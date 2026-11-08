@@ -1,0 +1,41 @@
+.wrap { margin-top: 0.75rem; }
+.toggle {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.25rem 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+}
+.toggle:hover { color: var(--brand); }
+
+.keyboard { display: grid; gap: 0.35rem; margin-top: 0.5rem; }
+.row { display: flex; justify-content: center; gap: 0.3rem; }
+.key {
+  font: inherit;
+  flex: 0 1 2.4rem;
+  min-width: 0;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.key:hover { background: var(--surface-hover); }
+.key:active { background: var(--surface-hover); transform: translateY(1px); }
+.wide { flex: 0 1 12rem; }
+.back { flex: 0 1 4rem; }
+
+/* Телефон: клавиши тянутся на всю ширину, как у системной клавиатуры. */
+@media (max-width: 600px) {
+  .row { gap: 0.25rem; }
+  .key { flex: 1 1 0; height: 2.8rem; font-size: 1.1rem; }
+  .row:nth-child(3) .key, .row:nth-child(4) .key { flex: 0 1 calc((100% - 8 * 0.25rem) / 9); }
+  .wide { flex: 3 1 0 !important; }
+  .back { flex: 1 1 0 !important; }
+}

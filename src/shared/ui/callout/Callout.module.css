@@ -1,0 +1,21 @@
+.callout { border: 3px solid var(--surface-muted); border-radius: var(--radius); margin: 16px 0; }
+.header { display: flex; align-items: center; gap: 0.5rem; padding: 18px 24px 0; font-size: 16px; font-weight: 700; }
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  color: var(--on-accent);
+}
+.smart .icon { background: var(--info); }
+.warn .icon { background: var(--warning); }
+.ok .icon { background: var(--success); }
+.content { padding: 10px 24px 18px; }
+.content > :first-child { margin-top: 0; }
+.content > :last-child { margin-bottom: 0; }
+@media (max-width: 600px) {
+  .header { padding: 12px 14px 0; }
+  .content { padding: 8px 14px 12px; }
+}

@@ -1,0 +1,4 @@
+.table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.table th, .table td { padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--border); text-align: left; }
+.table thead th { font-size: 0.85rem; color: var(--text-muted); }
+.table tbody th { font-weight: 400; color: var(--text-muted); font-style: italic; white-space: nowrap; }

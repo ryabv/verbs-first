@@ -1,0 +1,42 @@
+.root { container-type: inline-size; }
+.layout { display: grid; grid-template-columns: 12rem minmax(0, 1fr); gap: 1.5rem; }
+.list { display: grid; gap: 0.25rem; align-content: start; }
+.item {
+  font: inherit;
+  text-align: left;
+  display: grid;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.item:hover { color: var(--brand); }
+.active, .active:hover { color: var(--brand); border-color: var(--brand); }
+.lemma { font-weight: 600; }
+.translation { font-size: 0.8rem; color: var(--text-muted); }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+/* .header .title — сильнее, чем стили h2 статьи, иначе заголовок съезжает вниз. */
+.header .title { margin: 0; font-size: 1.7rem; line-height: 1.2; display: flex; align-items: center; gap: 0.3rem; }
+.subtitle { color: var(--text-muted); }
+.hint { color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem; }
+.toggle { white-space: nowrap; flex-shrink: 0; }
+
+/* Если виджет узкий (например, рядом со списком шагов) — глаголы строкой сверху. */
+@container (max-width: 60rem) {
+  .layout { grid-template-columns: 1fr; gap: 1rem; }
+  .list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .item {
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    padding: 0.3rem 0.8rem;
+  }
+  .translation { display: none; }
+  .active { border-color: var(--brand); }
+}
+
+@container (max-width: 30rem) {
+  .header { gap: 0.75rem; }
+  .toggle { font-size: 0.85rem; padding: 0.35rem 0.7rem; }
+}

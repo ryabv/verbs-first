@@ -1,0 +1,30 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  height: var(--header-height);
+  padding: 0 25px;
+  background: var(--bg);
+  border-bottom: 4px solid var(--border);
+}
+.logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem; color: var(--text); }
+.logo:hover { color: var(--text); }
+.logo b { color: var(--brand); }
+.mark {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+}
+.nav { display: flex; gap: 1.5rem; }
+.nav a { color: var(--text); font-size: 0.95rem; }
+.nav a:hover { color: var(--brand); }
+.nav a.active { color: var(--brand); }
+.tools { margin-left: auto; }
+@media (max-width: 600px) {
+  .header { padding: 0 16px; gap: 1rem; }
+}

@@ -1,0 +1,17 @@
+.button {
+  display: inline-block;
+  text-decoration: none;
+  font: inherit;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.55rem 1.1rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.button:disabled { opacity: 0.5; cursor: default; }
+.primary { background: var(--accent); color: var(--on-accent); }
+.primary:hover:not(:disabled) { background: var(--accent-strong); color: var(--on-accent); }
+.secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
+.secondary:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text); }
+.ghost { background: transparent; color: var(--accent); padding: 0.3rem 0.5rem; }
+.ghost:hover:not(:disabled) { background: var(--surface-muted); }

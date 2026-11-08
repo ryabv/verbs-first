@@ -1,0 +1,14 @@
+.switcher { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+.chip {
+  font: inherit;
+  display: grid;
+  justify-items: center;
+  padding: 0.35rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.chip small { font-size: 0.7rem; color: var(--text-muted); }
+.active { border-color: var(--brand); color: var(--brand); }

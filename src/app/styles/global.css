@@ -1,0 +1,86 @@
+/*
+ * Палитра и типографика в духе learn.javascript.ru:
+ * тёплый серый, фирменный красный, синие ссылки, системный шрифт, 18px в статьях.
+ */
+:root {
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f7f4f3;
+  --surface-hover: #e9e6e4;
+  --text: #313130;
+  --text-muted: #716f6e;
+  --text-subtle: #908e8d;
+  --border: #e9e6e4;
+  --border-strong: #d9d6d5;
+  --brand: #c4433a;
+  --brand-hover: #df6c5d;
+  --brand-soft: #fcd5ce;
+  --accent: #436ebd;
+  --accent-strong: #2f58a5;
+  --accent-soft: #ecf2f8;
+  --on-accent: #ffffff;
+  --info: #4b94be;
+  --success: #407b5a;
+  --success-soft: #f0f7f2;
+  --warning: #a15d00;
+  --warning-soft: #fff4e4;
+  --danger: #c73943;
+  --danger-soft: #feeeed;
+  --radius: 6px;
+  --font: BlinkMacSystemFont, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: Consolas, 'Lucida Console', Menlo, Monaco, monospace;
+  --header-height: 64px;
+  --sidebar-width: 249px;
+  --content-width: 800px;
+  color-scheme: light;
+}
+
+
+:root[data-theme='dark'] {
+  --bg: #232529;
+  --surface: #292c31;
+  --surface-muted: #292c31;
+  --surface-hover: #35383f;
+  --text: #e2e3e7;
+  --text-muted: #868d9a;
+  --text-subtle: #696e79;
+  --border: #35383f;
+  --border-strong: #41454c;
+  --brand: #e3796a;
+  --brand-hover: #d2483e;
+  --brand-soft: #602620;
+  --accent: #84a0ef;
+  --accent-strong: #a3b9f4;
+  --accent-soft: #1f2a40;
+  --on-accent: #232529;
+  --info: #78aacd;
+  --success: #5fa67d;
+  --success-soft: #1f3428;
+  --warning: #cf9a69;
+  --warning-soft: #38230b;
+  --danger: #e88b88;
+  --danger-soft: #441b1b;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.45 var(--font);
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--brand); }
+
+h1, h2, h3 { line-height: 1.25; }
+
+code { font-family: var(--font-mono); }
+
+#root { min-height: 100vh; display: flex; flex-direction: column; }

@@ -1,0 +1,84 @@
+/* ---------- сайдбар ---------- */
+.overall { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; color: var(--text-subtle); margin-bottom: 14px; }
+.bar { flex: 1; height: 4px; background: var(--surface-hover); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; background: var(--success); transition: width 0.3s; }
+
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.step {
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.25;
+  width: 100%;
+  display: flex;
+  gap: 0.4rem;
+  text-align: left;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.step:hover:not(:disabled) { color: var(--brand); }
+.step:disabled { cursor: default; color: var(--text-subtle); }
+.marker { flex-shrink: 0; min-width: 1.4rem; color: var(--text-subtle); }
+.current, .current .marker { color: var(--brand); }
+.done .marker { color: var(--success); font-weight: 700; }
+.kindTag {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0 0.35rem;
+  border-radius: 3px;
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  vertical-align: 1px;
+}
+
+/* ---------- статья ---------- */
+.head { margin: 40px 0 16px; }
+.kind { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); margin-bottom: 4px; }
+.title { margin: 0; font-size: 34px; font-weight: 700; }
+.body { font-size: 18px; line-height: 1.5; }
+
+.finishActions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.5rem; }
+
+/* Кнопка-свёртка списка шагов: только на телефоне. */
+.stepsToggle { display: none; }
+
+@media (max-width: 900px) {
+  .stepsToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.5rem 0.75rem;
+    font: inherit;
+    font-size: 0.95rem;
+    text-align: left;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+  }
+  .chevron { color: var(--text-subtle); }
+  .stepsWrap { display: none; }
+  .stepsWrapOpen { margin-top: 14px; }
+  .steps .step { padding: 6px 0; }
+  .overall { margin-bottom: 10px; }
+  .head { margin-top: 24px; }
+  .title { font-size: 26px; }
+  .body { font-size: 17px; }
+}
+
+.day {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-subtle);
+}
+.day:first-child { margin-top: 0; }

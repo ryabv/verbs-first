@@ -1,0 +1,28 @@
+.editor { font-size: 18px; }
+.textarea {
+  width: 100%;
+  font: inherit;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+  line-height: 1.5;
+}
+.textarea:focus { outline: none; border-color: var(--accent); }
+.listen { display: flex; align-items: center; gap: 0.3rem; margin-top: 6px; color: var(--text-muted); font-size: 15px; }
+
+.checklist { margin-top: 16px; border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 14px 20px; font-size: 16px; }
+.checklistHead { font-weight: 700; margin-bottom: 8px; }
+.allDone { color: var(--success); }
+.checklist ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.checklist li { display: flex; align-items: baseline; gap: 0.5rem; color: var(--text-muted); }
+.checklist li.ok { color: var(--text); }
+.mark { width: 1rem; color: var(--text-subtle); }
+.ok .mark { color: var(--success); font-weight: 700; }
+.evidence { margin-left: auto; padding: 0 8px; border-radius: 3px; background: var(--success-soft); color: var(--success); font-size: 14px; }
+.note { margin: 10px 0 0; font-size: 13px; color: var(--text-subtle); }
+
+.sample { margin-top: 20px; }
+.sample summary { cursor: pointer; color: var(--accent); }
