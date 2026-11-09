@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, Ref } from 'react';
 import styles from './Button.module.css';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -10,6 +10,8 @@ export function buttonClassName(variant: Variant = 'primary', extra?: string): s
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
+  /** React 19: ref — обычный проп. */
+  ref?: Ref<HTMLButtonElement>;
 }
 
 export function Button({ variant = 'primary', className, ...props }: ButtonProps) {
