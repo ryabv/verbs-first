@@ -1,5 +1,7 @@
 # Verbs First
 
+> Подробно: [продукт](docs/PRODUCT.md) · [архитектура](docs/ARCHITECTURE.md) · [план курса](docs/curriculum.md)
+
 Греческий через глаголы — по принципам методики Д. Петрова.
 React + TypeScript, Feature-Sliced Design, rspack, pnpm.
 
