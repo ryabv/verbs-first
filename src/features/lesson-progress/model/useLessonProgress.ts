@@ -7,7 +7,7 @@ export type StepStatus = 'done' | 'current' | 'available' | 'locked';
  * Прогресс по шагам урока.
  * Все шаги открыты: путь задаёт рекомендуемый порядок, но не запрещает перескакивать.
  */
-/** storageKey — из progressKey.lesson / progressKey.homework. */
+/** storageKey — из progressKey.lesson. */
 export function useLessonProgress(storageKey: string, stepIds: readonly string[]) {
   const [state, setState] = useState<StoredProgress>(() => readProgress(storageKey));
 

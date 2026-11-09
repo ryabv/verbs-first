@@ -1,7 +1,5 @@
 .lessonTitle { font-weight: 700; font-size: 1.05rem; line-height: 1.3; margin-bottom: 12px; }
-.modes { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.9rem; }
-.mode { color: var(--text-muted); }
-.modeActive { color: var(--brand); border-bottom: 2px solid var(--brand); }
+.headerLink { display: inline-block; font-size: 0.9rem; color: var(--accent); }
 
 .links { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .link { color: var(--text); }
@@ -18,3 +16,4 @@
   .head { margin-top: 24px; }
   .title { font-size: 26px; }
 }
+

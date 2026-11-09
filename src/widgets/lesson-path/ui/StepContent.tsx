@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import { GrammarSectionView, PhraseList, type Lesson, type LessonStep } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
-import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
+import { AddWords, LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { CompositionEditor } from '@/features/composition-check';
 import { ConjugationDrill } from '@/features/conjugation-drill';
+import { buildLessonExam, Exam, MAX_LISTENS } from '@/features/exam';
 import { SpeakButton } from '@/features/pronounce';
 import { SentenceTrainer } from '@/features/sentence-trainer';
 import { ReadingView } from '@/features/text-reading';
@@ -102,5 +103,23 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
     case 'dictation':
     case 'oral':
       return <SentenceTrainer mode={step.kind} items={step.items} onComplete={onGoal} />;
+
+    case 'exam':
+      return (
+        <Exam
+          id={lesson.id}
+          title={`Экзамен по уроку ${lesson.id}`}
+          build={() => buildLessonExam(lesson)}
+          rules={[
+            'Задания по всему уроку вперемешку: таблица глаголов, перевод, диктант, слова, текст.',
+            'Ударение обязательно: ошибка только в ударении тоже считается ошибкой.',
+            `Диктант можно прослушать не больше ${MAX_LISTENS} раз.`,
+          ]}
+          renderWords={(words) => (
+            <AddWords words={words} deckFor={wordDeck} label="Слова из ошибок — в карточки" />
+          )}
+          onPassed={onGoal}
+        />
+      );
   }
 }

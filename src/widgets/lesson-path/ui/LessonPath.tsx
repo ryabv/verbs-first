@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Lesson, LessonStep, StepKind } from '@/entities/lesson';
 import type { Verb } from '@/entities/verb';
 import { useLessonProgress } from '@/features/lesson-progress';
@@ -12,19 +12,22 @@ import { KIND_LABELS, StepList } from './StepList';
 import styles from './LessonPath.module.css';
 
 /** Шаги, которые засчитываются только по выполнении (а не по кнопке «дальше»). */
-const GOAL_KINDS: ReadonlySet<StepKind> = new Set(['drill', 'translate', 'dictation', 'oral']);
+const GOAL_KINDS: ReadonlySet<StepKind> = new Set(['drill', 'translate', 'dictation', 'oral', 'exam']);
 
 interface Props {
+  /** Открыть этот шаг (ссылка вида ?step=exam). После перехода вызывается onStepOpened. */
+  openStepId?: string;
+  onStepOpened?: () => void;
   lesson: Lesson;
-  /** Последовательность шагов: lesson.steps или lesson.homework. */
+  /** Весь путь: урок → домашнее задание → экзамен (lessonPath). */
   steps: LessonStep[];
-  /** Ключ прогресса в хранилище (progressKey.lesson / progressKey.homework). */
+  /** Ключ прогресса в хранилище (progressKey.lesson). */
   storageKey: string;
   /** Заголовок списка шагов в сайдбаре. */
   stepsTitle: string;
   /** Слот для просмотра таблиц глаголов (виджет verb-algorithm передаёт страница). */
   renderVerbs: (verbs: Verb[]) => ReactNode;
-  /** Верх сайдбара: название урока, переключатель режимов. */
+  /** Верх сайдбара: название урока, ссылка на справочник. */
   sidebarHeader: ReactNode;
   crumbs: Crumb[];
   /** Экран после последнего шага. */
@@ -32,9 +35,15 @@ interface Props {
 }
 
 /** Путь ученика: шаги в сайдбаре, текущий шаг — как статья учебника. */
-export function LessonPath({ lesson, steps, storageKey, stepsTitle, renderVerbs, sidebarHeader, crumbs, finish }: Props) {
-  const stepIds = steps.map((s) => s.id);
+export function LessonPath({ openStepId, onStepOpened, lesson, steps, storageKey, stepsTitle, renderVerbs, sidebarHeader, crumbs, finish }: Props) {
+  const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
   const progress = useLessonProgress(storageKey, stepIds);
+  const { goTo } = progress;
+  useEffect(() => {
+    if (!openStepId) return;
+    if (stepIds.includes(openStepId)) goTo(openStepId);
+    onStepOpened?.();
+  }, [openStepId, stepIds, goTo, onStepOpened]);
   const [celebrate, setCelebrate] = useState(false);
   // На телефоне список шагов свёрнут, чтобы задание было на первом экране.
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -89,6 +98,7 @@ export function LessonPath({ lesson, steps, storageKey, stepsTitle, renderVerbs,
         <div className={stepsOpen ? styles.stepsWrapOpen : styles.stepsWrap}>
           <StepList
             steps={steps}
+            partTitles={lesson.homeworkParts}
             statusOf={progress.statusOf}
             onSelect={(id) => {
               setCelebrate(false);
@@ -132,7 +142,7 @@ export function LessonPath({ lesson, steps, storageKey, stepsTitle, renderVerbs,
     <SidebarLayout sidebar={sidebar}>
       <header className={styles.head} ref={headRef}>
         <Breadcrumbs items={[...crumbs, { label: `Шаг ${progress.currentIndex + 1} из ${steps.length}` }]} />
-        <div className={styles.kind}>{KIND_LABELS[step.kind]}</div>
+        <div className={step.kind === 'exam' ? `${styles.kind} ${styles.kindExam}` : styles.kind}>{KIND_LABELS[step.kind]}</div>
         <h1 className={styles.title}>{step.title}</h1>
       </header>
 

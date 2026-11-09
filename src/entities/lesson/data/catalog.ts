@@ -19,10 +19,11 @@ const titles: [string, string][] = [
   ['Вежливость и итог', 'Документы'],
 ];
 
-export function buildCatalog(counts: Map<number, { steps: number; homework: number }>): LessonCatalogItem[] {
+/** counts: номер урока → число шагов всего пути (урок + ДЗ + экзамен). */
+export function buildCatalog(counts: Map<number, number>): LessonCatalogItem[] {
   return titles.map(([title, topic], i) => {
     const id = i + 1;
-    const { steps: stepCount = 0, homework: homeworkCount = 0 } = counts.get(id) ?? {};
-    return { id, title, topic, available: stepCount > 0, stepCount, homeworkCount };
+    const stepCount = counts.get(id) ?? 0;
+    return { id, title, topic, available: stepCount > 0, stepCount };
   });
 }

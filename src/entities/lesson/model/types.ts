@@ -76,8 +76,8 @@ interface StepBase {
   title: string;
   /** Что делаем и зачем — одна-две фразы от «преподавателя». */
   intro?: string;
-  /** День домашнего задания: шаги группируются по дням. */
-  day?: number;
+  /** Часть домашнего задания (1, 2, 3…): шаги ДЗ группируются по частям. Без сроков — в своём темпе. */
+  part?: number;
 }
 
 export type LessonStep =
@@ -95,7 +95,9 @@ export type LessonStep =
   | (StepBase & { kind: 'oral'; items: SentenceItem[] })
   | (StepBase & { kind: 'composition'; composition: CompositionTask })
   /** Слова урока: добавить в карточки. */
-  | (StepBase & { kind: 'words' });
+  | (StepBase & { kind: 'words' })
+  /** Экзамен по всему уроку (отдельный тип, строгие правила); задания собираются сами. */
+  | (StepBase & { kind: 'exam' });
 
 export type StepKind = LessonStep['kind'];
 
@@ -115,8 +117,10 @@ export interface Lesson {
   vocabulary: VocabGroup[];
   /** Путь ученика по уроку: теория и практика чередуются. */
   steps: LessonStep[];
-  /** Домашнее задание: те же шаги, разбитые по дням (поле day). */
+  /** Домашнее задание: шаги, разбитые на части (поле part). Идёт в пути после урока, перед экзаменом. */
   homework: LessonStep[];
+  /** Названия частей ДЗ: «Настоящее время»… */
+  homeworkParts: string[];
 }
 
 /** Строка оглавления: урок может быть ещё не наполнен. */
@@ -125,6 +129,6 @@ export interface LessonCatalogItem {
   title: string;
   topic: string;
   available: boolean;
+  /** Шагов во всём пути: урок + домашнее задание + экзамен. */
   stepCount: number;
-  homeworkCount: number;
 }

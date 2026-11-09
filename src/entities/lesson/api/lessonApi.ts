@@ -1,5 +1,6 @@
 import { buildCatalog } from '../data/catalog';
 import { lesson01 } from '../data/lesson-01';
+import { lessonPath } from '../lib/path';
 import type { Lesson, LessonCatalogItem } from '../model/types';
 
 /**
@@ -14,6 +15,6 @@ export function getLesson(id: number): Lesson | undefined {
 
 export function getLessonCatalog(): LessonCatalogItem[] {
   return buildCatalog(
-    new Map(Object.values(LESSONS).map((l) => [l.id, { steps: l.steps.length, homework: l.homework.length }])),
+    new Map(Object.values(LESSONS).map((l) => [l.id, lessonPath(l).length])),
   );
 }

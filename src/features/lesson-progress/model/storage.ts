@@ -3,27 +3,41 @@ export interface StoredProgress {
   current?: string;
 }
 
-/** Ключи прогресса: путь урока и домашнее задание считаются отдельно. */
+/**
+ * Ключ прогресса урока: урок, ДЗ и экзамен — один путь.
+ * Раньше ДЗ хранилось отдельно (`verbs-first:homework:<id>`) — его вливаем при чтении.
+ */
 export const progressKey = {
   lesson: (lessonId: number) => `verbs-first:lesson:${lessonId}`,
-  homework: (lessonId: number) => `verbs-first:homework:${lessonId}`,
 };
 
+const legacyHomeworkKey = (storageKey: string) => storageKey.replace('verbs-first:lesson:', 'verbs-first:homework:');
+
 /** localStorage может быть недоступен (приватный режим) — тогда прогресс живёт только в памяти. */
-export function readProgress(key: string): StoredProgress {
+function readRaw(key: string): StoredProgress | null {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return { completed: [] };
+    if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<StoredProgress>;
     return { completed: Array.isArray(parsed.completed) ? parsed.completed : [], current: parsed.current };
   } catch {
-    return { completed: [] };
+    return null;
   }
+}
+
+/** Прогресс урока (с влитым старым прогрессом ДЗ, если он был). */
+export function readProgress(key: string): StoredProgress {
+  const main = readRaw(key) ?? { completed: [] };
+  const legacy = readRaw(legacyHomeworkKey(key));
+  if (!legacy) return main;
+  return { ...main, completed: [...new Set([...main.completed, ...legacy.completed])] };
 }
 
 export function writeProgress(key: string, progress: StoredProgress): void {
   try {
     localStorage.setItem(key, JSON.stringify(progress));
+    // Старый прогресс ДЗ уже влит в progress (см. readProgress).
+    localStorage.removeItem(legacyHomeworkKey(key));
   } catch {
     /* не критично */
   }
@@ -32,6 +46,7 @@ export function writeProgress(key: string, progress: StoredProgress): void {
 export function clearProgress(key: string): void {
   try {
     localStorage.removeItem(key);
+    localStorage.removeItem(legacyHomeworkKey(key));
   } catch {
     /* не критично */
   }

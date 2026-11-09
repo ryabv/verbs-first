@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { getLesson, GrammarSectionView, PhraseList, type Lesson } from '@/entities/lesson';
+import { getLesson, GrammarSectionView, lessonPath, PhraseList, type Lesson } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { ConjugationDrill } from '@/features/conjugation-drill';
@@ -15,10 +15,10 @@ import { buttonClassName } from '@/shared/ui/button';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
 import styles from './LessonPage.module.css';
 
-type Mode = 'path' | 'homework' | 'reference';
+type Mode = 'path' | 'reference';
 
 function parseMode(raw: string | null): Mode {
-  return raw === 'reference' || raw === 'homework' ? raw : 'path';
+  return raw === 'reference' ? raw : 'path';
 }
 type TabId = 'grammar' | 'verbs' | 'reading' | 'words' | 'topic' | 'drill';
 
@@ -40,8 +40,19 @@ const verbsRenderer = (lesson: Lesson) =>
 
 export function LessonPage() {
   const { lessonId } = useParams();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const lesson = getLesson(Number(lessonId));
+  // ?step=exam (и старое ?mode=homework) — открыть шаг один раз и убрать параметр из адреса.
+  const clearStep = useCallback(() => {
+    setParams(
+      (p) => {
+        p.delete('step');
+        if (p.get('mode') === 'homework') p.delete('mode');
+        return p;
+      },
+      { replace: true },
+    );
+  }, [setParams]);
 
   if (!lesson) {
     return (
@@ -59,78 +70,46 @@ export function LessonPage() {
   ];
   const header = <LessonSidebarHeader lesson={lesson} mode={mode} />;
 
-  const base = routes.lesson(lesson.id);
-  const renderVerbs = verbsRenderer(lesson);
-
   if (mode === 'reference') {
     return <Reference lesson={lesson} tab={params.get('tab')} header={header} crumbs={crumbs} />;
   }
 
-  if (mode === 'homework') {
-    return (
-      <LessonPath
-        key="homework"
-        lesson={lesson}
-        steps={lesson.homework}
-        storageKey={progressKey.homework(lesson.id)}
-        stepsTitle="Домашнее задание"
-        renderVerbs={renderVerbs}
-        sidebarHeader={header}
-        crumbs={[...crumbs, { label: 'Домашнее задание', to: `${base}?mode=homework` }]}
-        finish={{
-          title: 'Домашнее задание выполнено!',
-          text: (
-            <p>
-              Схема урока {lesson.id} у вас в руках. Перед следующим уроком разомнитесь 5 минут в свободном
-              тренажёре — и вперёд.
-            </p>
-          ),
-          actions: (
-            <>
-              {getLesson(lesson.id + 1) ? (
-                <Link to={routes.lesson(lesson.id + 1)} className={buttonClassName('primary')}>
-                  Следующий урок
-                </Link>
-              ) : (
-                <Link to={routes.home()} className={buttonClassName('primary')}>
-                  Ко всем урокам
-                </Link>
-              )}
-              <Link to={`${base}?mode=reference&tab=drill`} className={buttonClassName('secondary')}>
-                Свободная тренировка
-              </Link>
-            </>
-          ),
-        }}
-      />
-    );
-  }
+  const next = getLesson(lesson.id + 1);
+  // Старые ссылки ?mode=homework ведут на первый шаг домашнего задания.
+  const openStepId = params.get('step') ?? (params.get('mode') === 'homework' ? lesson.homework[0]?.id : undefined);
 
   return (
     <LessonPath
-      key="path"
       lesson={lesson}
-      steps={lesson.steps}
+      steps={lessonPath(lesson)}
       storageKey={progressKey.lesson(lesson.id)}
-      stepsTitle="Шаги урока"
-      renderVerbs={renderVerbs}
+      openStepId={openStepId}
+      onStepOpened={clearStep}
+      stepsTitle="План урока"
+      renderVerbs={verbsRenderer(lesson)}
       sidebarHeader={header}
       crumbs={crumbs}
       finish={{
         title: `Урок ${lesson.id} пройден!`,
         text: (
           <p>
-            Вы прошли всю «таблицу умножения» для {lesson.verbIds.length} глаголов. Теперь главное — довести её
-            до автоматизма: домашнее задание рассчитано на три дня по 20–30 минут.
+            Урок, домашнее задание и экзамен позади: «таблица умножения» для {lesson.verbIds.length} глаголов у вас в
+            руках. Повторяйте слова в карточках — и вперёд.
           </p>
         ),
         actions: (
           <>
-            <Link to={`${base}?mode=homework`} className={buttonClassName('primary')}>
-              К домашнему заданию
-            </Link>
-            <Link to={routes.home()} className={buttonClassName('secondary')}>
-              Ко всем урокам
+            {next ? (
+              <Link to={routes.lesson(next.id)} className={buttonClassName('primary')}>
+                Следующий урок
+              </Link>
+            ) : (
+              <Link to={routes.home()} className={buttonClassName('primary')}>
+                Ко всем урокам
+              </Link>
+            )}
+            <Link to={routes.cards({ lesson: lesson.id })} className={buttonClassName('secondary')}>
+              Слова урока в карточках
             </Link>
           </>
         ),
@@ -139,22 +118,21 @@ export function LessonPage() {
   );
 }
 
+/** Верх сайдбара: урок и ссылка на справочник (он не этап учёбы, а шпаргалка). */
 function LessonSidebarHeader({ lesson, mode }: { lesson: Lesson; mode: Mode }) {
   const base = routes.lesson(lesson.id);
   return (
     <SidebarSection title={`Урок ${lesson.id}`}>
       <div className={styles.lessonTitle}>{lesson.title}</div>
-      <div className={styles.modes}>
-        <Link to={base} className={mode === 'path' ? styles.modeActive : styles.mode}>
-          Урок
+      {mode === 'reference' ? (
+        <Link to={base} className={styles.headerLink}>
+          ← К занятиям урока
         </Link>
-        <Link to={`${base}?mode=homework`} className={mode === 'homework' ? styles.modeActive : styles.mode}>
-          Домашнее задание
+      ) : (
+        <Link to={`${base}?mode=reference`} className={styles.headerLink}>
+          Справочник урока →
         </Link>
-        <Link to={`${base}?mode=reference`} className={mode === 'reference' ? styles.modeActive : styles.mode}>
-          Справочник
-        </Link>
-      </div>
+      )}
     </SidebarSection>
   );
 }

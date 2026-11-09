@@ -73,12 +73,24 @@
   .body { font-size: 17px; }
 }
 
-.day {
-  margin-top: 8px;
+.section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.part {
+  margin-top: 4px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-subtle);
 }
-.day:first-child { margin-top: 0; }
+
+/* Экзамен — отдельный тип, не «практика». */
+.kindTagExam { background: transparent; border: 1px solid var(--warning); color: var(--warning); }
+.kindExam { color: var(--warning); font-weight: 600; }

@@ -1,5 +1,5 @@
 import type { Lesson } from '../model/types';
-import { lesson01Homework, nikosReading } from './lesson-01-homework';
+import { lesson01Homework, lesson01HomeworkParts, nikosReading } from './lesson-01-homework';
 
 export const lesson01: Lesson = {
   id: 1,
@@ -317,11 +317,18 @@ export const lesson01: Lesson = {
       intro:
         'Финал урока: расскажите о себе. Список под полем отмечается сам, пока вы пишете. Когда закончите — обязательно произнесите текст вслух.',
     },
+    {
+      id: 'exam',
+      kind: 'exam',
+      title: 'Итог урока 1',
+      intro:
+        'Финал урока — после домашнего задания. Экзамен строже тренировок: подсказок нет, ответы — в конце. Сдали от 80% — урок закрыт, можно идти дальше.',
+    },
   ],
   vocabulary: [
     {
       id: 'text',
-      title: 'Слова',
+      title: 'Существительные',
       words: [
         { greek: 'η μουσική', russian: 'музыка' },
         { greek: 'το βιβλίο', russian: 'книга' },
@@ -357,6 +364,7 @@ export const lesson01: Lesson = {
     },
   ],
   homework: lesson01Homework,
+  homeworkParts: lesson01HomeworkParts,
   coreVerbIds: ['eimai'],
   verbIds: ['doulevo', 'grafo', 'diavazo', 'akouo', 'psachno', 'mageirevo', 'taxidevo', 'agorazo'],
 };

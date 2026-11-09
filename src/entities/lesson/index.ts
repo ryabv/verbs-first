@@ -14,5 +14,6 @@ export type {
   VocabGroup,
 } from './model/types';
 export { getLesson, getLessonCatalog } from './api/lessonApi';
+export { lessonPath, sectionOf, type PathSection } from './lib/path';
 export { GrammarSectionView } from './ui/GrammarSectionView';
 export { PhraseList } from './ui/PhraseList';

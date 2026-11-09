@@ -1,12 +1,16 @@
 import { Link } from 'react-router';
 import { getLessonCatalog } from '@/entities/lesson';
+import { readExamResult } from '@/features/exam';
 import { progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
+import { plural } from '@/shared/lib/plural';
 import { Callout } from '@/shared/ui/callout';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
   const lessons = getLessonCatalog();
+  const alphabetExam = readExamResult('alphabet');
+  const exams = Object.fromEntries(lessons.filter((l) => l.available).map((l) => [l.id, readExamResult(l.id)]));
 
   return (
     <div className={styles.page}>
@@ -38,7 +42,14 @@ export function HomePage() {
           <span>
             <span className={styles.title}>Алфавит и чтение</span>
             <span className={styles.meta}>
-              24 буквы, сочетания букв, ударение · 2 тренажёра. Если уже читаете по-гречески — сразу к урокам.
+              24 буквы, сочетания букв, ударение · 3 тренажёра и экзамен
+              {alphabetExam && (
+                <span className={alphabetExam.passed ? styles.done : undefined}>
+                  {' '}
+                  (сдан на {alphabetExam.best}%{alphabetExam.passed ? ' ✓' : ', нужно 80%'})
+                </span>
+              )}
+              . Если уже читаете по-гречески — сразу к урокам.
             </span>
           </span>
         </Link>
@@ -53,7 +64,6 @@ export function HomePage() {
         <ol className={styles.list}>
           {lessons.map((lesson) => {
             const done = lesson.available ? readProgress(progressKey.lesson(lesson.id)).completed.length : 0;
-            const homeworkDone = lesson.available ? readProgress(progressKey.homework(lesson.id)).completed.length : 0;
             const percent = lesson.stepCount ? Math.min(100, Math.round((done / lesson.stepCount) * 100)) : 0;
             const status = !lesson.available
               ? 'скоро'
@@ -61,7 +71,7 @@ export function HomePage() {
                 ? '✓ пройден'
                 : percent > 0
                   ? `пройдено ${percent}%`
-                  : `${lesson.stepCount} шагов`;
+                  : `${lesson.stepCount} ${plural(lesson.stepCount, ['шаг', 'шага', 'шагов'])}`;
 
             return (
               <li key={lesson.id} className={lesson.available ? styles.item : `${styles.item} ${styles.locked}`}>
@@ -76,11 +86,14 @@ export function HomePage() {
                   )}
                   <div className={styles.meta}>
                     {lesson.topic} · <span className={percent === 100 ? styles.done : undefined}>{status}</span>
-                    {lesson.homeworkCount > 0 && (
+                    {lesson.available && (
                       <>
                         {' · '}
-                        <Link to={`${routes.lesson(lesson.id)}?mode=homework`} className={styles.homework}>
-                          ДЗ {homeworkDone}/{lesson.homeworkCount}
+                        <Link
+                          to={`${routes.lesson(lesson.id)}?step=exam`}
+                          className={exams[lesson.id]?.passed ? `${styles.homework} ${styles.done}` : styles.homework}
+                        >
+                          {exams[lesson.id] ? `Экзамен ${exams[lesson.id]!.best}%${exams[lesson.id]!.passed ? ' ✓' : ''}` : 'Экзамен'}
                         </Link>
                       </>
                     )}
