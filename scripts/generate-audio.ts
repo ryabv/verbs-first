@@ -16,6 +16,11 @@ import path from 'node:path';
 import { createInterface } from 'node:readline';
 
 // Глубокие импорты (а не index.ts слайсов), чтобы не тянуть React-компоненты и CSS.
+import { COMBINATIONS } from '@/entities/alphabet/data/combinations';
+import { LETTERS } from '@/entities/alphabet/data/letters';
+import { WORD_QUIZ } from '@/entities/alphabet/data/quiz';
+import { STRESS_EXAMPLES } from '@/entities/alphabet/data/stress';
+import { DICTIONARY } from '@/entities/dictionary/data/words';
 import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
@@ -36,6 +41,15 @@ function collectTexts(): Set<string> {
     if (key) texts.add(key);
   };
 
+  // Алфавит: названия букв, примеры, слова тренажёра «Как читается».
+  for (const l of LETTERS) {
+    add(l.speakAs ?? l.name);
+    add(l.example.greek);
+  }
+  COMBINATIONS.forEach((c) => c.examples.forEach((e) => add(e.greek)));
+  WORD_QUIZ.forEach((q) => add(q.speak ?? q.prompt));
+  Object.values(STRESS_EXAMPLES).forEach((e) => add(e.greek));
+
   for (const { id, available } of getLessonCatalog()) {
     const lesson = available ? getLesson(id) : undefined;
     if (!lesson) continue;
@@ -51,6 +65,7 @@ function collectTexts(): Set<string> {
     }
     lesson.grammar.forEach((s) => s.examples?.forEach((e) => add(e.greek)));
     lesson.topic.phrases.forEach((p) => add(p.greek));
+    lesson.vocabulary.forEach((g) => g.words.forEach((w) => add(w.greek)));
     lesson.topic.presentation.sample.forEach((p) => add(p.greek));
     for (const step of [...lesson.steps, ...lesson.homework]) {
       if (step.kind === 'translate' || step.kind === 'dictation' || step.kind === 'oral')
@@ -62,6 +77,14 @@ function collectTexts(): Set<string> {
       add(reading.sentences.map((p) => p.greek).join(' '));
     }
   }
+  // Отдельные слова: каждое слово фраз нажимается и озвучивается в окне слова.
+  // Однобуквенные (ο, η) синтезатор читает как название буквы — их не озвучиваем.
+  const WORD_RE = /[\p{L}\p{M}]+/gu;
+  // Добавленные по ходу слова тоже обойдутся — это безвредно: слово даёт само себя.
+  for (const text of texts) {
+    for (const [word] of text.matchAll(WORD_RE)) if ([...word].length > 1) add(word);
+  }
+  DICTIONARY.forEach((e) => add(e.greek));
   return texts;
 }
 
