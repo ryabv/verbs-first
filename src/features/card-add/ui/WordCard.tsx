@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { DeckRef } from '@/entities/card';
 import type { TextToken } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
@@ -17,14 +17,16 @@ interface Props {
   hint?: string;
   /** Перевод уже показан рядом (панель разбора) — не повторяем, если слово и так в словарной форме. */
   translationShown?: boolean;
+  /** Ещё ссылка в нижнюю строку окна. */
+  extra?: ReactNode;
 }
 
 /**
  * Содержимое окна слова: что именно попадёт в карточку (словарная форма) и наборы.
  * Нет словарной формы — ученик вписывает её и перевод сам; форму из текста не кладём молча.
  */
-export function WordCard({ greek, russian, deck, display, hint, translationShown }: Props) {
-  if (!greek) return <OwnWord display={display ?? ''} hint={hint} deck={deck} />;
+export function WordCard({ greek, russian, deck, display, hint, translationShown, extra }: Props) {
+  if (!greek) return <OwnWord display={display ?? ''} hint={hint} deck={deck} extra={extra} />;
   const isBase = !display || stripAccents(display) === stripAccents(greek);
   return (
     <>
@@ -32,19 +34,18 @@ export function WordCard({ greek, russian, deck, display, hint, translationShown
         !translationShown && <span className={styles.popRussian}>{russian}</span>
       ) : (
         <span className={styles.popRussian}>
-          <span className={styles.baseLabel}>словарная форма </span>
-          <span lang="el" className={styles.base}>
+          <span lang="el" className={styles.base} title="Словарная форма — так слово попадёт в карточку">
             {greek}
           </span>{' '}
           — {russian}
         </span>
       )}
-      <AddToCards greek={greek} russian={russian} deck={deck} />
+      <AddToCards greek={greek} russian={russian} deck={deck} extra={extra} />
     </>
   );
 }
 
-function OwnWord({ display, hint, deck }: { display: string; hint?: string; deck?: DeckRef }) {
+function OwnWord({ display, hint, deck, extra }: { display: string; hint?: string; deck?: DeckRef; extra?: ReactNode }) {
   const [greek, setGreek] = useState(display.toLowerCase());
   const [russian, setRussian] = useState('');
   return (
@@ -73,7 +74,7 @@ function OwnWord({ display, hint, deck }: { display: string; hint?: string; deck
           autoComplete="off"
         />
       </span>
-      <AddToCards greek={greek} russian={russian} deck={deck} />
+      <AddToCards greek={greek} russian={russian} deck={deck} extra={extra} />
     </>
   );
 }

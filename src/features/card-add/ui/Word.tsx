@@ -88,10 +88,16 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, child
                 </span>
                 <SpeakButton text={phrase.greek} />
               </span>
-              <WordCard greek={phrase.greek} russian={phrase.russian} deck={phrase.deck ?? deck} />
-              <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(false)}>
-                <Arrow direction="left" /> К слову «{shown}»
-              </button>
+              <WordCard
+                greek={phrase.greek}
+                russian={phrase.russian}
+                deck={phrase.deck ?? deck}
+                extra={
+                  <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(false)}>
+                    <Arrow direction="left" /> К слову
+                  </button>
+                }
+              />
             </>
           ) : (
             <>
@@ -102,12 +108,20 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, child
                 {/* Одну букву синтезатор читает как её название — не озвучиваем. */}
                 {[...shown].length > 1 && <SpeakButton text={shown} />}
               </span>
-              <WordCard greek={greek} russian={russian} deck={deck} display={shown} hint={hint} />
-              {phrase && (
-                <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(true)}>
-                  Вся фраза в карточки <Arrow />
-                </button>
-              )}
+              <WordCard
+                greek={greek}
+                russian={russian}
+                deck={deck}
+                display={shown}
+                hint={hint}
+                extra={
+                  phrase && (
+                    <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(true)}>
+                      Вся фраза <Arrow />
+                    </button>
+                  )
+                }
+              />
             </>
           )}
         </span>

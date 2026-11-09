@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Link } from 'react-router';
+import { useState, type ReactNode } from 'react';
 import {
   addCards,
   createDeck,
@@ -13,7 +12,6 @@ import {
   type Deck,
   type DeckRef,
 } from '@/entities/card';
-import { routes } from '@/shared/config/routes';
 import { Check } from '@/shared/ui/ornament';
 import styles from './Word.module.css';
 
@@ -22,6 +20,8 @@ interface Props {
   russian: string;
   /** Набор, который предлагаем первым; по умолчанию — «Мои слова». */
   deck?: DeckRef;
+  /** Ещё ссылка в нижнюю строку окна (например, «Вся фраза»). */
+  extra?: ReactNode;
 }
 
 /** Сколько быстрых кнопок наборов показывать (кроме наборов, где слово уже есть). */
@@ -32,7 +32,7 @@ const QUICK = 3;
  * набор этого места, недавние наборы и те, где слово уже лежит. Нажатие ставит/снимает слово.
  * «Все наборы…» — полный список с галочками и создание нового.
  */
-export function AddToCards({ greek, russian, deck = DEFAULT_DECK }: Props) {
+export function AddToCards({ greek, russian, deck = DEFAULT_DECK, extra }: Props) {
   const { cards, decks } = useCards();
   const [picking, setPicking] = useState(false);
   const card = findCard(cards, greek);
@@ -57,7 +57,6 @@ export function AddToCards({ greek, russian, deck = DEFAULT_DECK }: Props) {
 
   return (
     <span className={styles.quick}>
-      <span className={styles.quickLabel}>{card ? 'Уже в карточках. Наборы:' : 'Добавить в карточки:'}</span>
       <span className={styles.chips}>
         {quick.map((d) => {
           const on = has(d.id);
@@ -78,9 +77,9 @@ export function AddToCards({ greek, russian, deck = DEFAULT_DECK }: Props) {
       </span>
       <span className={styles.quickLinks}>
         <button type="button" className={styles.linkBtn} onClick={() => setPicking(true)} disabled={!ready && !card}>
-          Все наборы и новый…
+          Наборы…
         </button>
-        {card && <Link to={routes.cards()}>Открыть карточки</Link>}
+        {extra}
       </span>
     </span>
   );
