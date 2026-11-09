@@ -46,7 +46,7 @@ src/
   app/                    точка входа, роутер, глобальные стили и токены темы
   pages/
     home/                 оглавление курса (16 уроков, прогресс урока и ДЗ)
-    lesson/               страница урока, три режима через ?mode=
+    lesson/               страница урока: один путь (урок → ДЗ → экзамен) + ?mode=reference
     cards/                карточки: наборы, тренировка, добавление своих слов
     alphabet/             «Алфавит»: буквы, сочетания, ударение, 2 тренажёра (?section=)
   widgets/
@@ -130,7 +130,8 @@ interface Lesson {
   readings: ReadingText[];            // тексты: предложения + glossary + вопросы + findTense
   vocabulary: VocabGroup[];           // новые слова по группам {id, title, words: Phrase[]} (кроме глаголов и фраз темы)
   steps: LessonStep[];                // путь урока
-  homework: LessonStep[];             // ДЗ: те же шаги с полем day
+  homework: LessonStep[];             // ДЗ: те же шаги с полем part (часть 1, 2, 3)
+  homeworkParts: string[];            // названия частей ДЗ
 }
 ```
 
@@ -150,7 +151,7 @@ interface Lesson {
 | `composition` | `CompositionEditor` | `composition: CompositionTask` | по кнопке |
 | `words` | `LessonWords` (слова урока → карточки) | — | по кнопке |
 
-Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `day?` (группировка ДЗ).
+Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `part?` (часть ДЗ).
 `SentenceItem = { russian; greek: string[] }` — `greek[0]` эталон, остальные тоже верны.
 Названия шагов **не повторяют** тип (тип показывает чип и подпись над заголовком).
 
@@ -178,22 +179,26 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 ### Роутинг и режимы урока
 
 - `/` — `HomePage`, `/lesson/:lessonId` — `LessonPage`, `/cards[?lesson=N]` — `CardsPage`
-  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?section=letters|combinations|stress|sounds|words]` —
+  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?section=letters|combinations|stress|sounds|words|order|exam]` —
   `AlphabetPage` (разделы описаны массивом `SECTIONS` в самой странице).
-- Режим урока в query: без параметра — путь урока, `?mode=homework` — ДЗ,
-  `?mode=reference&tab=grammar|verbs|reading|words|topic|drill` — справочник.
-- `LessonPath` переиспользуется для урока и ДЗ: отличаются `steps`, `storageKey`,
-  `stepsTitle`, `finish`. На `LessonPath` ставится `key`, чтобы при смене режима
-  состояние прогресса пересоздавалось.
+- Урок — **один путь** `lessonPath(lesson)` (`entities/lesson/lib/path.ts`): шаги урока (без
+  экзамена) → `homework` → шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
+  `exam`); `StepList` рисует заголовки частей и «Часть N · название» из `homeworkParts`,
+  нумерация — внутри части. Никаких «дней» (без давления сроками).
+- `?step=<id>` открывает шаг (и убирается из адреса); старое `?mode=homework` → первый шаг ДЗ.
+  `?mode=reference&tab=grammar|verbs|reading|words|topic|drill` — справочник (ссылка
+  «Справочник урока» в сайдбаре).
 
 ### Прогресс — `features/lesson-progress`
 
-- Ключи: `progressKey.lesson(id)` = `verbs-first:lesson:<id>`,
-  `progressKey.homework(id)` = `verbs-first:homework:<id>`. Значение `{ completed: string[], current?: string }`.
+- Ключ: `progressKey.lesson(id)` = `verbs-first:lesson:<id>` — один на весь путь.
+  Значение `{ completed: string[], current?: string }`. Старый отдельный прогресс ДЗ
+  (`verbs-first:homework:<id>`) вливается при чтении и удаляется при записи.
 - Все шаги открыты (свободная навигация). Шаги из `GOAL_KINDS` не засчитываются,
   если их пропустили кнопкой «дальше».
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
   `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
+  `verbs-first:exam:<lessonId|alphabet>` (`{ best, passed }`),
   `verbs-first:composition:<lessonId>[:<stepId>]` (черновики).
 - Все обращения к `localStorage` — в `try/catch`: в приватном режиме он может бросать.
 
@@ -223,8 +228,19 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   озвучивает и отдельные слова фраз (кроме однобуквенных).
 - `Phrase` (через `wordIn`) режет фразу на слова-кнопки (`Word` с `display` = форма в тексте и
   `phrase` = вся фраза); `TokenCard` — то же для панели разбора в `ReadingView`
-  (слот `renderAdd(token)`). Слова урока: глаголы → «Урок N · Глаголы», остальное → «Урок N · Слова»
-  (`lessonWordDeck`).
+  (слот `renderAdd(token)`). Отдельное слово урока (`lessonWordDeck`): глагол → «Урок N · Глаголы», слово из
+  `vocabulary` → набор своей группы («Существительные», «Связки и наречия»), прочее → «Другие слова».
+  Названия наборов урока синхронизируются с данными (`ensureDeck`).
+- **Экзамены** — `features/exam`: общий `Exam` (id, title, build, rules) со строгими правилами,
+  результат `verbs-first:exam:<id>` (`id` — номер урока или `alphabet`). Наборы заданий:
+  `buildAlphabetExam()` (из `SOUND_QUIZ`, `WORD_QUIZ`, `MARKS_QUIZ`, порядка `LETTERS`) и
+  `buildLessonExam(lesson)` — собирает задания из данных
+  урока (глаголы → `buildRussian`/`buildGreek`, фразы translate/dictation/oral из шагов и ДЗ
+  без повторов с таблицей, `vocabulary`, `readings[].questions`); засчитывается только
+  `correct` (ударение обязательно). Шаг `kind: 'exam'` (последний в `steps`) рендерит
+  `StepContent`; сдал — `onPassed` → шаг засчитан (`GOAL_KINDS`). Слова из ошибок — слот
+  `renderWords` → `AddWords` (`features/card-add`). Ссылка на шаг: `?step=<id>` (`LessonPath`
+  `openStepId`, параметр после перехода убирается).
 - **Любое слово — в карточки.** `features/card-add` даёт `Word` (слово-кнопка с пунктиром →
   всплывающее окно: перевод, озвучка, «+ В карточки» или «✓ В наборе «…»» через `findCard`),
   `wordIn(deck)` (рендер-функция для слотов) и `AddToCards` (только кнопка, для готовых
