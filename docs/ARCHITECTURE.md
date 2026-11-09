@@ -19,11 +19,21 @@
 pnpm install
 pnpm dev          # http://localhost:3000
 pnpm typecheck    # tsc --noEmit — обязательно перед коммитом
+pnpm lint         # oxlint (запускается сам перед каждым коммитом)
+pnpm lint:fix     # автоисправление
 pnpm build        # dist/
 pnpm audio        # догенерировать mp3 для новых греческих фраз (нужен .venv с edge-tts)
 ```
 
-Проверки в CI: `typecheck` + `build`. Тестов и линтера пока нет.
+Проверки в CI: `lint` + `typecheck` + `build`. Тестов пока нет.
+
+**Линтер** — [oxlint](https://oxc.rs), конфиг `.oxlintrc.json`: плагины typescript, react,
+jsx-a11y, import, unicorn, oxc; `correctness` — ошибка, `suspicious`/`perf` — предупреждения.
+`react-perf` выключен намеренно: в проекте нет `memo`, его советы — шум.
+**Pre-commit хук** ставит `simple-git-hooks` через скрипт `prepare` (при `pnpm install`):
+`pnpm lint` перед каждым коммитом. Пропустить в крайнем случае: `SKIP_SIMPLE_GIT_HOOKS=1 git commit …`.
+Чинить замечания в коде, а не выключать правила; `autoFocus` заменён на фокус из эффекта
+(правило jsx-a11y/no-autofocus).
 
 ## Слои FSD
 
@@ -248,7 +258,7 @@ public/audio/manifest.json  { "нормализованный текст": "фа
 
 ## Технический долг и ограничения
 
-- Нет тестов и линтера. Логику (`compareAnswer`, `buildGreek`, `createAnalyzer`, `useQueue`)
+- Нет тестов. Логику (`compareAnswer`, `buildGreek`, `createAnalyzer`, `useQueue`)
   проверяли разовыми `tsx`-скриптами — стоит оформить в unit-тесты.
 - Кросс-импорт `features/pronounce` из других фич (см. выше).
 - Нет бэкенда: прогресс не синхронизируется между устройствами, сочинения проверяются

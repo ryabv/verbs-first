@@ -12,7 +12,7 @@ React 19 + TypeScript + rspack + pnpm, Feature-Sliced Design, без бэкен�
 
 - Общение с владельцем и все тексты интерфейса — **на русском**.
 - Соблюдать FSD: импорт только вниз по слоям и только через `index.ts` слайса.
-- Перед коммитом: `pnpm typecheck` и `pnpm build`.
+- Перед коммитом: `pnpm typecheck` и `pnpm build`; `pnpm lint` (oxlint) запускается хуком сам — замечания чинить, а не отключать.
 - Добавили или изменили греческий текст → `pnpm audio` и закоммитить mp3 + `public/audio/manifest.json`.
 - Никаких абсолютных путей `'/…'` к ресурсам: сайт живёт под `/verbs-first/` (`process.env.BASE_URL`).
 - Цвета — только CSS-переменные из `src/app/styles/global.css` (есть тёмная тема).
