@@ -28,6 +28,24 @@ export function HomePage() {
 
       <section className={styles.part}>
         <h2 className={styles.partTitle}>
+          <span className={styles.partLabel}>Перед курсом</span>
+          Алфавит
+        </h2>
+        <Link to={routes.alphabet()} className={styles.alphabet}>
+          <span className={styles.alphabetGlyphs} lang="el">
+            Αα Ββ Γγ Δδ
+          </span>
+          <span>
+            <span className={styles.title}>Алфавит и чтение</span>
+            <span className={styles.meta}>
+              24 буквы, сочетания букв, ударение · 2 тренажёра. Если уже читаете по-гречески — сразу к урокам.
+            </span>
+          </span>
+        </Link>
+      </section>
+
+      <section className={styles.part}>
+        <h2 className={styles.partTitle}>
           <span className={styles.partLabel}>Курс</span>
           Базовый уровень
         </h2>

@@ -1,0 +1,36 @@
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  font-size: 16px;
+}
+.letter {
+  display: grid;
+  align-content: start;
+  gap: 0.35rem;
+  padding: 14px 16px;
+  background: var(--surface-muted);
+  border-radius: var(--radius);
+}
+.letterHead { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.glyph { font-size: 2.2rem; font-weight: 600; line-height: 1.1; }
+.sound { font-size: 1.1rem; font-weight: 600; color: var(--brand); }
+.name { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; color: var(--text-muted); font-size: 0.95rem; }
+.note { font-size: 0.85rem; line-height: 1.4; color: var(--text-muted); }
+
+.example, .examples li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem 0.35rem; }
+.exampleGreek { font-weight: 600; }
+.reading { color: var(--accent); }
+.translation { color: var(--text-muted); font-size: 0.9rem; }
+.translation::before { content: '— '; }
+
+.combos { display: grid; gap: 0.75rem; font-size: 16px; }
+.combo { padding: 14px 18px; background: var(--surface-muted); border-radius: var(--radius); }
+.comboHead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem; }
+.comboLetters { font-size: 1.6rem; font-weight: 700; }
+.comboSound { font-size: 1.1rem; font-weight: 600; color: var(--brand); }
+.rule { margin: 0.3rem 0 0.5rem; }
+.examples { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem; }

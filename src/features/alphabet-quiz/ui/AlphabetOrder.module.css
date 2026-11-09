@@ -1,0 +1,86 @@
+.root { max-width: 40rem; font-size: 16px; }
+
+.settings { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.25rem; margin-bottom: 1rem; }
+.segmented { display: inline-flex; margin: 0; padding: 0; min-inline-size: 0; border: 2px solid var(--border); border-radius: 999px; overflow: hidden; }
+.legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.seg, .segActive {
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.85rem;
+  border: none;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.segActive { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.toggle { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; color: var(--text-muted); cursor: pointer; }
+
+/* Собранный алфавит: 24 ячейки, по 12 в ряд. */
+.sequence {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 4px;
+}
+.slot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1.5px dashed var(--border);
+  border-radius: 6px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+.slotDone { border-style: solid; border-color: var(--success); background: var(--success-soft); color: var(--success); }
+.slotMissed { border-color: var(--warning); background: var(--bg); color: var(--warning); }
+.slotNext { border-style: solid; border-color: var(--accent); color: var(--accent); }
+
+.status { margin: 0 0 0.75rem; color: var(--text-muted); }
+.mistakes { color: var(--danger); }
+
+.grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.4rem; }
+.key {
+  font: inherit;
+  display: grid;
+  place-items: center;
+  gap: 0.1rem;
+  min-height: 3.2rem;
+  padding: 0.3rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.key:hover:not(:disabled) { border-color: var(--accent); }
+.glyph { font-size: 1.6rem; font-weight: 600; line-height: 1; }
+.name { font-size: 0.7rem; color: var(--text-subtle); }
+.keyUsed { visibility: hidden; }
+.keyWrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); animation: shake 0.3s; }
+.keyHint { border-color: var(--accent); background: var(--accent-soft); }
+
+@keyframes shake {
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .keyWrong { animation: none; }
+}
+
+.best { margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--text-subtle); }
+
+.finish { display: grid; gap: 0.6rem; justify-items: start; border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 20px; }
+.finishTitle { font-size: 1.15rem; font-weight: 600; color: var(--success); }
+.missed { color: var(--text-muted); }
+.missed span { color: var(--text); font-weight: 600; letter-spacing: 0.1em; }
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .sequence { gap: 3px; }
+  .slot { font-size: 0.85rem; border-radius: 4px; }
+  .finish { padding: 16px; border-width: 2px; }
+}

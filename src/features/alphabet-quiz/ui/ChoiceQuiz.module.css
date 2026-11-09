@@ -1,0 +1,38 @@
+.quiz { max-width: 40rem; font-size: 16px; }
+.progress { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
+.bar { flex: 1; height: 8px; background: var(--surface-muted); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; background: var(--success); transition: width 0.25s; }
+
+.card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
+.meta { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.prompt { display: flex; align-items: center; gap: 0.4rem; font-size: 2.2rem; font-weight: 700; margin: 0.4rem 0 1.2rem; }
+
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.option {
+  font: inherit;
+  font-size: 1.15rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.option:hover:not(:disabled) { border-color: var(--accent); }
+.option:disabled { cursor: default; }
+.right, .right:disabled { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+.wrong, .wrong:disabled { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+
+.result { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); }
+.resultOk { background: var(--success-soft); color: var(--success); }
+.resultBad { background: var(--danger-soft); color: var(--danger); }
+.note { margin-top: 0.3rem; color: var(--text); font-size: 0.95rem; }
+.next { margin-top: 1rem; }
+.finish { font-size: 1.1rem; font-weight: 600; color: var(--success); margin-bottom: 1rem; }
+
+@media (max-width: 600px) {
+  .card { padding: 16px; border-width: 2px; }
+  .prompt { font-size: 1.8rem; }
+  .next { width: 100%; min-height: 2.9rem; }
+}

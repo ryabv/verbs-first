@@ -31,3 +31,21 @@
 
 .homework { color: inherit; }
 .homework:hover { color: var(--brand); }
+
+.alphabet {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 16px 20px;
+  border: 3px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  max-width: 46rem;
+}
+.alphabet:hover { border-color: var(--border-strong); color: var(--text); }
+.alphabet:hover .title { color: var(--brand); }
+.alphabet .meta { display: block; margin-top: 4px; }
+.alphabetGlyphs { font-size: 1.6rem; font-weight: 700; color: var(--brand); white-space: nowrap; }
+@media (max-width: 600px) {
+  .alphabet { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}
