@@ -10,8 +10,11 @@
 .sidebarInner {
   position: sticky;
   top: 0;
-  max-height: 100vh;
+  /* Высота — экран без шапки (с меандром): иначе низ списка прячется под краем окна,
+     и до последних шагов приходится докручивать ещё и страницу. */
+  max-height: calc(100vh - var(--header-height) - 8px);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 23px 25px 40px;
 }
 .main { padding: 0 40px 40px; }
