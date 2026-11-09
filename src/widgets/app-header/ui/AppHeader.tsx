@@ -1,7 +1,8 @@
 import { Link, NavLink } from 'react-router';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
-import { Laurel, Meander } from '@/shared/ui/ornament';
+import { CardsIcon } from '@/shared/ui/icon';
+import { Laurel, Meander, Scroll } from '@/shared/ui/ornament';
 import styles from './AppHeader.module.css';
 
 export function AppHeader() {
@@ -18,9 +19,11 @@ export function AppHeader() {
       </Link>
       <nav className={styles.nav}>
         <NavLink to={routes.home()} end className={({ isActive }) => (isActive ? styles.active : undefined)}>
+          <Scroll className={styles.navIcon} />
           Уроки
         </NavLink>
         <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
+          <CardsIcon className={styles.navIcon} />
           Карточки
         </NavLink>
       </nav>

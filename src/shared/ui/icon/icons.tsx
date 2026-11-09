@@ -42,3 +42,14 @@ export function SpeakerOffIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Карточки: две карточки со сдвигом, на передней — α. */
+export function CardsIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="3" y="6" width="10" height="13" rx="1.8" />
+      <path d="M13 8.5h6a1.8 1.8 0 0 1 1.8 1.8v8.9A1.8 1.8 0 0 1 19 21h-7.2A1.8 1.8 0 0 1 10 19.2V19" />
+      <path d="M10.2 10.3c-.3 2.2-.6 3.9 0 4.1M10 12c-.4-1.3-1-1.8-1.9-1.8-1.2 0-1.8 1-1.8 2.1 0 1.1.7 2.1 1.6 2.1 1 0 1.6-1.1 2-2.3" />
+    </Svg>
+  );
+}

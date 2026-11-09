@@ -95,6 +95,18 @@ export function Amphora(props: Props) {
   );
 }
 
+/** Свиток — античный учебник. */
+export function Scroll(props: Props) {
+  return (
+    <Svg strokeWidth={2} {...props}>
+      <path d="M6 4h11a2 2 0 0 1 2 2v12" />
+      <path d="M6 4a2 2 0 0 0-2 2v1h4V6a2 2 0 0 0-2-2Z" />
+      <path d="M8 7v11a2 2 0 0 0 2 2h9a2 2 0 0 0 0-4h-9" />
+      <path d="M11 9h5M11 12h5" />
+    </Svg>
+  );
+}
+
 /** Ионическая колонна. */
 export function Column(props: Props) {
   return (

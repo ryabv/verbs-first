@@ -1,1 +1,1 @@
-export { Amphora, Arrow, Check, Column, Laurel, Meander, Wreath } from './Ornament';
+export { Amphora, Arrow, Check, Column, Laurel, Meander, Scroll, Wreath } from './Ornament';
