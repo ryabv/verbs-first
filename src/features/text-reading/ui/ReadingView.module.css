@@ -69,3 +69,15 @@
 .optionRight, .optionRight:disabled { border-color: var(--success); background: var(--success-soft); color: var(--success); }
 .optionWrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
 .glossAdd { margin-top: 0.4rem; }
+.glossClose {
+  float: right;
+  margin: -6px -8px 0 8px;
+  padding: 0 8px;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.glossClose:hover { color: var(--text); }

@@ -15,19 +15,21 @@ interface Props {
   /** Как слово написано на странице. */
   display?: string;
   hint?: string;
+  /** Перевод уже показан рядом (панель разбора) — не повторяем, если слово и так в словарной форме. */
+  translationShown?: boolean;
 }
 
 /**
  * Содержимое окна слова: что именно попадёт в карточку (словарная форма) и наборы.
  * Нет словарной формы — ученик вписывает её и перевод сам; форму из текста не кладём молча.
  */
-export function WordCard({ greek, russian, deck, display, hint }: Props) {
+export function WordCard({ greek, russian, deck, display, hint, translationShown }: Props) {
   if (!greek) return <OwnWord display={display ?? ''} hint={hint} deck={deck} />;
   const isBase = !display || stripAccents(display) === stripAccents(greek);
   return (
     <>
       {isBase ? (
-        <span className={styles.popRussian}>{russian}</span>
+        !translationShown && <span className={styles.popRussian}>{russian}</span>
       ) : (
         <span className={styles.popRussian}>
           <span className={styles.baseLabel}>словарная форма </span>
@@ -87,6 +89,7 @@ export function TokenCard({ token, deckFor }: { token: TextToken; deckFor?: Word
       deck={entry && deckFor?.(entry)}
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
+      translationShown
     />
   );
 }

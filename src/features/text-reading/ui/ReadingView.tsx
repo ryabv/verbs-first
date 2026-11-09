@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { ReadingText } from '@/entities/lesson';
 import { createAnalyzer, TENSE_LABELS, type TextToken, type Verb } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
@@ -26,6 +26,26 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
   const [mode, setMode] = useState<Mode>('read');
   const [picked, setPicked] = useState<Set<WordId>>(new Set());
   const [checked, setChecked] = useState(false);
+  const glossRef = useRef<HTMLDivElement>(null);
+
+  // Панель разбора закрывается кликом мимо (не по слову и не по самой панели) и по Esc.
+  const isOpen = selected !== null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const onDown = (e: PointerEvent) => {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      if (glossRef.current?.contains(target) || target.closest('[data-reading-word]')) return;
+      setSelected(null);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null);
+    document.addEventListener('pointerdown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen]);
 
   const target = useMemo(() => {
     const ids = new Set<WordId>();
@@ -83,6 +103,7 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
                     key={ti}
                     type="button"
                     className={wordClass(`${si}:${ti}`)}
+                    data-reading-word
                     onClick={() => onWord(`${si}:${ti}`, token)}
                   >
                     {token.text}
@@ -99,9 +120,12 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
       </div>
 
       {mode === 'read' && (
-        <div className={styles.gloss} aria-live="polite">
+        <div className={styles.gloss} aria-live="polite" ref={glossRef}>
           {selected ? (
             <>
+              <button type="button" className={styles.glossClose} onClick={() => setSelected(null)} aria-label="Закрыть">
+                ×
+              </button>
               <b>{selected.token.text}</b> —{' '}
               {selected.token.verb
                 ? describeVerb(selected.token.verb)
