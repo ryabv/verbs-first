@@ -36,3 +36,6 @@
 .examples { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.4rem; }
 .examples li { padding-left: 0.75rem; border-left: 2px solid var(--border); }
 .note { display: block; font-size: 0.85rem; color: var(--text-muted); }
+/* Экзамен — отдельный тип, не «практика». */
+.tagExam { color: var(--warning); background: transparent; border: 1px solid var(--warning); }
+.kindExam { color: var(--warning); font-weight: 600; }

@@ -10,10 +10,12 @@ import {
   WORD_QUIZ,
 } from '@/entities/alphabet';
 import { AlphabetOrder, ChoiceQuiz } from '@/features/alphabet-quiz';
+import { buildAlphabetExam, Exam } from '@/features/exam';
 import { wordIn } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
+import { buttonClassName } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
@@ -26,7 +28,7 @@ const word = wordIn({ id: 'alphabet', title: 'Алфавит' });
 interface Section {
   id: string;
   title: string;
-  kind: 'Читаем' | 'Практика';
+  kind: 'Читаем' | 'Практика' | 'Экзамен';
   intro: string;
   render: () => ReactNode;
 }
@@ -37,7 +39,7 @@ const SECTIONS: Section[] = [
     title: 'Буквы',
     kind: 'Читаем',
     intro:
-      'В греческом алфавите 24 буквы, многие знакомы по русскому или по математике. Главные ловушки: β — это «в», δ и θ — звуки, которых нет в русском, а «и» пишется пятью разными способами. Нажимайте на динамик — слушайте название буквы и пример.',
+      'В греческом алфавите 24 буквы, многие знакомы по русскому или по математике. Главные ловушки: β — это «в», δ и θ — звуки, которых нет в русском, а «и» дают три буквы — η, ι, υ (с сочетаниями букв способов шесть, о них в следующем разделе). Нажимайте на динамик — слушайте название буквы и пример.',
     render: () => <LetterGrid letters={LETTERS} renderSpeak={speak} renderWord={word} />,
   },
   {
@@ -75,8 +77,31 @@ const SECTIONS: Section[] = [
     title: 'Алфавит по порядку',
     kind: 'Практика',
     intro:
-      'Экзамен: нажимайте буквы по порядку — от α до ω. Каждая верная буква произносится вслух. Ошиблись дважды на одной букве — подсветим нужную. На компьютере можно печатать с греческой раскладки.',
+      'Выучите алфавит по порядку: нажимайте буквы от α до ω. Каждая верная буква произносится вслух. Ошиблись дважды на одной букве — подсветим нужную. На компьютере можно печатать с греческой раскладки.',
     render: () => <AlphabetOrder />,
+  },
+  {
+    id: 'exam',
+    title: 'Экзамен по алфавиту',
+    kind: 'Экзамен',
+    intro:
+      'Проверка всего раздела: буквы, сочетания, чтение слов, ударение и знаки, порядок букв. Правила строже, чем в тренажёрах: ответ — только в конце.',
+    render: () => (
+      <Exam
+        id="alphabet"
+        title="Экзамен по алфавиту"
+        build={buildAlphabetExam}
+        rules={[
+          '20 вопросов по всему разделу: звуки букв и сочетаний, чтение слов, ударение и знаки, порядок букв.',
+          'Озвучки по ходу нет — она подсказывает. Послушать можно в разборе.',
+        ]}
+        actions={
+          <Link to={routes.lesson(1)} className={buttonClassName('secondary')}>
+            К уроку 1
+          </Link>
+        }
+      />
+    ),
   },
 ];
 
@@ -181,8 +206,8 @@ function StressRules() {
 
       <Callout kind="ok" title="Вы готовы читать">
         <p>
-          Проверьте себя на двух тренажёрах и переходите к <Link to={routes.lesson(1)}>уроку 1</Link>: там уже нужно
-          читать глаголы.
+          Закрепите на тренажёрах, сдайте экзамен по алфавиту — и переходите к{' '}
+          <Link to={routes.lesson(1)}>уроку 1</Link>: там уже нужно читать глаголы.
         </p>
       </Callout>
     </div>
@@ -218,6 +243,7 @@ export function AlphabetPage() {
               <Link to={routes.alphabet(s.id)} className={s.id === section.id ? styles.linkActive : styles.link}>
                 {s.title}
                 {s.kind === 'Практика' && <span className={styles.tag}>практика</span>}
+                {s.kind === 'Экзамен' && <span className={`${styles.tag} ${styles.tagExam}`}>экзамен</span>}
               </Link>
             </li>
           ))}
@@ -230,7 +256,7 @@ export function AlphabetPage() {
     <SidebarLayout sidebar={sidebar}>
       <header className={styles.head}>
         <Breadcrumbs items={[{ label: 'Уроки', to: routes.home() }, { label: 'Алфавит', to: routes.alphabet() }]} />
-        <div className={styles.kind}>{section.kind}</div>
+        <div className={section.kind === 'Экзамен' ? `${styles.kind} ${styles.kindExam}` : styles.kind}>{section.kind}</div>
         <h1 className={styles.title}>{section.title}</h1>
       </header>
 
