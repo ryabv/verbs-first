@@ -1,0 +1,70 @@
+.exam { max-width: 44rem; display: grid; gap: 1.25rem; font-size: 16px; }
+.progress { display: flex; align-items: center; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
+.bar { flex: 1; height: 8px; background: var(--surface-muted); border-radius: 999px; overflow: hidden; }
+/* Цвет нейтральный: по ходу экзамена не показываем, верно или нет. */
+.fill { height: 100%; background: var(--accent); transition: width 0.25s; }
+
+.card { max-width: 44rem; border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
+.introTitle { margin: 0 0 0.75rem; }
+.rules { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: 0.35rem; }
+.prev { color: var(--text-muted); }
+
+.label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.prompt { font-size: 1.5rem; font-weight: 600; margin: 0.4rem 0 1.1rem; }
+.listen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin: 0.6rem 0 1.1rem; }
+.listenHint { font-size: 0.9rem; color: var(--text-muted); }
+.icon { width: 1.1em; height: 1.1em; margin-right: 0.4rem; vertical-align: -0.15em; }
+
+.form { display: flex; gap: 0.5rem; }
+.input {
+  font: inherit;
+  font-size: 1.15rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 0.8rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+}
+.input:focus { outline: none; border-color: var(--accent); }
+
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.option {
+  font: inherit;
+  font-size: 1.05rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.option:hover { border-color: var(--accent); }
+
+.passed { border-color: var(--success); }
+.failed { border-color: var(--warning); }
+.score { font-size: 3rem; font-weight: 700; line-height: 1; }
+.passed .score, .passed .verdict { color: var(--success); }
+.failed .score, .failed .verdict { color: var(--warning); }
+.verdict { font-size: 1.2rem; font-weight: 600; margin-top: 0.3rem; }
+.summary { margin-top: 0.4rem; color: var(--text-muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+
+.review { display: grid; gap: 0.75rem; }
+.reviewTitle { margin: 0; }
+.words { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.mistakes { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.mistake { padding: 0.75rem 1rem; border-left: 3px solid var(--danger); background: var(--surface-muted); border-radius: 0 var(--radius) var(--radius) 0; }
+.mistakePrompt { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; font-weight: 600; margin: 0.2rem 0; }
+.given { color: var(--danger); }
+.accent { color: var(--warning); }
+.right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; color: var(--success); }
+
+@media (max-width: 600px) {
+  .card { padding: 16px; border-width: 2px; }
+  .prompt { font-size: 1.25rem; }
+  .options { grid-template-columns: minmax(0, 1fr); }
+  .form { flex-direction: column; }
+}
