@@ -1,2 +1,4 @@
 allowBuilds:
   esbuild: false
+  # хуки ставит наш скрипт prepare, а не postinstall пакета
+  simple-git-hooks: false

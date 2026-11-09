@@ -11,7 +11,7 @@ export function VerbParadigm({ verb }: { verb: Verb }) {
     <table className={styles.table}>
       <thead>
         <tr>
-          <th />
+          <th scope="col">Лицо</th>
           {TENSES.map((t) => (
             <th key={t}>{TENSE_LABELS[t]}</th>
           ))}

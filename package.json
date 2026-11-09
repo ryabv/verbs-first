@@ -7,7 +7,10 @@
     "dev": "rspack dev",
     "build": "rspack build",
     "typecheck": "tsc --noEmit",
-    "audio": "tsx scripts/generate-audio.ts"
+    "audio": "tsx scripts/generate-audio.ts",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "prepare": "simple-git-hooks"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -21,9 +24,14 @@
     "@rspack/plugin-react-refresh": "^2.0.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "oxlint": "^1.92.0",
     "react-refresh": "^0.19.0",
+    "simple-git-hooks": "^2.14.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@12.18.0"
+  "packageManager": "pnpm@12.18.0",
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint"
+  }
 }

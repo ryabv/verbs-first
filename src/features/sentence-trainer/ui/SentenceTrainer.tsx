@@ -77,6 +77,11 @@ function WrittenCard({ mode, item, onResult }: CardProps & { mode: 'translate' |
   const [verdict, setVerdict] = useState<AnswerVerdict | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const keyboard = useGreekKeyboard();
+
+  // Фокус в поле при открытии (на телефоне — только если ученик уже печатал, см. useGreekKeyboard).
+  useEffect(() => {
+    if (keyboard.autoFocus) inputRef.current?.focus();
+  }, [keyboard.autoFocus]);
   const expected = item.greek[0] ?? '';
 
   // Диктант: сразу проигрываем фразу (после клика «Дальше» браузер это разрешает).
@@ -118,7 +123,6 @@ function WrittenCard({ mode, item, onResult }: CardProps & { mode: 'translate' |
           placeholder="Напишите по-гречески…"
           lang="el"
           inputMode={keyboard.inputMode}
-          autoFocus={keyboard.autoFocus}
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}

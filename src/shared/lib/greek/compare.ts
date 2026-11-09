@@ -2,11 +2,11 @@ import { normalizeGreek, stripAccents } from './normalize';
 
 export type AnswerVerdict = 'correct' | 'accent' | 'wrong';
 
-const SUBJECT_PRONOUNS = ['εγώ', 'εσύ', 'αυτός', 'αυτή', 'αυτό', 'εμείς', 'εσείς', 'αυτοί', 'αυτές', 'αυτά'];
+const SUBJECT_PRONOUNS = new Set(['εγώ', 'εσύ', 'αυτός', 'αυτή', 'αυτό', 'εμείς', 'εσείς', 'αυτοί', 'αυτές', 'αυτά']);
 
 function dropLeadingPronoun(normalized: string): string {
   const [first, ...rest] = normalized.split(' ');
-  return first && SUBJECT_PRONOUNS.includes(first) ? rest.join(' ') : normalized;
+  return first && SUBJECT_PRONOUNS.has(first) ? rest.join(' ') : normalized;
 }
 
 /**

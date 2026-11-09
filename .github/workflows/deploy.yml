@@ -25,6 +25,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm typecheck
       # Сайт живёт по адресу https://<user>.github.io/<repo>/
       - run: pnpm build

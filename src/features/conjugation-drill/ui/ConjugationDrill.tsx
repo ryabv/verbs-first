@@ -24,6 +24,11 @@ export function ConjugationDrill({ verbs, tenses, forms, goal, onGoalReached }: 
   const { task, answer, setAnswer, verdict, check, next, stats } = useDrill(verbs, { tenses, forms });
   const inputRef = useRef<HTMLInputElement>(null);
   const keyboard = useGreekKeyboard();
+
+  // Фокус в поле при открытии (на телефоне — только если ученик уже печатал, см. useGreekKeyboard).
+  useEffect(() => {
+    if (keyboard.autoFocus) inputRef.current?.focus();
+  }, [keyboard.autoFocus]);
   // Подсказка (начальная форма глагола) — только по запросу, сама сбрасывается на новом задании.
   const [hintFor, setHintFor] = useState<string | null>(null);
   const hintShown = hintFor === task.key;
@@ -88,7 +93,6 @@ export function ConjugationDrill({ verbs, tenses, forms, goal, onGoalReached }: 
             placeholder="Напишите по-гречески…"
             lang="el"
             inputMode={keyboard.inputMode}
-            autoFocus={keyboard.autoFocus}
             autoComplete="off"
             autoCapitalize="off"
             spellCheck={false}

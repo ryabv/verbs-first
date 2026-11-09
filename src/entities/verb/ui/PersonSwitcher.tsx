@@ -9,12 +9,13 @@ interface PersonSwitcherProps {
 
 export function PersonSwitcher({ value, onChange }: PersonSwitcherProps) {
   return (
-    <div className={styles.switcher} role="radiogroup" aria-label="Лицо">
+    <fieldset className={styles.switcher}>
+      <legend className={styles.legend}>Лицо</legend>
       {PERSONS.map((p) => (
         <button
           key={p}
-          role="radio"
-          aria-checked={p === value}
+          type="button"
+          aria-pressed={p === value}
           className={p === value ? `${styles.chip} ${styles.active}` : styles.chip}
           onClick={() => onChange(p)}
         >
@@ -22,6 +23,6 @@ export function PersonSwitcher({ value, onChange }: PersonSwitcherProps) {
           <small>{RUSSIAN_PRONOUNS[p]}</small>
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

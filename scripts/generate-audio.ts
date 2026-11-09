@@ -132,12 +132,12 @@ async function main() {
 
   // Удаляем файлы, которые больше ни к чему не относятся.
   const used = new Set(Object.values(manifest));
-  for (const name of await readdir(OUT_DIR)) {
-    const stale = (name.endsWith('.mp3') && !used.has(name) && !failed.length) || name.endsWith('.part');
-    if (stale) await unlink(path.join(OUT_DIR, name));
-  }
+  const isStale = (name: string) =>
+    (name.endsWith('.mp3') && !used.has(name) && !failed.length) || name.endsWith('.part');
+  const stale = (await readdir(OUT_DIR)).filter(isStale);
+  await Promise.all(stale.map((name) => unlink(path.join(OUT_DIR, name))));
 
-  const sorted = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b, 'el')));
+  const sorted = Object.fromEntries(Object.entries(manifest).toSorted(([a], [b]) => a.localeCompare(b, 'el')));
   await writeFile(path.join(OUT_DIR, 'manifest.json'), `${JSON.stringify(sorted, null, 1)}\n`);
 
   if (failed.length) {
