@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { PersonSwitcher, VerbParadigm, VerbTable, type Person, type Verb } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
 import { Button } from '@/shared/ui/button';
@@ -8,10 +8,12 @@ type View = 'table' | 'paradigm';
 
 interface Props {
   verbs: readonly Verb[];
+  /** Слот для начальной формы глагола (например, с добавлением в карточки). */
+  renderWord?: (greek: string, russian: string) => ReactNode;
 }
 
 /** «Алгоритм глагола»: список глаголов урока + таблица выбранного глагола. */
-export function VerbAlgorithm({ verbs }: Props) {
+export function VerbAlgorithm({ verbs, renderWord }: Props) {
   const [verbId, setVerbId] = useState(verbs[0]?.id);
   const [person, setPerson] = useState<Person>(0);
   const [view, setView] = useState<View>('table');
@@ -39,7 +41,7 @@ export function VerbAlgorithm({ verbs }: Props) {
         <header className={styles.header}>
           <div>
             <h2 className={styles.title}>
-              {verb.lemma} <SpeakButton text={verb.lemma} />
+              {renderWord ? renderWord(verb.lemma, verb.translation) : verb.lemma} <SpeakButton text={verb.lemma} />
             </h2>
             <div className={styles.subtitle}>{verb.translation}</div>
             {verb.pastHint && <div className={styles.hint}>Прошедшее: {verb.pastHint}</div>}

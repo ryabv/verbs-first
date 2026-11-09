@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { GrammarSectionView, PhraseList, type Lesson, type LessonStep } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
+import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { CompositionEditor } from '@/features/composition-check';
 import { ConjugationDrill } from '@/features/conjugation-drill';
 import { SpeakButton } from '@/features/pronounce';
@@ -19,6 +20,9 @@ interface Props {
 
 export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
   const allVerbs = getVerbs([...lesson.coreVerbIds, ...lesson.verbIds]);
+  const decks = lessonDecks(lesson);
+  const wordDeck = lessonWordDeck(lesson);
+  const exampleWord = wordIn(decks.examples, wordDeck);
 
   switch (step.kind) {
     case 'theory':
@@ -27,7 +31,12 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
           {lesson.grammar
             .filter((section) => step.sectionIds.includes(section.id))
             .map((section) => (
-              <GrammarSectionView key={section.id} section={section} renderPhraseAction={speakAction} />
+              <GrammarSectionView
+                key={section.id}
+                section={section}
+                renderPhraseAction={speakAction}
+                renderGreek={exampleWord}
+              />
             ))}
         </>
       );
@@ -49,12 +58,18 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
     case 'reading': {
       const reading = lesson.readings.find((r) => r.id === step.readingId);
       return reading ? (
-        <ReadingView reading={reading} verbs={allVerbs} />
+        <ReadingView
+          reading={reading}
+          verbs={allVerbs}
+          renderAdd={(token) => <TokenCard token={token} deckFor={wordDeck} />}
+        />
       ) : null;
     }
 
     case 'phrases':
-      return <PhraseList phrases={lesson.topic.phrases} renderAction={speakAction} />;
+      return (
+        <PhraseList phrases={lesson.topic.phrases} renderAction={speakAction} renderGreek={wordIn(decks.phrases, wordDeck)} />
+      );
 
     case 'presentation':
       return (
@@ -64,6 +79,7 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
           sample={lesson.topic.presentation.sample}
           checklist={lesson.topic.presentation.checklist}
           verbs={allVerbs}
+          renderGreek={exampleWord}
         />
       );
 
@@ -75,8 +91,12 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
           sample={step.composition.sample}
           checklist={step.composition.checklist}
           verbs={allVerbs}
+          renderGreek={exampleWord}
         />
       );
+
+    case 'words':
+      return <LessonWords lesson={lesson} />;
 
     case 'translate':
     case 'dictation':

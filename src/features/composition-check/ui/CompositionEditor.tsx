@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { PhraseList, type CompositionCheck, type Phrase } from '@/entities/lesson';
 import { createAnalyzer, type Verb } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
@@ -12,6 +12,7 @@ interface Props {
   sample: Phrase[];
   checklist: CompositionCheck[];
   verbs: readonly Verb[];
+  renderGreek?: (greek: string, russian: string) => ReactNode;
 }
 
 function readDraft(key: string): string {
@@ -23,7 +24,7 @@ function readDraft(key: string): string {
 }
 
 /** Сочинение с чеклистом, который отмечается сам по формам глаголов урока. */
-export function CompositionEditor({ draftKey, task, sample, checklist, verbs }: Props) {
+export function CompositionEditor({ draftKey, task, sample, checklist, verbs, renderGreek }: Props) {
   const [text, setText] = useState(() => readDraft(draftKey));
   const analyze = useMemo(() => createAnalyzer(verbs), [verbs]);
   const results = useMemo(() => runChecks(text, checklist, analyze), [text, checklist, analyze]);
@@ -75,7 +76,7 @@ export function CompositionEditor({ draftKey, task, sample, checklist, verbs }: 
 
       <details className={styles.sample}>
         <summary>Посмотреть пример</summary>
-        <PhraseList phrases={sample} renderAction={(t) => <SpeakButton text={t} />} />
+        <PhraseList phrases={sample} renderAction={(t) => <SpeakButton text={t} />} renderGreek={renderGreek} />
       </details>
     </div>
   );

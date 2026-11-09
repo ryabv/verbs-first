@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import type { ReadingText } from '@/entities/lesson';
 import { createAnalyzer, TENSE_LABELS, type TextToken, type Verb } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
@@ -10,12 +10,14 @@ interface Props {
   reading: ReadingText;
   /** Глаголы, формы которых распознаются в тексте. */
   verbs: readonly Verb[];
+  /** Слот в панели разбора: добавить слово в карточки (словарной формой). */
+  renderAdd?: (token: TextToken) => ReactNode;
 }
 
 type Mode = 'read' | 'find';
 type WordId = string; // "<номер предложения>:<номер токена>"
 
-export function ReadingView({ reading, verbs }: Props) {
+export function ReadingView({ reading, verbs, renderAdd }: Props) {
   const analyze = useMemo(() => createAnalyzer(verbs), [verbs]);
   const sentences = useMemo(() => reading.sentences.map((s) => analyze(s.greek)), [analyze, reading]);
 
@@ -104,6 +106,7 @@ export function ReadingView({ reading, verbs }: Props) {
               {selected.token.verb
                 ? describeVerb(selected.token.verb)
                 : (reading.glossary[selected.token.key] ?? 'нет в словаре урока')}
+              {renderAdd && <div className={styles.glossAdd}>{renderAdd(selected.token)}</div>}
             </>
           ) : (
             <span className={styles.muted}>Нажмите на слово, чтобы увидеть перевод и разбор.</span>

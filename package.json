@@ -10,7 +10,8 @@
     "audio": "tsx scripts/generate-audio.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "lexicon:check": "tsx --import ./scripts/css-stub.mjs scripts/lexicon-coverage.ts"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { getLesson, GrammarSectionView, PhraseList, type Lesson } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
+import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { ConjugationDrill } from '@/features/conjugation-drill';
 import { progressKey } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
@@ -19,18 +20,23 @@ type Mode = 'path' | 'homework' | 'reference';
 function parseMode(raw: string | null): Mode {
   return raw === 'reference' || raw === 'homework' ? raw : 'path';
 }
-type TabId = 'grammar' | 'verbs' | 'reading' | 'topic' | 'drill';
+type TabId = 'grammar' | 'verbs' | 'reading' | 'words' | 'topic' | 'drill';
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'grammar', label: 'Грамматика' },
   { id: 'verbs', label: 'Алгоритм глагола' },
   { id: 'reading', label: 'Текст для чтения' },
+  { id: 'words', label: 'Слова урока' },
   { id: 'topic', label: 'Разговорная тема' },
   { id: 'drill', label: 'Тренажёр' },
 ];
 
 const speakAction = (text: string) => <SpeakButton text={text} />;
-const renderVerbs = (verbs: Verb[]) => <VerbAlgorithm verbs={verbs} />;
+/** Таблицы глаголов: начальная форма по тапу добавляется в набор «Глаголы» урока. */
+const verbsRenderer = (lesson: Lesson) =>
+  function renderVerbs(verbs: Verb[]) {
+    return <VerbAlgorithm verbs={verbs} renderWord={wordIn(lessonDecks(lesson).verbs)} />;
+  };
 
 export function LessonPage() {
   const { lessonId } = useParams();
@@ -54,6 +60,7 @@ export function LessonPage() {
   const header = <LessonSidebarHeader lesson={lesson} mode={mode} />;
 
   const base = routes.lesson(lesson.id);
+  const renderVerbs = verbsRenderer(lesson);
 
   if (mode === 'reference') {
     return <Reference lesson={lesson} tab={params.get('tab')} header={header} crumbs={crumbs} />;
@@ -165,6 +172,9 @@ function Reference({ lesson, tab: rawTab, header, crumbs }: ReferenceProps) {
   const coreVerbs = getVerbs(lesson.coreVerbIds);
   const lessonVerbs = getVerbs(lesson.verbIds);
   const base = `${routes.lesson(lesson.id)}?mode=reference`;
+  const decks = lessonDecks(lesson);
+  const wordDeck = lessonWordDeck(lesson);
+  const exampleWord = wordIn(decks.examples, wordDeck);
 
   const sidebar = (
     <>
@@ -193,22 +203,34 @@ function Reference({ lesson, tab: rawTab, header, crumbs }: ReferenceProps) {
       <div className={styles.body}>
         {current.id === 'grammar' &&
           lesson.grammar.map((section) => (
-            <GrammarSectionView key={section.id} section={section} renderPhraseAction={speakAction} />
+            <GrammarSectionView
+              key={section.id}
+              section={section}
+              renderPhraseAction={speakAction}
+              renderGreek={exampleWord}
+            />
           ))}
 
-        {current.id === 'verbs' && <VerbAlgorithm verbs={[...coreVerbs, ...lessonVerbs]} />}
+        {current.id === 'verbs' && verbsRenderer(lesson)([...coreVerbs, ...lessonVerbs])}
 
         {current.id === 'reading' &&
           lesson.readings.map((reading) => (
-            <ReadingView key={reading.id} reading={reading} verbs={[...coreVerbs, ...lessonVerbs]} />
+            <ReadingView
+              key={reading.id}
+              reading={reading}
+              verbs={[...coreVerbs, ...lessonVerbs]}
+              renderAdd={(token) => <TokenCard token={token} deckFor={wordDeck} />}
+            />
           ))}
+
+        {current.id === 'words' && <LessonWords lesson={lesson} />}
 
         {current.id === 'topic' && (
           <>
-            <PhraseList phrases={lesson.topic.phrases} renderAction={speakAction} />
+            <PhraseList phrases={lesson.topic.phrases} renderAction={speakAction} renderGreek={wordIn(decks.phrases, wordDeck)} />
             <h2>Мини-презентация</h2>
             <p>{lesson.topic.presentation.task}</p>
-            <PhraseList phrases={lesson.topic.presentation.sample} renderAction={speakAction} />
+            <PhraseList phrases={lesson.topic.presentation.sample} renderAction={speakAction} renderGreek={exampleWord} />
           </>
         )}
 

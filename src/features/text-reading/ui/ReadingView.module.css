@@ -68,3 +68,4 @@
 .option:hover:not(:disabled) { border-color: var(--border-strong); }
 .optionRight, .optionRight:disabled { border-color: var(--success); background: var(--success-soft); color: var(--success); }
 .optionWrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+.glossAdd { margin-top: 0.4rem; }
