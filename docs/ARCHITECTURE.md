@@ -356,6 +356,19 @@ public/audio/manifest.json  { "нормализованный текст": "фа
 `pnpm-workspace.yaml` (`allowBuilds`) — иначе install в CI падает с `ERR_PNPM_IGNORED_BUILDS`.
 После изменения зависимостей обязательно коммитить обновлённый `pnpm-lock.yaml`.
 
+## PWA
+
+Сайт ставится на телефон и компьютер как приложение и открывается без сети.
+- `public/manifest.webmanifest` — имя, цвета, `start_url`/`scope` относительные (`./`), поэтому
+  работают под `/verbs-first/`. Ссылки на манифест и `apple-touch-icon` в `public/index.html`
+  собираются через `<%= BASE_URL %>` (`templateParameters` в `rspack.config.ts`).
+- Иконки — `public/icons/`: исходники `icon.svg` и `icon-maskable.svg` (ρ в венке; у maskable
+  запас по краям под обрезку Android), PNG 192/512/180 — растр из них.
+- `public/sw.js` — service worker, регистрируется в `src/app/index.tsx` только в продакшене.
+  Страницы, `main.js`/`main.css` (без хэша в имени) и манифест озвучки — сначала сеть, без сети —
+  кэш; любая страница офлайн — оболочка `index.html`. mp3 — сначала кэш (имя = хэш текста).
+  Поменяли логику кэширования — поднять `VERSION` в `sw.js`: старый кэш удалится при активации.
+
 ## Технический долг и ограничения
 
 - Нет тестов. Логику (`compareAnswer`, `buildGreek`, `createAnalyzer`, `useQueue`)

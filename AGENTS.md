@@ -32,3 +32,4 @@ React 19 + TypeScript + rspack + pnpm, Feature-Sliced Design, без бэкен�
 - Новый урок: заполнить и `vocabulary` (слова для карточек, существительные — с артиклем).
 - Изменение зависимостей → закоммитить `pnpm-lock.yaml` (CI ставит `--frozen-lockfile`).
 - Пуш в `main` сразу деплоит сайт.
+- PWA: меняете кэширование в `public/sw.js` — поднимите `VERSION`; иконки приложения — из `public/icons/*.svg`.

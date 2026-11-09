@@ -35,9 +35,10 @@ export default defineConfig({
     ],
   },
   plugins: [
-    new rspack.HtmlRspackPlugin({ template: './public/index.html' }),
+    new rspack.HtmlRspackPlugin({ template: './public/index.html', templateParameters: { BASE_URL } }),
     // GitHub Pages отдаёт 404.html на любой неизвестный адрес — так работают прямые ссылки на уроки.
-    !isDev && new rspack.HtmlRspackPlugin({ template: './public/index.html', filename: '404.html' }),
+    !isDev &&
+      new rspack.HtmlRspackPlugin({ template: './public/index.html', filename: '404.html', templateParameters: { BASE_URL } }),
     new rspack.DefinePlugin({ 'process.env.BASE_URL': JSON.stringify(BASE_URL) }),
     // Всё из public (в т.ч. сгенерированная озвучка public/audio) — как есть в dist.
     new rspack.CopyRspackPlugin({

@@ -5,4 +5,4 @@ declare module '*.module.css' {
 declare module '*.css';
 
 /** Подставляется rspack (DefinePlugin): префикс адреса сайта, всегда со слешем в конце. */
-declare const process: { env: { BASE_URL: string } };
+declare const process: { env: { BASE_URL: string; NODE_ENV: string } };
