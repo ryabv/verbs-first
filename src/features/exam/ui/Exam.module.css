@@ -11,6 +11,14 @@
 
 .label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
 .prompt { font-size: 1.5rem; font-weight: 600; margin: 0.4rem 0 1.1rem; }
+.passage {
+  margin: 0.6rem 0 0.2rem;
+  padding: 0.8rem 1rem;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  background: var(--surface-muted);
+  border-radius: var(--radius);
+}
 .listen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin: 0.6rem 0 1.1rem; }
 .listenHint { font-size: 0.9rem; color: var(--text-muted); }
 .icon { width: 1.1em; height: 1.1em; margin-right: 0.4rem; vertical-align: -0.15em; }

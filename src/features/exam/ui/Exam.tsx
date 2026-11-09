@@ -197,6 +197,11 @@ function ChoiceCard({ question, onSubmit }: { question: ChoiceQuestion; onSubmit
         {question.label}
         {question.context && <> · «{question.context}»</>}
       </div>
+      {question.passage && (
+        <div className={styles.passage} lang="el">
+          {question.passage.join(' ')}
+        </div>
+      )}
       <div className={styles.prompt} lang={question.greekPrompt ? 'el' : undefined}>
         {question.prompt}
       </div>

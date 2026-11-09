@@ -31,6 +31,8 @@ export interface ChoiceQuestion extends Base {
   prompt: string;
   /** Подпись над вопросом (название текста). */
   context?: string;
+  /** Греческий текст, по которому вопрос: проверяем понимание, а не память. */
+  passage?: string[];
   greekPrompt: boolean;
   options: string[];
   answer: number;
