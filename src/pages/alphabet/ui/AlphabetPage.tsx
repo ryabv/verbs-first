@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
   COMBINATIONS,
@@ -218,6 +218,8 @@ function StressRules() {
 export function AlphabetPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  // На телефоне список разделов свёрнут, как список шагов в уроке.
+  const [navOpen, setNavOpen] = useState(false);
   const index = Math.max(
     0,
     SECTIONS.findIndex((s) => s.id === params.get('section')),
@@ -237,10 +239,25 @@ export function AlphabetPage() {
         <div className={styles.partTitle}>Алфавит и чтение</div>
       </SidebarSection>
       <SidebarSection title="Разделы">
-        <ol className={styles.links}>
+        <button
+          type="button"
+          className={styles.navToggle}
+          onClick={() => setNavOpen((v) => !v)}
+          aria-expanded={navOpen}
+        >
+          <span>
+            Раздел {index + 1} из {SECTIONS.length}: {section.title}
+          </span>
+          <span className={styles.chevron}>{navOpen ? '▴' : '▾'}</span>
+        </button>
+        <ol className={navOpen ? `${styles.links} ${styles.linksOpen}` : styles.links}>
           {SECTIONS.map((s) => (
             <li key={s.id}>
-              <Link to={routes.alphabet(s.id)} className={s.id === section.id ? styles.linkActive : styles.link}>
+              <Link
+                to={routes.alphabet(s.id)}
+                className={s.id === section.id ? styles.linkActive : styles.link}
+                onClick={() => setNavOpen(false)}
+              >
                 {s.title}
                 {s.kind === 'Практика' && <span className={styles.tag}>практика</span>}
                 {s.kind === 'Экзамен' && <span className={`${styles.tag} ${styles.tagExam}`}>экзамен</span>}
