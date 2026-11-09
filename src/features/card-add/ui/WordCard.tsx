@@ -2,7 +2,8 @@ import { useState } from 'react';
 import type { DeckRef } from '@/entities/card';
 import type { TextToken } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
-import { glossHint, lookupToken, type LexEntry } from '../lib/lexicon';
+import { glossHint, lookupToken } from '../lib/lexicon';
+import type { WordDeckFn } from '../lib/lessonWordGroups';
 import { AddToCards } from './AddToCards';
 import styles from './Word.module.css';
 
@@ -76,14 +77,14 @@ function OwnWord({ display, hint, deck }: { display: string; hint?: string; deck
 }
 
 /** Для панели разбора слова в тексте: словарная форма слова-токена и наборы. */
-export function TokenCard({ token, deckFor }: { token: TextToken; deckFor?: (kind: LexEntry['kind']) => DeckRef }) {
+export function TokenCard({ token, deckFor }: { token: TextToken; deckFor?: WordDeckFn }) {
   const entry = lookupToken(token);
   return (
     <WordCard
       key={token.key}
       greek={entry?.greek ?? ''}
       russian={entry?.russian ?? ''}
-      deck={deckFor?.(entry?.kind ?? 'word')}
+      deck={entry && deckFor?.(entry)}
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
     />

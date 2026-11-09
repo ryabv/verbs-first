@@ -22,4 +22,4 @@ export {
   type DeckRef,
 } from './model/store';
 export { statusOf, pickSession, shuffle, LEARNED_BOX, type CardStatus } from './lib/srs';
-export { checkGreek, checkRussian, greekVariants } from './lib/answers';
+export { cardKey, checkGreek, checkRussian, greekVariants } from './lib/answers';

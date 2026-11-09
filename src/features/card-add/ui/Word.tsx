@@ -2,7 +2,8 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { DeckRef } from '@/entities/card';
 import type { TextToken } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
-import { analyzePhrase, glossHint, lookupToken, type LexEntry } from '../lib/lexicon';
+import type { WordDeckFn } from '../lib/lessonWordGroups';
+import { analyzePhrase, glossHint, lookupToken } from '../lib/lexicon';
 import { WordCard } from './WordCard';
 import styles from './Word.module.css';
 
@@ -120,7 +121,7 @@ interface PhraseProps {
   /** Куда класть фразу целиком. */
   deck?: DeckRef;
   /** Куда класть отдельные слова (по умолчанию — туда же). */
-  wordDeck?: (kind: LexEntry['kind']) => DeckRef | undefined;
+  wordDeck?: WordDeckFn;
 }
 
 /** Слово из фразы: в карточку идёт словарная форма (глагол — начальная, сущ. — с артиклем). */
@@ -130,7 +131,7 @@ function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase: Phr
     <Word
       greek={entry?.greek ?? ''}
       russian={entry?.russian ?? ''}
-      deck={wordDeck?.(entry?.kind ?? 'word') ?? phrase.deck}
+      deck={(entry && wordDeck?.(entry)) ?? phrase.deck}
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
       phrase={phrase}

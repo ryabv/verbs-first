@@ -83,7 +83,15 @@ const makeId = () => `${Date.now().toString(36)}${Math.random().toString(36).sli
 /** Набор урока создаётся по первому добавленному слову. */
 export function ensureDeck(deck: Omit<Deck, 'createdAt'>): void {
   const s = getState();
-  if (s.decks.some((d) => d.id === deck.id)) return;
+  const existing = s.decks.find((d) => d.id === deck.id);
+  // Наборы урока называются по данным урока: переименовали группу — обновим название.
+  if (existing) {
+    if (existing.lessonId !== undefined && existing.title !== deck.title) {
+      // oxlint-disable-next-line no-map-spread
+      setState({ ...s, decks: s.decks.map((d) => (d.id === deck.id ? { ...d, title: deck.title } : d)) });
+    }
+    return;
+  }
   setState({ ...s, decks: [...s.decks, { ...deck, createdAt: Date.now() }] });
 }
 
