@@ -45,6 +45,13 @@ export interface ReadingText {
   findTense?: Tense;
 }
 
+/** Группа новых слов урока (для карточек). Глаголы и фразы темы добавляются автоматически. */
+export interface VocabGroup {
+  id: string;
+  title: string;
+  words: Phrase[];
+}
+
 /** Какие ячейки таблицы тренирует упражнение. Пусто = все. */
 export interface DrillScope {
   verbIds?: string[];
@@ -86,7 +93,9 @@ export type LessonStep =
   | (StepBase & { kind: 'dictation'; items: SentenceItem[] })
   /** Русская фраза → сказать вслух → сверить с образцом (самопроверка). */
   | (StepBase & { kind: 'oral'; items: SentenceItem[] })
-  | (StepBase & { kind: 'composition'; composition: CompositionTask });
+  | (StepBase & { kind: 'composition'; composition: CompositionTask })
+  /** Слова урока: добавить в карточки. */
+  | (StepBase & { kind: 'words' });
 
 export type StepKind = LessonStep['kind'];
 
@@ -102,6 +111,8 @@ export interface Lesson {
   verbIds: string[];
   /** Тексты для чтения и разбора. */
   readings: ReadingText[];
+  /** Новые слова урока по группам (кроме глаголов и фраз темы — они берутся сами). */
+  vocabulary: VocabGroup[];
   /** Путь ученика по уроку: теория и практика чередуются. */
   steps: LessonStep[];
   /** Домашнее задание: те же шаги, разбитые по дням (поле day). */

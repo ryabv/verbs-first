@@ -1,0 +1,86 @@
+.setup, .session { font-size: 16px; }
+.empty { color: var(--text-muted); }
+
+.option { display: grid; gap: 0.4rem; margin-bottom: 1rem; }
+.optionLabel { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.segmented { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.seg, .segActive {
+  font: inherit;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.9rem;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.seg:hover { border-color: var(--border-strong); }
+.segActive { border-color: var(--brand); color: var(--brand); }
+.direction { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 1rem; }
+.start { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+
+.progress { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
+.bar { flex: 1; height: 8px; background: var(--surface-muted); border-radius: 999px; overflow: hidden; }
+.fill { height: 100%; background: var(--success); transition: width 0.25s; }
+.exit { font: inherit; font-size: 0.9rem; background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; }
+.exit:hover { color: var(--brand); }
+
+.card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; max-width: 40rem; }
+.promptBox { display: grid; justify-items: start; gap: 0.3rem; margin-bottom: 1.2rem; }
+.prompt { font-size: 1.7rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; }
+.hint { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.icon { vertical-align: -0.15em; margin-right: 0.3em; }
+
+.options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+.optionBtn {
+  font: inherit;
+  font-size: 1.05rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.optionBtn:hover:not(:disabled) { border-color: var(--accent); }
+.optionBtn:disabled { cursor: default; }
+.optRight, .optRight:disabled { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+.optWrong, .optWrong:disabled { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+
+.form { display: flex; gap: 0.5rem; }
+.input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 1.15rem;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+}
+.input:focus { outline: none; border-color: var(--accent); }
+
+.result { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); }
+.correct { background: var(--success-soft); color: var(--success); }
+.accent { background: var(--warning-soft); color: var(--warning); }
+.wrong { background: var(--danger-soft); color: var(--danger); }
+.reveal { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.3rem; color: var(--text); }
+.revealGreek { font-size: 1.2rem; font-weight: 600; }
+.revealRussian { color: var(--text-muted); }
+.next { margin-top: 1rem; }
+
+.selfAnswer { padding: 0.8rem 1rem; background: var(--surface-muted); border-radius: var(--radius); margin-bottom: 1rem; }
+.selfButtons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.finish { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; max-width: 40rem; }
+.finishTitle { font-size: 1.3rem; font-weight: 700; color: var(--success); }
+
+@media (max-width: 600px) {
+  .card, .finish { padding: 16px; border-width: 2px; }
+  .prompt { font-size: 1.4rem; }
+  .options { grid-template-columns: 1fr; }
+  .selfButtons :global(button), .next { flex: 1 1 100%; width: 100%; min-height: 2.9rem; }
+}

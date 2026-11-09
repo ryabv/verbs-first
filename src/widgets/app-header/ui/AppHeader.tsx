@@ -16,6 +16,9 @@ export function AppHeader() {
         <NavLink to={routes.home()} end className={({ isActive }) => (isActive ? styles.active : undefined)}>
           Уроки
         </NavLink>
+        <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
+          Карточки
+        </NavLink>
       </nav>
       <div className={styles.tools}>
         <ThemeSwitcher />

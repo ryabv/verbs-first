@@ -11,6 +11,7 @@ export type {
   CompositionCheck,
   CompositionTask,
   SentenceItem,
+  VocabGroup,
 } from './model/types';
 export { getLesson, getLessonCatalog } from './api/lessonApi';
 export { GrammarSectionView } from './ui/GrammarSectionView';

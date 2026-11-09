@@ -14,6 +14,7 @@ export const KIND_LABELS: Record<StepKind, string> = {
   dictation: 'Диктант',
   oral: 'Говорим вслух',
   composition: 'Сочинение',
+  words: 'Слова',
 };
 
 /** Чип в списке шагов — только у заданий; название шага его не повторяет. */
@@ -24,6 +25,7 @@ const KIND_TAGS: Partial<Record<StepKind, string>> = {
   dictation: 'диктант',
   oral: 'вслух',
   composition: 'сочинение',
+  words: 'карточки',
 };
 
 interface Props {
