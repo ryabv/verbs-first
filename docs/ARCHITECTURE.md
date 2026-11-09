@@ -47,6 +47,8 @@ src/
   pages/
     home/                 оглавление курса (16 уроков, прогресс урока и ДЗ)
     lesson/               страница урока, три режима через ?mode=
+    cards/                карточки: наборы, тренировка, добавление своих слов
+    alphabet/             «Алфавит»: буквы, сочетания, ударение, 2 тренажёра (?section=)
   widgets/
     app-header, app-footer
     lesson-path/          «путь» по шагам: сайдбар со списком шагов, контент шага, prev/next, финал
@@ -56,12 +58,18 @@ src/
     sentence-trainer/     фразы целиком: translate / dictation / oral
     text-reading/         текст: клик по слову → разбор, перевод, «найди глаголы», вопросы
     composition-check/    сочинение с чек-листом, который отмечается сам
+    card-add/             «Слова урока»: группы слов урока с кнопками «в карточки»
+    card-editor/          форма «добавить любое слово» в любой/новый набор
+    card-training/        тренажёр карточек: что показываем × как отвечаем, сессия
+    alphabet-quiz/        ChoiceQuiz — вопрос с вариантами ответа (буква → звук, как читается слово)
     lesson-progress/      прогресс по шагам (localStorage)
     pronounce/            кнопка озвучки SpeakButton
     theme-switcher/       светлая/тёмная тема
   entities/
     verb/                 модель глагола, данные, сборка фраз, анализатор текста, VerbTable
     lesson/               модель урока, контент уроков, api getLesson/getLessonCatalog
+    card/                 карточки и наборы: хранилище (localStorage), прогресс по словам, проверка ответов
+    alphabet/             буквы, сочетания букв, вопросы тренажёров (данные) + LetterGrid, CombinationList
   shared/
     lib/greek/            нормализация греческого, сравнение ответов
     lib/speech/           speak(): mp3 из манифеста или греческий голос браузера
@@ -120,6 +128,7 @@ interface Lesson {
   coreVerbIds: string[];              // опорные (είμαι, έχω): в таблицах, но не в тренажёре
   verbIds: string[];                  // 8 глаголов урока
   readings: ReadingText[];            // тексты: предложения + glossary + вопросы + findTense
+  vocabulary: VocabGroup[];           // новые слова по группам {id, title, words: Phrase[]} (кроме глаголов и фраз темы)
   steps: LessonStep[];                // путь урока
   homework: LessonStep[];             // ДЗ: те же шаги с полем day
 }
@@ -139,6 +148,7 @@ interface Lesson {
 | `dictation` | `SentenceTrainer` на слух | `items` | то же |
 | `oral` | `SentenceTrainer` вслух + самопроверка | `items` | то же |
 | `composition` | `CompositionEditor` | `composition: CompositionTask` | по кнопке |
+| `words` | `LessonWords` (слова урока → карточки) | — | по кнопке |
 
 Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `day?` (группировка ДЗ).
 `SentenceItem = { russian; greek: string[] }` — `greek[0]` эталон, остальные тоже верны.
@@ -167,9 +177,11 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 
 ### Роутинг и режимы урока
 
-- `/` — `HomePage`, `/lesson/:lessonId` — `LessonPage`.
+- `/` — `HomePage`, `/lesson/:lessonId` — `LessonPage`, `/cards[?lesson=N]` — `CardsPage`
+  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?section=letters|combinations|stress|sounds|words]` —
+  `AlphabetPage` (разделы описаны массивом `SECTIONS` в самой странице).
 - Режим урока в query: без параметра — путь урока, `?mode=homework` — ДЗ,
-  `?mode=reference&tab=grammar|verbs|reading|topic|drill` — справочник.
+  `?mode=reference&tab=grammar|verbs|reading|words|topic|drill` — справочник.
 - `LessonPath` переиспользуется для урока и ДЗ: отличаются `steps`, `storageKey`,
   `stepsTitle`, `finish`. На `LessonPath` ставится `key`, чтобы при смене режима
   состояние прогресса пересоздавалось.
@@ -181,8 +193,75 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - Все шаги открыты (свободная навигация). Шаги из `GOAL_KINDS` не засчитываются,
   если их пропустили кнопкой «дальше».
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
+  `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
   `verbs-first:composition:<lessonId>[:<stepId>]` (черновики).
 - Все обращения к `localStorage` — в `try/catch`: в приватном режиме он может бросать.
+
+### Карточки — `entities/card` + `features/card-*` + `pages/cards`
+
+Независимый сервис слов, связанный с уроками через **наборы** (`Deck`).
+
+- Хранилище `entities/card/model/store.ts`: `localStorage` (`verbs-first:cards:v1` =
+  `{ decks, cards }`) + `useSyncExternalStore` (`useCards()`), синхронизация между вкладками
+  через событие `storage`. Действия: `addCards`, `ensureDeck`, `createDeck`, `removeDeck`,
+  `removeCard`, `recordAnswer`. При появлении бэкенда меняется только этот файл.
+- **Одно слово = одна карточка, наборов может быть несколько** (`Card.deckIds`). Ключ слова —
+  `stripAccents(greek)`; `addCards` для уже известного слова не создаёт дубль, а добавляет набор
+  в `deckIds`. Прогресс общий, поэтому при выборе нескольких наборов слово в тренировке одно
+  (`cardsInDecks`). `removeFromDeck` / `removeDeck` убирают набор у слова; карточка удаляется,
+  только когда наборов у неё не осталось. Старый формат (`deckId`) мигрируется при загрузке.
+- Наборы урока создаются при первом добавлении: id `lesson-<N>-<groupId>`, название
+  «Урок N · Группа», поле `lessonId`. Группы урока собирает `features/card-add/lib/lessonWordGroups.ts`:
+  «Глаголы» (из `verbIds`/`coreVerbIds`) + `lesson.vocabulary` + фразы `topic.phrases`.
+  Свой набор по умолчанию — `my-words` («Мои слова»), его нельзя удалить.
+- **Словарь сайта** (`features/card-add/lib/lexicon.ts`): собирается один раз из
+  `lesson.vocabulary`, `entities/dictionary` (ручной словарь: словарная форма + явные `forms`),
+  фраз темы, примеров алфавита и словариков текстов (`glossary` — только как подсказка значения).
+  `lookupToken(token)` → словарная форма: глагол через `createAnalyzer` → `lemma`; иначе по
+  ключу `stripAccents`. Форма из текста в карточку не кладётся. `pnpm lexicon:check`
+  (`scripts/lexicon-coverage.ts`) показывает слова сайта без словарной формы. `pnpm audio`
+  озвучивает и отдельные слова фраз (кроме однобуквенных).
+- `Phrase` (через `wordIn`) режет фразу на слова-кнопки (`Word` с `display` = форма в тексте и
+  `phrase` = вся фраза); `TokenCard` — то же для панели разбора в `ReadingView`
+  (слот `renderAdd(token)`). Слова урока: глаголы → «Урок N · Глаголы», остальное → «Урок N · Слова»
+  (`lessonWordDeck`).
+- **Любое слово — в карточки.** `features/card-add` даёт `Word` (слово-кнопка с пунктиром →
+  всплывающее окно: перевод, озвучка, «+ В карточки» или «✓ В наборе «…»» через `findCard`),
+  `wordIn(deck)` (рендер-функция для слотов) и `AddToCards` (только кнопка, для готовых
+  панелей вроде разбора слова в тексте). `AddToCards` показывает до 3 быстрых кнопок: набор
+  места + наборы слова + недавние (`Deck.usedAt`, ставит `addCards`; `recentDecks`) + «Мои
+  слова»; «Все наборы и новый…» — галочки по всем наборам и создание нового. Наборы урока — `lessonDecks(lesson)`: `verbs`,
+  `text`, `phrases`, `examples`; алфавит — набор `alphabet`. Entities и виджеты не знают о
+  карточках: у них слоты `renderGreek` (`PhraseList`, `GrammarSectionView`,
+  `CompositionEditor`), `renderWord` (`LetterGrid`, `CombinationList`, `VerbAlgorithm`),
+  `renderAdd` (`ReadingView`); заполняют их страницы и `StepContent`. В упражнениях
+  (тренажёры, карточки) слова не кликабельны, чтобы не подсказывать.
+- Прогресс (`lib/srs.ts`, коробки Лейтнера **без расписания по датам** — решено пока не
+  усложнять): у каждой карточки **два** независимых прогресса — `ru-gr` (вспомнить
+  греческое) и `gr-ru` (понять греческое). Верно → коробка +1 (до 5), ошибка → 0;
+  «выучено» — коробка ≥ 3. Сессия: до 20 карточек, сначала самые слабые.
+  В прогресс идёт только **первая** попытка в сессии; ошибочная карточка возвращается
+  через 2 карточки.
+- Тренировка = «что показываем» (`ru` / `gr` / `audio`) × «как отвечаем»
+  (`choose` — 4 варианта, дистракторы сначала из той же сессии; `write`; `self` — самопроверка).
+  Язык ответа: на русский — по-гречески, на греческий — по-русски, на слух + написать —
+  по-гречески (диктант). Настройки — `verbs-first:cards:settings`.
+- Проверка (`lib/answers.ts`): греческий через `compareAnswer` с вариантами (через `/`,
+  артикль `ο/η/το…` необязателен); русский — любое из значений через `,`/`;`, скобки
+  игнорируются, одна опечатка в слове от 5 букв — «почти».
+- Озвучка своих слов: mp3 нет, работает греческий голос браузера (если есть).
+
+### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`
+
+- Данные: `LETTERS` (24 буквы: название по-гречески и по-русски, звук, пояснение, пример
+  с чтением русскими буквами), `COMBINATIONS` (αι, ει/οι, ου, αυ/ευ, μπ, ντ, γκ/γγ, τσ/τζ,
+  γ+ε/ι, σ+звонкая, ια/ιο, двойные согласные), `SOUND_QUIZ` (строится из букв и сочетаний),
+  `WORD_QUIZ` (слова с **ручными** неверными вариантами — типичными ошибками чтения).
+- Чтение пишется русскими буквами с ударением (знак ́); звуков θ, ð, γ нет в русском —
+  в чтении они записаны греческими буквами и объяснены в пояснении к букве.
+- `ChoiceQuiz`: озвучка показывается **только после ответа** (иначе подсказывает).
+- Озвучиваются названия букв, примеры и слова `WORD_QUIZ` (`pnpm audio`).
+  Слова из `lesson.vocabulary` озвучиваются заранее (`pnpm audio`).
 
 ### Проверка ответов — `shared/lib/greek`
 
@@ -264,4 +343,4 @@ public/audio/manifest.json  { "нормализованный текст": "фа
 - Нет бэкенда: прогресс не синхронизируется между устройствами, сочинения проверяются
   только по формам глаголов урока.
 - Наполнен только урок 1 (+ ДЗ). Уроки 2–16 есть в оглавлении как «скоро».
-- Сборка выдаёт 2 предупреждения rspack о размере бандла — не критично.
+- Сборка предупреждает о размере бандла (~500 КБ, контент уроков в JS). Когда уроков станет больше — грузить уроки через `import()`.
