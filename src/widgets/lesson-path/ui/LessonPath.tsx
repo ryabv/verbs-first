@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Lesson, LessonStep, StepKind } from '@/entities/lesson';
 import type { Verb } from '@/entities/verb';
+import { readExamResult } from '@/features/exam';
 import { useLessonProgress } from '@/features/lesson-progress';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
@@ -15,9 +16,10 @@ import styles from './LessonPath.module.css';
 const GOAL_KINDS: ReadonlySet<StepKind> = new Set(['drill', 'translate', 'dictation', 'oral', 'exam']);
 
 interface Props {
-  /** Открыть этот шаг (ссылка вида ?step=exam). После перехода вызывается onStepOpened. */
+  /** Шаг из адреса (?step=…). */
   openStepId?: string;
-  onStepOpened?: () => void;
+  /** Текущий шаг сменился — записать в адрес. initial: первая запись (заменить, а не добавить в историю). */
+  onStepChange?: (id: string, initial: boolean) => void;
   lesson: Lesson;
   /** Весь путь: урок → домашнее задание → экзамен (lessonPath). */
   steps: LessonStep[];
@@ -35,15 +37,32 @@ interface Props {
 }
 
 /** Путь ученика: шаги в сайдбаре, текущий шаг — как статья учебника. */
-export function LessonPath({ openStepId, onStepOpened, lesson, steps, storageKey, stepsTitle, renderVerbs, sidebarHeader, crumbs, finish }: Props) {
+export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey, stepsTitle, renderVerbs, sidebarHeader, crumbs, finish }: Props) {
   const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
   const progress = useLessonProgress(storageKey, stepIds);
-  const { goTo } = progress;
+  const { goTo, currentId, setDone } = progress;
+
+  // Адрес ↔ текущий шаг. synced — последний шаг, о котором договорились адрес и состояние:
+  // изменился адрес (ссылка, «назад») — идём на шаг; изменился шаг — пишем в адрес.
+  const synced = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!openStepId) return;
-    if (stepIds.includes(openStepId)) goTo(openStepId);
-    onStepOpened?.();
-  }, [openStepId, stepIds, goTo, onStepOpened]);
+    if (openStepId && openStepId !== synced.current && stepIds.includes(openStepId)) {
+      synced.current = openStepId;
+      goTo(openStepId);
+      return;
+    }
+    if (currentId && currentId !== synced.current) {
+      const initial = synced.current === undefined;
+      synced.current = currentId;
+      onStepChange?.(currentId, initial);
+    }
+  }, [openStepId, currentId, stepIds, goTo, onStepChange]);
+
+  // Экзамен отмечен пройденным тогда и только тогда, когда он сдан.
+  const examPassed = readExamResult(lesson.id)?.passed ?? false;
+  useEffect(() => {
+    for (const s of steps) if (s.kind === 'exam') setDone(s.id, examPassed);
+  }, [steps, examPassed, setDone]);
   const [celebrate, setCelebrate] = useState(false);
   // На телефоне список шагов свёрнут, чтобы задание было на первом экране.
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -66,7 +85,10 @@ export function LessonPath({ openStepId, onStepOpened, lesson, steps, storageKey
     const top = narrow && headRef.current ? headRef.current.getBoundingClientRect().top + window.scrollY - 8 : 0;
     window.scrollTo({ top, behavior: 'smooth' });
   };
+  // Последний шаг-задание (экзамен) не завершить, пока оно не выполнено.
+  const finishLocked = isLast && GOAL_KINDS.has(step.kind) && !progress.isDone(step.id);
   const goNext = () => {
+    if (finishLocked) return;
     // Упражнение засчитывается только по выполнении; пропуск — просто переход дальше.
     if (GOAL_KINDS.has(step.kind) && !progress.isDone(step.id) && nextStep) progress.goTo(nextStep.id);
     else progress.completeAndNext();
@@ -167,6 +189,8 @@ export function LessonPath({ openStepId, onStepOpened, lesson, steps, storageKey
           label: isLast ? 'Последний шаг' : 'Следующий шаг',
           title: isLast ? 'Завершить' : (nextStep?.title ?? ''),
           onClick: goNext,
+          disabled: finishLocked,
+          hint: step.kind === 'exam' ? 'Сначала сдайте экзамен' : 'Сначала выполните задание',
         }}
       />
     </SidebarLayout>

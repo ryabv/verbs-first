@@ -42,17 +42,20 @@ export function LessonPage() {
   const { lessonId } = useParams();
   const [params, setParams] = useSearchParams();
   const lesson = getLesson(Number(lessonId));
-  // ?step=exam (и старое ?mode=homework) — открыть шаг один раз и убрать параметр из адреса.
-  const clearStep = useCallback(() => {
-    setParams(
-      (p) => {
-        p.delete('step');
-        if (p.get('mode') === 'homework') p.delete('mode');
-        return p;
-      },
-      { replace: true },
-    );
-  }, [setParams]);
+  // Текущий шаг живёт в адресе (?step=…): ссылку можно сохранить, «назад» в браузере ведёт к прошлому шагу.
+  const syncStep = useCallback(
+    (id: string, initial: boolean) => {
+      setParams(
+        (p) => {
+          p.set('step', id);
+          if (p.get('mode') === 'homework') p.delete('mode');
+          return p;
+        },
+        { replace: initial },
+      );
+    },
+    [setParams],
+  );
 
   if (!lesson) {
     return (
@@ -84,7 +87,7 @@ export function LessonPage() {
       steps={lessonPath(lesson)}
       storageKey={progressKey.lesson(lesson.id)}
       openStepId={openStepId}
-      onStepOpened={clearStep}
+      onStepChange={syncStep}
       stepsTitle="План урока"
       renderVerbs={verbsRenderer(lesson)}
       sidebarHeader={header}

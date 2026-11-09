@@ -185,7 +185,7 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   экзамена) → `homework` → шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
   `exam`); `StepList` рисует заголовки частей и «Часть N · название» из `homeworkParts`,
   нумерация — внутри части. Никаких «дней» (без давления сроками).
-- `?step=<id>` открывает шаг (и убирается из адреса); старое `?mode=homework` → первый шаг ДЗ.
+- Текущий шаг всегда в адресе `?step=<id>` (`openStepId` ↔ `onStepChange`): переход по шагам добавляет запись в историю, «назад» возвращает к прошлому шагу; старое `?mode=homework` → первый шаг ДЗ.
   `?mode=reference&tab=grammar|verbs|reading|words|topic|drill` — справочник (ссылка
   «Справочник урока» в сайдбаре).
 
@@ -238,9 +238,8 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   урока (глаголы → `buildRussian`/`buildGreek`, фразы translate/dictation/oral из шагов и ДЗ
   без повторов с таблицей, `vocabulary`, `readings[].questions`); засчитывается только
   `correct` (ударение обязательно). Шаг `kind: 'exam'` (последний в `steps`) рендерит
-  `StepContent`; сдал — `onPassed` → шаг засчитан (`GOAL_KINDS`). Слова из ошибок — слот
-  `renderWords` → `AddWords` (`features/card-add`). Ссылка на шаг: `?step=<id>` (`LessonPath`
-  `openStepId`, параметр после перехода убирается).
+  `StepContent`; сдал — `onPassed` → шаг засчитан (`GOAL_KINDS`); отметка шага экзамена всегда сверяется с `readExamResult`, «Завершить» на несданном экзамене недоступна. Слова из ошибок — слот
+  `renderWords` → `AddWords` (`features/card-add`). Ссылка на шаг: `?step=<id>`.
 - **Любое слово — в карточки.** `features/card-add` даёт `Word` (слово-кнопка с пунктиром →
   всплывающее окно: перевод, озвучка, «+ В карточки» или «✓ В наборе «…»» через `findCard`),
   `wordIn(deck)` (рендер-функция для слотов) и `AddToCards` (только кнопка, для готовых

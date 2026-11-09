@@ -44,6 +44,14 @@ export function useLessonProgress(storageKey: string, stepIds: readonly string[]
     setState((s) => (s.completed.includes(id) ? s : { ...s, completed: [...s.completed, id] }));
   }, []);
 
+  /** Поставить или снять отметку (например, по результату экзамена). */
+  const setDone = useCallback((id: string, done: boolean) => {
+    setState((s) => {
+      if (s.completed.includes(id) === done) return s;
+      return { ...s, completed: done ? [...s.completed, id] : s.completed.filter((x) => x !== id) };
+    });
+  }, []);
+
   /** Отметить текущий шаг и перейти к следующему. */
   const completeAndNext = useCallback(() => {
     if (!currentId) return;
@@ -68,6 +76,7 @@ export function useLessonProgress(storageKey: string, stepIds: readonly string[]
     statusOf,
     goTo,
     markDone,
+    setDone,
     completeAndNext,
     reset,
   };
