@@ -1,3 +1,4 @@
+import { Arrow } from '../ornament';
 import styles from './PrevNext.module.css';
 
 export interface NavTarget {
@@ -14,7 +15,7 @@ export function PrevNext({ prev, next }: { prev?: NavTarget; next?: NavTarget })
     <nav className={styles.wrap}>
       {prev && (
         <button type="button" className={`${styles.nav} ${styles.prev}`} onClick={prev.onClick}>
-          <span className={styles.arrow}>←</span>
+          <Arrow direction="left" className={styles.arrow} />
           <span className={styles.label}>{prev.label}</span>
           <span className={styles.title}>{prev.title}</span>
         </button>
@@ -26,7 +27,7 @@ export function PrevNext({ prev, next }: { prev?: NavTarget; next?: NavTarget })
           onClick={next.onClick}
           disabled={next.disabled}
         >
-          <span className={styles.arrow}>→</span>
+          <Arrow className={styles.arrow} />
           <span className={styles.label}>{next.disabled && next.hint ? next.hint : next.label}</span>
           <span className={styles.title}>{next.title}</span>
         </button>

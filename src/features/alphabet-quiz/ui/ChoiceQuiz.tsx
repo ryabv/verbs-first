@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { QuizItem } from '@/entities/alphabet';
 import { SpeakButton } from '@/features/pronounce';
 import { Button } from '@/shared/ui/button';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './ChoiceQuiz.module.css';
 
 const OPTIONS = 4;
@@ -59,9 +60,7 @@ export function ChoiceQuiz({ items, question }: Props) {
   return (
     <div className={styles.quiz}>
       <div className={styles.progress}>
-        <div className={styles.bar}>
-          <div className={styles.fill} style={{ width: `${(done / items.length) * 100}%` }} />
-        </div>
+        <ProgressBar value={done / items.length} />
         <span>
           {done} / {items.length}
         </span>

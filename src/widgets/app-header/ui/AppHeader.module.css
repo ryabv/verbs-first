@@ -4,22 +4,25 @@
   gap: 2rem;
   height: var(--header-height);
   padding: 0 25px;
+  position: relative;
+  margin-bottom: 8px;
   background: var(--bg);
-  border-bottom: 4px solid var(--border);
 }
-.logo { display: flex; align-items: center; gap: 0.5rem; font-size: 1.2rem; color: var(--text); }
+/* Меандр вместо нижней границы шапки. */
+.meander { position: absolute; left: 0; right: 0; bottom: -8px; height: 8px; -webkit-mask-size: 13px 8px; mask-size: 13px 8px; }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-display); font-size: 1.35rem; color: var(--text); }
 .logo:hover { color: var(--text); }
 .logo b { color: var(--brand); }
 .mark {
+  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background: var(--brand);
-  color: #fff;
-  font-weight: 700;
+  width: 2.6rem;
+  height: 2.6rem;
 }
+/* ρ (от ρήμα — «глагол») в оливковом венке. */
+.wreath { position: absolute; inset: 0; color: var(--olive); }
+.rho { position: relative; margin-top: -0.2rem; font-size: 1.5rem; font-weight: 700; line-height: 1; color: var(--brand); }
 .nav { display: flex; gap: 1.5rem; }
 .nav a { color: var(--text); font-size: 0.95rem; }
 .nav a:hover { color: var(--brand); }

@@ -13,6 +13,7 @@ import { routes } from '@/shared/config/routes';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
+import { Arrow } from '@/shared/ui/ornament';
 import styles from './LessonPage.module.css';
 
 type Mode = 'path' | 'reference';
@@ -61,7 +62,9 @@ export function LessonPage() {
     return (
       <div className={styles.empty}>
         <p>Этот урок ещё не готов.</p>
-        <Link to={routes.home()}>← Ко всем урокам</Link>
+        <Link to={routes.home()}>
+          <Arrow direction="left" /> Ко всем урокам
+        </Link>
       </div>
     );
   }
@@ -129,11 +132,11 @@ function LessonSidebarHeader({ lesson, mode }: { lesson: Lesson; mode: Mode }) {
       <div className={styles.lessonTitle}>{lesson.title}</div>
       {mode === 'reference' ? (
         <Link to={base} className={styles.headerLink}>
-          ← К занятиям урока
+          <Arrow direction="left" /> К занятиям урока
         </Link>
       ) : (
         <Link to={`${base}?mode=reference`} className={styles.headerLink}>
-          Справочник урока →
+          Справочник урока <Arrow />
         </Link>
       )}
     </SidebarSection>

@@ -4,7 +4,10 @@
   justify-content: space-between;
   gap: 0.5rem 2rem;
   padding: 20px 25px;
-  border-top: 2px solid var(--border);
+  position: relative;
+  margin-top: 8px;
   color: var(--text-muted);
   font-size: 0.85rem;
 }
+
+.meander { position: absolute; left: 0; right: 0; top: -8px; height: 8px; -webkit-mask-size: 13px 8px; mask-size: 13px 8px; }

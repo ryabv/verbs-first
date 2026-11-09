@@ -13,6 +13,8 @@ import {
 } from '../model/settings';
 import { useSession } from '../model/useSession';
 import { CardQuestion } from './CardQuestion';
+import { Amphora } from '@/shared/ui/ornament';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './CardTrainer.module.css';
 
 interface Props {
@@ -57,7 +59,12 @@ export function CardTrainer({ pool, allCards }: Props) {
   }
 
   if (pool.length === 0) {
-    return <p className={styles.empty}>В выбранных наборах пока нет карточек. Добавьте слова из уроков или свои.</p>;
+    return (
+      <p className={styles.empty}>
+        <Amphora className={styles.emptyIcon} size="2.5rem" />
+        В выбранных наборах пока нет карточек. Добавьте слова из уроков или свои.
+      </p>
+    );
   }
 
   return (
@@ -132,9 +139,7 @@ function Session({ cards, allCards, settings, onExit, onRestart }: SessionProps)
   return (
     <div className={styles.session}>
       <div className={styles.progress}>
-        <div className={styles.bar}>
-          <div className={styles.fill} style={{ width: `${(session.done / session.total) * 100}%` }} />
-        </div>
+        <ProgressBar value={session.done / session.total} />
         <span>
           {session.done} / {session.total}
         </span>

@@ -3,6 +3,7 @@ import { PhraseList, type CompositionCheck, type Phrase } from '@/entities/lesso
 import { createAnalyzer, type Verb } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
 import { runChecks } from '../model/check';
+import { Check } from '@/shared/ui/ornament';
 import styles from './CompositionEditor.module.css';
 
 interface Props {
@@ -63,7 +64,7 @@ export function CompositionEditor({ draftKey, task, sample, checklist, verbs, re
         <ul>
           {results.map((r) => (
             <li key={r.label} className={r.ok ? styles.ok : undefined}>
-              <span className={styles.mark}>{r.ok ? '✓' : '○'}</span>
+              <span className={styles.mark}>{r.ok ? <Check /> : '○'}</span>
               {r.label}
               {r.evidence && <span className={styles.evidence}>{r.evidence}</span>}
             </li>

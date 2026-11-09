@@ -5,6 +5,7 @@ import { progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
 import { Callout } from '@/shared/ui/callout';
+import { Check, Laurel } from '@/shared/ui/ornament';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
@@ -46,7 +47,7 @@ export function HomePage() {
               {alphabetExam && (
                 <span className={alphabetExam.passed ? styles.done : undefined}>
                   {' '}
-                  (сдан на {alphabetExam.best}%{alphabetExam.passed ? ' ✓' : ', нужно 80%'})
+                  (сдан на {alphabetExam.best}%{alphabetExam.passed ? <> <Check /></> : ', нужно 80%'})
                 </span>
               )}
               . Если уже читаете по-гречески — сразу к урокам.
@@ -68,7 +69,7 @@ export function HomePage() {
             const status = !lesson.available
               ? 'скоро'
               : percent === 100
-                ? '✓ пройден'
+                ? 'пройден'
                 : percent > 0
                   ? `пройдено ${percent}%`
                   : `${lesson.stepCount} ${plural(lesson.stepCount, ['шаг', 'шага', 'шагов'])}`;
@@ -85,7 +86,10 @@ export function HomePage() {
                     <span className={styles.title}>{lesson.title}</span>
                   )}
                   <div className={styles.meta}>
-                    {lesson.topic} · <span className={percent === 100 ? styles.done : undefined}>{status}</span>
+                    {lesson.topic} · <span className={percent === 100 ? styles.done : undefined}>
+                      {percent === 100 && <Laurel className={styles.laurel} />}
+                      {status}
+                    </span>
                     {lesson.available && (
                       <>
                         {' · '}
@@ -93,7 +97,8 @@ export function HomePage() {
                           to={`${routes.lesson(lesson.id)}?step=exam`}
                           className={exams[lesson.id]?.passed ? `${styles.homework} ${styles.done}` : styles.homework}
                         >
-                          {exams[lesson.id] ? `Экзамен ${exams[lesson.id]!.best}%${exams[lesson.id]!.passed ? ' ✓' : ''}` : 'Экзамен'}
+                          {exams[lesson.id] ? `Экзамен ${exams[lesson.id]!.best}%` : 'Экзамен'}
+                          {exams[lesson.id]?.passed && <> <Check /></>}
                         </Link>
                       </>
                     )}

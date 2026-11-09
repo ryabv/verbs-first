@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { sectionOf, type LessonStep, type PathSection, type StepKind } from '@/entities/lesson';
 import type { StepStatus } from '@/features/lesson-progress';
+import { Check } from '@/shared/ui/ornament';
 import styles from './LessonPath.module.css';
 
 export const KIND_LABELS: Record<StepKind, string> = {
@@ -75,7 +76,7 @@ export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect }: 
                 onClick={() => onSelect(step.id)}
                 aria-current={status === 'current' ? 'step' : undefined}
               >
-                <span className={styles.marker}>{status === 'done' ? '✓' : `${n}.`}</span>
+                <span className={styles.marker}>{status === 'done' ? <Check /> : `${n}.`}</span>
                 <span>
                   {step.title}
                   {tag && (

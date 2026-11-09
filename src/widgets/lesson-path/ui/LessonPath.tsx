@@ -6,10 +6,12 @@ import { useLessonProgress } from '@/features/lesson-progress';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
+import { Laurel } from '@/shared/ui/ornament';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
 import { StepContent } from './StepContent';
 import { KIND_LABELS, StepList } from './StepList';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './LessonPath.module.css';
 
 /** Шаги, которые засчитываются только по выполнении (а не по кнопке «дальше»). */
@@ -101,9 +103,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
       {sidebarHeader}
       <SidebarSection title={stepsTitle}>
         <div className={styles.overall}>
-          <div className={styles.bar}>
-            <div className={styles.fill} style={{ width: `${percent}%` }} />
-          </div>
+          <ProgressBar value={percent / 100} thin />
           <span>{percent}%</span>
         </div>
         <button
@@ -139,6 +139,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
       <SidebarLayout sidebar={sidebar}>
         <header className={styles.head}>
           <Breadcrumbs items={[...crumbs, { label: 'Итог' }]} />
+          <Laurel className={styles.finishLaurel} size="4.5rem" />
           <h1 className={styles.title}>{finish.title}</h1>
         </header>
         <Callout kind="ok" title="Что дальше">

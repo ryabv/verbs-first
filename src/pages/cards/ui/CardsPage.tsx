@@ -17,6 +17,7 @@ import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Callout } from '@/shared/ui/callout';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
+import { Amphora } from '@/shared/ui/ornament';
 import styles from './CardsPage.module.css';
 
 /** Карточки: независимый сервис слов, связанный с уроками через наборы. */
@@ -89,6 +90,7 @@ export function CardsPage() {
 
       {cards.length === 0 && (
         <Callout title="Пока пусто">
+          <Amphora className={styles.emptyIcon} size="3rem" />
           <p>
             Добавьте слова из урока — на шаге «Слова урока» или в{' '}
             <Link to={`${routes.lesson(1)}?mode=reference&tab=words`}>справочнике урока 1</Link> — или впишите своё

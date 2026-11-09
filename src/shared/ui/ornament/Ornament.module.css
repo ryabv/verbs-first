@@ -1,0 +1,18 @@
+.wreath {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 7.5rem;
+  height: 7.5rem;
+}
+.wreathSvg { position: absolute; inset: 0; color: var(--olive); }
+.wreathInner { position: relative; }
+
+/* Узор — маска, цвет — фон: так меандр берёт цвет из CSS-переменной и тёмной темы. */
+.meander {
+  height: 10px;
+  background: var(--meander);
+  --meander-unit: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' viewBox='0 0 16 10'%3E%3Cpath d='M0 9.2H16M1.5 9.2V1H13.5V7H5V3.5H10V5' fill='none' stroke='black' stroke-width='1.4'/%3E%3C/svg%3E");
+  -webkit-mask: var(--meander-unit) repeat-x left center / 16px 10px;
+  mask: var(--meander-unit) repeat-x left center / 16px 10px;
+}

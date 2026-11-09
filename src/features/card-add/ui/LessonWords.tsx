@@ -5,6 +5,7 @@ import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { lessonWordGroups, type WordGroup } from '../lib/lessonWordGroups';
+import { Check } from '@/shared/ui/ornament';
 import styles from './LessonWords.module.css';
 
 /** Слова урока по группам с кнопками «добавить в карточки». */
@@ -50,7 +51,7 @@ export function LessonWords({ lesson }: { lesson: Lesson }) {
                   + Добавить всё
                 </button>
               ) : (
-                <span className={styles.done}>✓ в карточках</span>
+                <span className={styles.done}><Check /> в карточках</span>
               )}
             </header>
             <ul className={styles.list}>
@@ -65,7 +66,7 @@ export function LessonWords({ lesson }: { lesson: Lesson }) {
                     <span className={styles.russian}>{word.russian}</span>
                     {inCards ? (
                       <span className={styles.added} title={`Уже в наборе «${group.deckTitle}»`}>
-                        ✓
+                        <Check />
                       </span>
                     ) : (
                       <button

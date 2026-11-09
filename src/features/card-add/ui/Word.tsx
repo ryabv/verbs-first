@@ -5,6 +5,7 @@ import { SpeakButton } from '@/features/pronounce';
 import type { WordDeckFn } from '../lib/lessonWordGroups';
 import { analyzePhrase, glossHint, lookupToken } from '../lib/lexicon';
 import { WordCard } from './WordCard';
+import { Arrow } from '@/shared/ui/ornament';
 import styles from './Word.module.css';
 
 interface PhraseRef {
@@ -89,7 +90,7 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, child
               </span>
               <WordCard greek={phrase.greek} russian={phrase.russian} deck={phrase.deck ?? deck} />
               <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(false)}>
-                ← К слову «{shown}»
+                <Arrow direction="left" /> К слову «{shown}»
               </button>
             </>
           ) : (
@@ -104,7 +105,7 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, child
               <WordCard greek={greek} russian={russian} deck={deck} display={shown} hint={hint} />
               {phrase && (
                 <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(true)}>
-                  Вся фраза в карточки →
+                  Вся фраза в карточки <Arrow />
                 </button>
               )}
             </>

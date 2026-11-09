@@ -9,13 +9,17 @@
   font-size: 0.8rem;
   color: var(--on-accent);
 }
-.smart .icon { background: var(--info); }
 .warn .icon { background: var(--warning); }
-.ok .icon { background: var(--success); }
+.motif { flex: none; margin: -0.15rem 0; }
+.smart .motif { color: var(--accent); }
+.ok .motif { color: var(--olive); }
 .content { padding: 10px 24px 18px; }
+/* Без заголовка отступ сверху — как снизу. */
+.content:first-child { padding-top: 18px; }
 .content > :first-child { margin-top: 0; }
 .content > :last-child { margin-bottom: 0; }
 @media (max-width: 600px) {
   .header { padding: 12px 14px 0; }
   .content { padding: 8px 14px 12px; }
+  .content:first-child { padding-top: 12px; }
 }

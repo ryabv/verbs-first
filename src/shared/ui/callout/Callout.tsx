@@ -1,9 +1,15 @@
 import type { ReactNode } from 'react';
+import { Column, Laurel } from '../ornament';
 import styles from './Callout.module.css';
 
 type Kind = 'smart' | 'warn' | 'ok';
 
-const ICONS: Record<Kind, string> = { smart: 'i', warn: '!', ok: '✓' };
+/** Греческие мотивы: колонна — справка, венок — успех; предупреждение — знак «!», чтобы читалось сразу. */
+function Icon({ kind }: { kind: Kind }) {
+  if (kind === 'smart') return <Column className={styles.motif} size="1.5rem" />;
+  if (kind === 'ok') return <Laurel className={styles.motif} size="1.5rem" />;
+  return <span className={styles.icon}>!</span>;
+}
 
 interface Props {
   kind?: Kind;
@@ -17,7 +23,7 @@ export function Callout({ kind = 'smart', title, children }: Props) {
     <div className={`${styles.callout} ${styles[kind]}`}>
       {title && (
         <div className={styles.header}>
-          <span className={styles.icon}>{ICONS[kind]}</span>
+          <Icon kind={kind} />
           {title}
         </div>
       )}

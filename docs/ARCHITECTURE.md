@@ -341,6 +341,12 @@ public/audio/manifest.json  { "нормализованный текст": "фа
   клавиатур. Кнопки клавиатуры и «Проверить» делают `preventDefault` на `mousedown`,
   чтобы поле не теряло фокус.
 - Иконки — inline SVG в `shared/ui/icon` (`currentColor`), не эмодзи.
+- Греческие мотивы — `shared/ui/ornament`: `Laurel`/`Wreath` (венок — только награда),
+  `Amphora`, `Column`, `Meander` (полоса-маска, цвет `--meander`), `Check` (галочка-мазок) и `Arrow`
+  (стрела-копьё) — вместо символов ✓ ← → в интерфейсе.
+- Полоса прогресса — одна на всё приложение: `shared/ui/progress-bar` (`ProgressBar value={0…1}`,
+  `thin` для сайдбара): «бегущая волна», бледный узор заполняется оливковым. Цвета — `--olive`, `--brand`.
+  Шрифт крупных заголовков `--font-display` (Alegreya, Google Fonts в `public/index.html`).
 
 ## Деплой
 

@@ -3,10 +3,12 @@ import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
 import { speak } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
+import { Check, Column, Wreath } from '@/shared/ui/ornament';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import { SpeakerIcon } from '@/shared/ui/icon';
 import { PASS_PERCENT, readExamResult, saveExamResult, type ExamId } from '../model/result';
 import type { ChoiceQuestion, ExamQuestion, ExamWord, WriteQuestion } from '../model/types';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './Exam.module.css';
 
 /** Сколько раз можно прослушать фразу диктанта. */
@@ -54,7 +56,10 @@ export function Exam({ id, title, build, rules, renderWords, actions, onPassed }
   if (!questions) {
     return (
       <div className={styles.card}>
-        <h2 className={styles.introTitle}>{title}</h2>
+        <h2 className={styles.introTitle}>
+          <Column className={styles.introIcon} size="1.6rem" />
+          {title}
+        </h2>
         <ul className={styles.rules}>
           {rules.map((rule, i) => (
             <li key={i}>{rule}</li>
@@ -65,7 +70,7 @@ export function Exam({ id, title, build, rules, renderWords, actions, onPassed }
         </ul>
         {prev && (
           <p className={styles.prev}>
-            Ваш лучший результат: {prev.best}% {prev.passed ? '— сдан ✓' : '— пока не сдан'}
+            Ваш лучший результат: {prev.best}% {prev.passed ? <>— сдан <Check /></> : '— пока не сдан'}
           </p>
         )}
         <Button onClick={start}>Начать экзамен</Button>
@@ -105,9 +110,7 @@ export function Exam({ id, title, build, rules, renderWords, actions, onPassed }
   return (
     <div className={styles.exam}>
       <div className={styles.progress}>
-        <div className={styles.bar}>
-          <div className={styles.fill} style={{ width: `${(index / questions.length) * 100}%` }} />
-        </div>
+        <ProgressBar value={index / questions.length} />
         <span>
           {index + 1} / {questions.length}
         </span>
@@ -252,7 +255,13 @@ function Results({ answers, percent, record, onRestart, renderWords, actions }: 
   return (
     <div className={styles.exam}>
       <div className={`${styles.card} ${passed ? styles.passed : styles.failed}`}>
-        <div className={styles.score}>{percent}%</div>
+        {passed ? (
+          <Wreath className={styles.wreath}>
+            <span className={styles.score}>{percent}%</span>
+          </Wreath>
+        ) : (
+          <div className={styles.score}>{percent}%</div>
+        )}
         <div className={styles.verdict}>
           {passed ? 'Экзамен сдан!' : `Пока не сдан — нужно ${PASS_PERCENT}%`}
         </div>
@@ -299,3 +308,4 @@ function Results({ answers, percent, record, onRestart, renderWords, actions }: 
     </div>
   );
 }
+

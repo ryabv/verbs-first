@@ -4,6 +4,8 @@ import { Button } from '@/shared/ui/button';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import type { DrillCells } from '../model/task';
 import { useDrill } from '../model/useDrill';
+import { Check } from '@/shared/ui/ornament';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './ConjugationDrill.module.css';
 
 const VERDICT_TEXT = {
@@ -52,16 +54,14 @@ export function ConjugationDrill({ verbs, tenses, forms, goal, onGoalReached }: 
     <div className={styles.drill}>
       {goal !== undefined ? (
         <div className={styles.goal}>
-          <div className={styles.goalBar}>
-            <div className={styles.goalFill} style={{ width: `${Math.min(solved / goal, 1) * 100}%` }} />
-          </div>
+          <ProgressBar value={Math.min(solved / goal, 1)} />
           <span>
             {Math.min(solved, goal)} / {goal}
           </span>
         </div>
       ) : (
         <div className={styles.stats}>
-          <span>✓ {stats.correct}</span>
+          <span><Check /> {stats.correct}</span>
           <span>≈ {stats.accent}</span>
           <span>✗ {stats.wrong}</span>
         </div>

@@ -7,6 +7,7 @@ import { Button } from '@/shared/ui/button';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import { SpeakerIcon } from '@/shared/ui/icon';
 import { useQueue } from '../model/useQueue';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './SentenceTrainer.module.css';
 
 export type TrainerMode = 'translate' | 'dictation' | 'oral';
@@ -36,9 +37,7 @@ export function SentenceTrainer({ mode, items, onComplete }: Props) {
   return (
     <div className={styles.trainer}>
       <div className={styles.goal}>
-        <div className={styles.goalBar}>
-          <div className={styles.goalFill} style={{ width: `${(queue.solved / items.length) * 100}%` }} />
-        </div>
+        <ProgressBar value={queue.solved / items.length} />
         <span>
           {queue.solved} / {items.length}
         </span>

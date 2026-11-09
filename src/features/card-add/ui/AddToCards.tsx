@@ -14,6 +14,7 @@ import {
   type DeckRef,
 } from '@/entities/card';
 import { routes } from '@/shared/config/routes';
+import { Check } from '@/shared/ui/ornament';
 import styles from './Word.module.css';
 
 interface Props {
@@ -70,7 +71,7 @@ export function AddToCards({ greek, russian, deck = DEFAULT_DECK }: Props) {
               title={on ? `Убрать из «${d.title}»` : `Добавить в «${d.title}»`}
               onClick={() => (on ? removeFrom(card!, d.id) : addTo(d, greek, russian))}
             >
-              {on ? '✓' : '+'} {d.title}
+              {on ? <Check /> : '+'} {d.title}
             </button>
           );
         })}
