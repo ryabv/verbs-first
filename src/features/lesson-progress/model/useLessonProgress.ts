@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { clearProgress, readProgress, writeProgress, type StoredProgress } from './storage';
 
 export type StepStatus = 'done' | 'current' | 'available' | 'locked';
@@ -9,9 +9,18 @@ export type StepStatus = 'done' | 'current' | 'available' | 'locked';
  */
 /** storageKey — из progressKey.lesson. */
 export function useLessonProgress(storageKey: string, stepIds: readonly string[]) {
-  const [state, setState] = useState<StoredProgress>(() => readProgress(storageKey));
-
-  useEffect(() => writeProgress(storageKey, state), [storageKey, state]);
+  const [state, setStateRaw] = useState<StoredProgress>(() => readProgress(storageKey));
+  // Пишем сразу, а не в эффекте: после шага ученик может тут же уйти на карту урока,
+  // и компонент размонтируется раньше, чем эффект успеет сохранить прогресс.
+  const setState = useCallback(
+    (update: (s: StoredProgress) => StoredProgress) =>
+      setStateRaw((s) => {
+        const next = update(s);
+        if (next !== s) writeProgress(storageKey, next);
+        return next;
+      }),
+    [storageKey],
+  );
 
   const completed = useMemo(() => new Set(state.completed), [state.completed]);
   const frontier = stepIds.findIndex((id) => !completed.has(id));
@@ -34,15 +43,15 @@ export function useLessonProgress(storageKey: string, stepIds: readonly string[]
 
   const goTo = useCallback(
     (id: string) => {
-      if (stepIds.indexOf(id) <= unlockedUntil) setState((s) => ({ ...s, current: id }));
+      if (stepIds.indexOf(id) <= unlockedUntil) setState((s) => (s.current === id ? s : { ...s, current: id }));
     },
-    [stepIds, unlockedUntil],
+    [stepIds, unlockedUntil, setState],
   );
 
   /** Отметить шаг пройденным (без перехода). */
   const markDone = useCallback((id: string) => {
     setState((s) => (s.completed.includes(id) ? s : { ...s, completed: [...s.completed, id] }));
-  }, []);
+  }, [setState]);
 
   /** Поставить или снять отметку (например, по результату экзамена). */
   const setDone = useCallback((id: string, done: boolean) => {
@@ -50,7 +59,7 @@ export function useLessonProgress(storageKey: string, stepIds: readonly string[]
       if (s.completed.includes(id) === done) return s;
       return { ...s, completed: done ? [...s.completed, id] : s.completed.filter((x) => x !== id) };
     });
-  }, []);
+  }, [setState]);
 
   /** Отметить текущий шаг и перейти к следующему. */
   const completeAndNext = useCallback(() => {
@@ -60,11 +69,11 @@ export function useLessonProgress(storageKey: string, stepIds: readonly string[]
       completed: s.completed.includes(currentId) ? s.completed : [...s.completed, currentId],
       current: nextId ?? currentId,
     }));
-  }, [currentId, stepIds]);
+  }, [currentId, stepIds, setState]);
 
   const reset = useCallback(() => {
     clearProgress(storageKey);
-    setState({ completed: [] });
+    setStateRaw({ completed: [] });
   }, [storageKey]);
 
   return {
