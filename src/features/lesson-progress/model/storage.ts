@@ -9,8 +9,8 @@ export interface StoredProgress {
  */
 export const progressKey = {
   lesson: (lessonId: number) => `verbs-first:lesson:${lessonId}`,
-  /** Разделы алфавита (до курса). */
-  alphabet: 'verbs-first:alphabet:progress',
+  /** Курс чтения («Урок 0»): этапы алфавита на карте. */
+  reading: 'verbs-first:reading',
 };
 
 /** Старый ключ ДЗ — только у уроков; у прочих ключей (алфавит) его нет. */
@@ -60,9 +60,9 @@ export function clearProgress(key: string): void {
 }
 
 /** Медальоны, которые ученик уже видел на карте: новые показываем с анимацией один раз. */
-const awardsKey = (lessonId: number) => `verbs-first:awards-seen:${lessonId}`;
+const awardsKey = (lessonId: number | string) => `verbs-first:awards-seen:${lessonId}`;
 
-export function readSeenAwards(lessonId: number): string[] {
+export function readSeenAwards(lessonId: number | string): string[] {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(awardsKey(lessonId)) ?? '[]');
     return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
@@ -71,7 +71,7 @@ export function readSeenAwards(lessonId: number): string[] {
   }
 }
 
-export function writeSeenAwards(lessonId: number, stageIds: readonly string[]): void {
+export function writeSeenAwards(lessonId: number | string, stageIds: readonly string[]): void {
   try {
     localStorage.setItem(awardsKey(lessonId), JSON.stringify(stageIds));
   } catch {

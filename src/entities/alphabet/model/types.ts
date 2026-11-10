@@ -3,6 +3,11 @@ export interface ReadingExample {
   greek: string;
   russian: string;
   reading: string;
+  /**
+   * Обычное написание, если слово показано иначе (вывеска ЗАГЛАВНЫМИ без ударений):
+   * по нему озвучиваем — иначе синтезатор не знает, где ударение, — и добавляем в карточки.
+   */
+  plain?: string;
 }
 
 export interface Letter {

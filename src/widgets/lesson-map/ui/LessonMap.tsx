@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import type { Lesson, LessonStage } from '@/entities/lesson';
+import type { LessonStage } from '@/entities/lesson';
 import { readExamResult } from '@/features/exam';
 import {
   doneWithExam,
@@ -19,7 +19,8 @@ import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './LessonMap.module.css';
 
 interface Props {
-  lesson: Lesson;
+  /** Что за курс: id (он же id экзамена и медальонов), надпись над названием, название, описание. */
+  course: { id: number | string; kicker: string; title: string; summary: string };
   stages: LessonStage[];
   /** Необязательные ответвления (lessonBranches): пунктирные тропинки в сторону от этапов. */
   branches: LessonStage[];
@@ -45,11 +46,11 @@ const MEDAL_Y = 35;
 const xOf = (i: number) => 50 + 22 * Math.sin((i * Math.PI) / 2);
 
 /** Карта урока: этапы на нарисованной дорожке, за каждый — медальон. */
-export function LessonMap({ lesson, stages, branches, storageKey, crumbs, onOpenStep, links, finish }: Props) {
+export function LessonMap({ course, stages, branches, storageKey, crumbs, onOpenStep, links, finish }: Props) {
   const stepIds = useMemo(() => stages.flatMap((st) => st.steps.map((s) => s.id)), [stages]);
   const progress = useLessonProgress(storageKey, stepIds);
   // Экзамен засчитан, только если сдан (как и в пути урока).
-  const examPassed = readExamResult(lesson.id)?.passed ?? false;
+  const examPassed = readExamResult(course.id)?.passed ?? false;
   const isDone = doneWithExam(stages, progress.isDone, examPassed);
 
   const done = stages.map((st) => isStageDone(st, isDone));
@@ -59,13 +60,13 @@ export function LessonMap({ lesson, stages, branches, storageKey, crumbs, onOpen
 
   // Новые медальоны — те, что получены, но ещё не показаны: им анимация и поздравление.
   const [fresh] = useState(() => {
-    const seen = new Set(readSeenAwards(lesson.id));
+    const seen = new Set(readSeenAwards(course.id));
     return stages.filter((st, i) => done[i] && !seen.has(st.id)).map((st) => st.id);
   });
   const earnedIds = stages.filter((_, i) => done[i]).map((st) => st.id).join('|');
   useEffect(() => {
-    writeSeenAwards(lesson.id, earnedIds ? earnedIds.split('|') : []);
-  }, [lesson.id, earnedIds]);
+    writeSeenAwards(course.id, earnedIds ? earnedIds.split('|') : []);
+  }, [course.id, earnedIds]);
 
   const lastFresh = stages.find((st) => st.id === fresh[fresh.length - 1]);
   const nodeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -96,9 +97,9 @@ export function LessonMap({ lesson, stages, branches, storageKey, crumbs, onOpen
     <div className={styles.page}>
       <header className={styles.head}>
         <Breadcrumbs items={crumbs} />
-        <div className={styles.kicker}>Урок {lesson.id}</div>
-        <h1 className={styles.title}>{lesson.title}</h1>
-        <p className={styles.summary}>{lesson.summary}</p>
+        <div className={styles.kicker}>{course.kicker}</div>
+        <h1 className={styles.title}>{course.title}</h1>
+        <p className={styles.summary}>{course.summary}</p>
         <div className={styles.overall}>
           <ProgressBar value={doneCount / stages.length} thin />
           <span>

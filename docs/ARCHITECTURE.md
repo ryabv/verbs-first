@@ -48,7 +48,7 @@ src/
     home/                 оглавление курса (16 уроков, прогресс урока и ДЗ)
     lesson/               страница урока: один путь (урок → ДЗ → экзамен) + ?mode=reference
     cards/                карточки: наборы, тренировка, добавление своих слов
-    alphabet/             «Алфавит»: буквы, сочетания, ударение, 2 тренажёра (?section=)
+    alphabet/             «Урок 0»: карта курса чтения, шаги (?step=), справочник (?mode=reference)
   widgets/
     app-header, app-footer
     lesson-map/           карта урока: этапы на дорожке, медальоны, финал урока
@@ -62,7 +62,7 @@ src/
     card-add/             «Слова урока»: группы слов урока с кнопками «в карточки»
     card-editor/          форма «добавить любое слово» в любой/новый набор
     card-training/        тренажёр карточек: что показываем × как отвечаем, сессия
-    alphabet-quiz/        ChoiceQuiz — вопрос с вариантами ответа (буква → звук, как читается слово)
+    alphabet-quiz/        ChoiceQuiz (в т.ч. «услышь и выбери»), SyllableGrid, WordLadder, BuildWord, TextReader, AlphabetOrder
     lesson-progress/      прогресс по шагам (localStorage)
     pronounce/            кнопка озвучки SpeakButton
     theme-switcher/       светлая/тёмная тема
@@ -70,7 +70,7 @@ src/
     verb/                 модель глагола, данные, сборка фраз, анализатор текста, VerbTable
     lesson/               модель урока, контент уроков, api getLesson/getLessonCatalog
     card/                 карточки и наборы: хранилище (localStorage), прогресс по словам, проверка ответов
-    alphabet/             буквы, сочетания букв, вопросы тренажёров (данные) + LetterGrid, CombinationList
+    alphabet/             буквы, сочетания, тренажёры, курс чтения READING_COURSE + LetterGrid, LetterIntroList, CombinationList
   shared/
     lib/greek/            нормализация греческого, сравнение ответов
     lib/speech/           speak(): mp3 из манифеста или греческий голос браузера
@@ -183,7 +183,7 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 ### Роутинг и режимы урока
 
 - `/` — `HomePage`, `/lesson/:lessonId` — `LessonPage`, `/cards[?lesson=N]` — `CardsPage`
-  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?section=letters|combinations|stress|sounds|words|order|exam]` —
+  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?step=…]`, `/alphabet?mode=reference[&section=letters|combinations|stress|sounds|words|order]` (старые `?section=` ведут в справочник) —
   `AlphabetPage` (разделы описаны массивом `SECTIONS` в самой странице).
 - Урок — **один путь** `lessonPath(lesson)` (`entities/lesson/lib/path.ts`): этапы урока, после
   каждого — части `homework` с `after` = этот этап, в конце шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
@@ -222,8 +222,8 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - Этап пройден, когда пройдены все его шаги (`isStageDone`); экзамен засчитан, только если
   сдан (`doneWithExam`). Показанные медальоны — `verbs-first:awards-seen:<id>`: новые
   (полученные, но не показанные) карта анимирует один раз.
-- Алфавит — тот же `useLessonProgress` с ключом `progressKey.alphabet` (`verbs-first:alphabet:progress`):
-  разделы «Читаем» засчитываются по «Дальше», тренажёры — по `onComplete`, экзамен — только если сдан.
+- Урок 0 — тот же `useLessonProgress` с ключом `progressKey.reading` (`verbs-first:reading`);
+  медальоны — `verbs-first:awards-seen:alphabet`, экзамен — `verbs-first:exam:alphabet`.
   Старый ключ ДЗ вливается только у ключей уроков (`verbs-first:lesson:*`).
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
   `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
@@ -296,6 +296,15 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - Озвучка своих слов: mp3 нет, работает греческий голос браузера (если есть).
 
 ### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`
+
+- **Курс чтения** `READING_COURSE` (`entities/alphabet/data/course.ts`) — тип `Course`
+  из `entities/lesson` (этапы, шаги, ответвления, `examAward`, без ДЗ); `lessonStages`/
+  `lessonBranches` принимают и урок, и курс, карта и путь — те же `LessonMap`/`LessonPath`.
+  Шаги курса — виды `letters`, `syllables`, `ladder`, `choice` (`listen` — «услышь и выбери»),
+  `build`, `text` (`look`: записка/открытка/объявление/табличка), `order`, `rules` в общем `LessonStep`; рисует их `pages/alphabet/ui/ReadingStep`.
+  Неверные варианты «услышь и выбери» и «как читается» — ближайшие по написанию слова
+  (`listenItems`, `readItems`). `pnpm reading:check` — в словах этапа только пройденные
+  буквы и сочетания (ударение на первой гласной и διαλυτικά разбивают пару).
 
 - Данные: `LETTERS` (24 буквы: название по-гречески и по-русски, звук, пояснение, пример
   с чтением русскими буквами), `COMBINATIONS` (αι, ει/οι, ου, αυ/ευ, μπ, ντ, γκ/γγ, τσ/τζ,

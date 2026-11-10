@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { stageOfStep, type Lesson, type LessonStage, type StepKind, type TableScope } from '@/entities/lesson';
-import type { Verb } from '@/entities/verb';
+import { stageOfStep, type LessonStage, type LessonStep, type StepKind } from '@/entities/lesson';
 import { readExamResult } from '@/features/exam';
 import { isStageDone, stageEntryStep, useLessonProgress } from '@/features/lesson-progress';
 import { Arrow } from '@/shared/ui/ornament';
@@ -9,28 +8,28 @@ import { Button } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
-import { StepContent } from './StepContent';
 import { KIND_LABELS, StepList } from './StepList';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './LessonPath.module.css';
 
 /** Шаги, которые засчитываются только по выполнении (а не по кнопке «дальше»). */
-const GOAL_KINDS: ReadonlySet<StepKind> = new Set(['drill', 'translate', 'dictation', 'oral', 'exam']);
+const GOAL_KINDS: ReadonlySet<StepKind> = new Set(['drill', 'translate', 'dictation', 'oral', 'exam', 'choice', 'build', 'order']);
 
 interface Props {
   /** Шаг из адреса (?step=…). */
   openStepId?: string;
   /** Текущий шаг сменился — записать в адрес. initial: первая запись (заменить, а не добавить в историю). */
   onStepChange?: (id: string, initial: boolean) => void;
-  lesson: Lesson;
+  /** id экзамена курса (номер урока или 'alphabet'): шаг экзамена засчитан, только если он сдан. */
+  examId: number | string;
   /** Весь путь по этапам: урок → домашнее задание → экзамен (lessonStages). */
   stages: LessonStage[];
   /** Необязательные ответвления от этапов (lessonBranches). */
   branches: LessonStage[];
   /** Ключ прогресса в хранилище (progressKey.lesson). */
   storageKey: string;
-  /** Слот для просмотра таблиц глаголов (виджет verb-algorithm передаёт страница). */
-  renderVerbs: (verbs: Verb[], scope?: TableScope) => ReactNode;
+  /** Содержимое шага: урок рисует StepContent, курс чтения — свои упражнения. onGoal — задание выполнено. */
+  renderStep: (step: LessonStep, onGoal: () => void) => ReactNode;
   /** Верх сайдбара: название урока, ссылка на справочник. */
   sidebarHeader: ReactNode;
   /** Крошки до карты урока включительно. */
@@ -40,7 +39,7 @@ interface Props {
 }
 
 /** Путь ученика внутри этапа: шаги этапа в сайдбаре, текущий шаг — как статья учебника. */
-export function LessonPath({ openStepId, onStepChange, lesson, stages, branches, storageKey, renderVerbs, sidebarHeader, crumbs, onOpenMap }: Props) {
+export function LessonPath({ openStepId, onStepChange, examId, stages, branches, storageKey, renderStep, sidebarHeader, crumbs, onOpenMap }: Props) {
   // Шаги ответвлений — после основного пути: так «дальше» внутри ответвления не уводит в основной путь.
   const all = useMemo(() => [...stages, ...branches], [stages, branches]);
   const steps = useMemo(() => all.flatMap((st) => st.steps), [all]);
@@ -73,7 +72,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, branches,
   }, [openStepId, currentId, stepIds, goTo, onStepChange]);
 
   // Экзамен отмечен пройденным тогда и только тогда, когда он сдан.
-  const examPassed = readExamResult(lesson.id)?.passed ?? false;
+  const examPassed = readExamResult(examId)?.passed ?? false;
   useEffect(() => {
     for (const s of steps) if (s.kind === 'exam') setDone(s.id, examPassed);
   }, [steps, examPassed, setDone]);
@@ -124,6 +123,10 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, branches,
 
   const sidebar = (
     <>
+      {/* Назад на карту — первым, как привычная кнопка «назад»: не искать под списком шагов. */}
+      <button type="button" className={styles.mapLink} onClick={onOpenMap}>
+        <Arrow direction="left" /> К карте урока
+      </button>
       {sidebarHeader}
       <SidebarSection title={isBranch ? `Ответвление · ${parent?.title ?? ''}` : `Этап ${stage.n} из ${stages.length}`}>
         <div className={styles.stageTitle}>
@@ -158,9 +161,6 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, branches,
             }}
           />
         </div>
-        <button type="button" className={styles.mapLink} onClick={onOpenMap}>
-          <Arrow direction="left" /> Карта урока
-        </button>
       </SidebarSection>
     </>
   );
@@ -199,7 +199,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, branches,
       {step.intro && <Callout>{step.intro}</Callout>}
 
       <div className={styles.body}>
-        <StepContent key={step.id} lesson={lesson} step={step} onGoal={onGoal} renderVerbs={renderVerbs} />
+        <div key={step.id}>{renderStep(step, onGoal)}</div>
       </div>
 
       <PrevNext

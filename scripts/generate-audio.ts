@@ -17,6 +17,8 @@ import { createInterface } from 'node:readline';
 
 // Глубокие импорты (а не index.ts слайсов), чтобы не тянуть React-компоненты и CSS.
 import { COMBINATIONS } from '@/entities/alphabet/data/combinations';
+import { READING_COURSE } from '@/entities/alphabet/data/course';
+import { syllableSpeech } from '@/entities/alphabet/lib/syllable';
 import { LETTERS } from '@/entities/alphabet/data/letters';
 import { WORD_QUIZ } from '@/entities/alphabet/data/quiz';
 import { STRESS_EXAMPLES } from '@/entities/alphabet/data/stress';
@@ -49,6 +51,18 @@ function collectTexts(): Set<string> {
   COMBINATIONS.forEach((c) => c.examples.forEach((e) => add(e.greek)));
   WORD_QUIZ.forEach((q) => add(q.speak ?? q.prompt));
   Object.values(STRESS_EXAMPLES).forEach((e) => add(e.greek));
+  // Курс чтения (урок 0): слоги, слова этапов, примеры букв, «услышь и выбери», ответвления.
+  for (const step of [...READING_COURSE.steps, ...READING_COURSE.branches.flatMap((b) => b.steps)]) {
+    if (step.kind === 'letters') step.letters.forEach((l) => add(l.example.greek));
+    if (step.kind === 'text') {
+      step.sentences.forEach((p) => add(p.greek));
+      add(step.sentences.map((p) => p.greek).join(' '));
+    }
+    if (step.kind === 'syllables') step.rows.flat().forEach(([greek]) => add(syllableSpeech(greek)));
+    if (step.kind === 'ladder' || step.kind === 'build') step.words.forEach((w) => add(w.plain ?? w.greek));
+    if (step.kind === 'choice') step.items.forEach((q) => !/[а-яё]/i.test(q.prompt) && add(q.speak ?? q.prompt));
+    if (step.kind === 'story') [...(step.examples ?? []), ...(step.words ?? [])].forEach((p) => add(p.greek));
+  }
 
   for (const { id, available } of getLessonCatalog()) {
     const lesson = available ? getLesson(id) : undefined;

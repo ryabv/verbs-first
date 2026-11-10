@@ -6,3 +6,6 @@ export { STRESS_EXAMPLES, type StressExample } from './data/stress';
 export { MARKS_QUIZ } from './data/marks';
 export { LetterGrid } from './ui/LetterGrid';
 export { CombinationList } from './ui/CombinationList';
+export { READING_COURSE } from './data/course';
+export { LetterIntroList } from './ui/LetterIntroList';
+export { syllableSpeech } from './lib/syllable';

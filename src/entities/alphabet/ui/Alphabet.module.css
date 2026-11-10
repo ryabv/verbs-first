@@ -20,6 +20,7 @@
 .sound { font-size: 1.1rem; font-weight: 600; color: var(--brand); }
 .name { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; color: var(--text-muted); font-size: 0.95rem; }
 .note { font-size: 0.85rem; line-height: 1.4; color: var(--text-muted); }
+.tip { font-size: 0.92rem; line-height: 1.45; }
 
 .example, .examples li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.15rem 0.35rem; }
 .exampleGreek { font-weight: 600; }

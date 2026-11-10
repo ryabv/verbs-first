@@ -1,290 +1,194 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
-import {
-  COMBINATIONS,
-  CombinationList,
-  LETTERS,
-  LetterGrid,
-  SOUND_QUIZ,
-  STRESS_EXAMPLES,
-  WORD_QUIZ,
-} from '@/entities/alphabet';
+import { COMBINATIONS, CombinationList, LETTERS, LetterGrid, READING_COURSE, SOUND_QUIZ, WORD_QUIZ } from '@/entities/alphabet';
+import { lessonBranches, lessonStages } from '@/entities/lesson';
 import { AlphabetOrder, ChoiceQuiz } from '@/features/alphabet-quiz';
-import { buildAlphabetExam, Exam, readExamResult } from '@/features/exam';
-import { progressKey, useLessonProgress } from '@/features/lesson-progress';
 import { wordIn } from '@/features/card-add';
+import { progressKey } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
+import { LessonMap } from '@/widgets/lesson-map';
+import { LessonPath } from '@/widgets/lesson-path';
 import { routes } from '@/shared/config/routes';
-import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
+import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
-import { Check } from '@/shared/ui/ornament';
-import { ProgressBar } from '@/shared/ui/progress-bar';
+import { Arrow } from '@/shared/ui/ornament';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
+import { ALPHABET_DECK, ReadingStep } from './ReadingStep';
+import { StressRules } from './StressRules';
 import styles from './AlphabetPage.module.css';
 
+const COURSE = READING_COURSE;
+const STAGES = lessonStages(COURSE);
+const BRANCHES = lessonBranches(COURSE);
+const CRUMBS: Crumb[] = [
+  { label: 'Уроки', to: routes.home() },
+  { label: 'Урок 0', to: routes.alphabet() },
+];
+
+/** «Урок 0 · Алфавит и чтение»: карта курса, шаги по этапам и справочник. */
+export function AlphabetPage() {
+  const [params, setParams] = useSearchParams();
+  const syncStep = useCallback(
+    (id: string, initial: boolean) => setParams({ step: id }, { replace: initial }),
+    [setParams],
+  );
+
+  // Справочник: все буквы и сочетания на одной странице. Старые ссылки ?section=… ведут сюда же.
+  if (params.get('mode') === 'reference' || params.has('section')) {
+    return <Reference section={params.get('section')} />;
+  }
+
+  const openStepId = params.get('step') ?? undefined;
+  const header = (
+    <SidebarSection title="Урок 0">
+      <div className={styles.courseTitle}>{COURSE.title}</div>
+      <Link to={routes.alphabetReference()} className={styles.headerLink}>
+        Справочник алфавита <Arrow />
+      </Link>
+    </SidebarSection>
+  );
+
+  if (!openStepId) {
+    return (
+      <LessonMap
+        course={{ id: COURSE.id, kicker: 'Урок 0', title: COURSE.title, summary: COURSE.summary }}
+        stages={STAGES}
+        branches={BRANCHES}
+        storageKey={progressKey.reading}
+        crumbs={[CRUMBS[0]!, { label: 'Урок 0' }]}
+        onOpenStep={(id) => setParams({ step: id })}
+        links={
+          <Link to={routes.alphabetReference()}>
+            Справочник алфавита <Arrow />
+          </Link>
+        }
+        finish={{
+          title: 'Вы читаете по-гречески!',
+          text: <p>Все буквы, сочетания и правила ударения позади, экзамен сдан. Пора к глаголам.</p>,
+          actions: (
+            <>
+              <Link to={routes.lesson(1)} className={buttonClassName('primary')}>
+                К уроку 1
+              </Link>
+              <Link to={routes.cards()} className={buttonClassName('secondary')}>
+                Слова в карточках
+              </Link>
+            </>
+          ),
+        }}
+      />
+    );
+  }
+
+  return (
+    <LessonPath
+      examId={COURSE.id}
+      stages={STAGES}
+      branches={BRANCHES}
+      storageKey={progressKey.reading}
+      openStepId={openStepId}
+      onStepChange={syncStep}
+      onOpenMap={() => {
+        setParams({});
+        window.scrollTo({ top: 0 });
+      }}
+      renderStep={(step, onGoal) => <ReadingStep step={step} onGoal={onGoal} />}
+      sidebarHeader={header}
+      crumbs={CRUMBS}
+    />
+  );
+}
+
+// ---------- справочник ----------
+
 const speak = (text: string) => <SpeakButton text={text} />;
-/** Слова-примеры из алфавита попадают в набор «Алфавит». */
-const word = wordIn({ id: 'alphabet', title: 'Алфавит' });
+const word = wordIn(ALPHABET_DECK);
 
 interface Section {
   id: string;
   title: string;
-  kind: 'Читаем' | 'Практика' | 'Экзамен';
+  practice?: boolean;
   intro: string;
-  /** done — раздел выполнен (тренажёр пройден, экзамен сдан). Разделы «Читаем» засчитываются по «Дальше». */
-  render: (done: () => void) => ReactNode;
+  render: () => ReactNode;
 }
 
 const SECTIONS: Section[] = [
   {
     id: 'letters',
     title: 'Буквы',
-    kind: 'Читаем',
     intro:
-      'В греческом алфавите 24 буквы, многие знакомы по русскому или по математике. Главные ловушки: β — это «в», δ и θ — звуки, которых нет в русском, а «и» дают три буквы — η, ι, υ (с сочетаниями букв способов шесть, о них в следующем разделе). Нажимайте на динамик — слушайте название буквы и пример.',
+      'Все 24 буквы: название, звук и пример. Главные ловушки: β — это «в», δ и θ — звуки, которых нет в русском, а «и» дают три буквы — η, ι, υ.',
     render: () => <LetterGrid letters={LETTERS} renderSpeak={speak} renderWord={word} />,
   },
   {
     id: 'combinations',
     title: 'Сочетания букв',
-    kind: 'Читаем',
-    intro:
-      'Греческий читается почти всегда так, как пишется, — но некоторые пары букв дают один звук. Выучив эту страницу, вы сможете прочитать любое слово.',
+    intro: 'Пары букв, которые дают один звук. С ними вы прочитаете любое слово.',
     render: () => <CombinationList combinations={COMBINATIONS} renderSpeak={speak} renderWord={word} />,
   },
   {
     id: 'stress',
     title: 'Ударение и знаки',
-    kind: 'Читаем',
-    intro: 'Последние правила — и можно читать.',
+    intro: 'Ударение, точки над буквами, знаки препинания и греческая раскладка.',
     render: () => <StressRules />,
   },
   {
     id: 'sounds',
     title: 'Буква → звук',
-    kind: 'Практика',
+    practice: true,
     intro: 'Какой звук обозначает буква или сочетание? После ответа можно послушать название буквы.',
-    render: (done) => <ChoiceQuiz items={SOUND_QUIZ} question="Какой звук?" onComplete={done} />,
+    render: () => <ChoiceQuiz items={SOUND_QUIZ} question="Какой звук?" />,
   },
   {
     id: 'words',
     title: 'Как читается слово',
-    kind: 'Практика',
-    intro:
-      'Прочитайте слово про себя и выберите правильное чтение. Варианты похожи — это типичные ошибки. После ответа послушайте слово и повторите вслух.',
-    render: (done) => <ChoiceQuiz items={WORD_QUIZ} question="Как читается?" onComplete={done} />,
+    practice: true,
+    intro: 'Прочитайте слово про себя и выберите правильное чтение. Варианты похожи — это типичные ошибки.',
+    render: () => <ChoiceQuiz items={WORD_QUIZ} question="Как читается?" />,
   },
   {
     id: 'order',
     title: 'Алфавит по порядку',
-    kind: 'Практика',
-    intro:
-      'Выучите алфавит по порядку: нажимайте буквы от α до ω. Каждая верная буква произносится вслух. Ошиблись дважды на одной букве — подсветим нужную. На компьютере можно печатать с греческой раскладки.',
-    render: (done) => <AlphabetOrder onComplete={done} />,
-  },
-  {
-    id: 'exam',
-    title: 'Экзамен по алфавиту',
-    kind: 'Экзамен',
-    intro:
-      'Проверка всего раздела: буквы, сочетания, чтение слов, ударение и знаки, порядок букв. Правила строже, чем в тренажёрах: ответ — только в конце.',
-    render: (done) => (
-      <Exam
-        id="alphabet"
-        onPassed={done}
-        title="Экзамен по алфавиту"
-        build={buildAlphabetExam}
-        rules={[
-          '20 вопросов по всему разделу: звуки букв и сочетаний, чтение слов, ударение и знаки, порядок букв.',
-          'Озвучки по ходу нет — она подсказывает. Послушать можно в разборе.',
-        ]}
-        actions={
-          <Link to={routes.lesson(1)} className={buttonClassName('secondary')}>
-            К уроку 1
-          </Link>
-        }
-      />
-    ),
+    practice: true,
+    intro: 'Нажимайте буквы от α до ω. Каждая верная буква произносится вслух.',
+    render: () => <AlphabetOrder />,
   },
 ];
 
-type ExampleId = keyof typeof STRESS_EXAMPLES;
-
-/** Пример: слово (по тапу — в карточки) + озвучка, по желанию — чтение и перевод. */
-function Ex({ id, full = false }: { id: ExampleId; full?: boolean }) {
-  const e = STRESS_EXAMPLES[id];
-  return (
-    <span className={styles.example}>
-      {word(e.greek, e.russian)}
-      {speak(e.greek)}
-      {full && (
-        <>
-          {' '}
-          <span className={styles.reading}>[{e.reading}]</span> — {e.russian}
-        </>
-      )}
-    </span>
-  );
-}
-
-/** Список примеров: по одному на строку, с чтением и переводом. */
-function Examples({ ids, note }: { ids: ExampleId[]; note?: Partial<Record<ExampleId, string>> }) {
-  return (
-    <ul className={styles.examples}>
-      {ids.map((id) => (
-        <li key={id}>
-          <Ex id={id} full />
-          {note?.[id] && <span className={styles.note}>{note[id]}</span>}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function StressRules() {
-  return (
-    <div className={styles.rules}>
-      <h2>Ударение — τόνος</h2>
-      <p>
-        В каждом слове из двух и более слогов ударение <b>всегда</b> отмечено знаком. Читать ударение легко — оно
-        написано. Ударный слог произносится чуть сильнее, но безударные гласные не «съедаются»:{' '}
-        <span lang="el">ο</span> всегда «о», не «а».
-      </p>
-      <Examples ids={['kalimera', 'efcharisto']} />
-      <p>Ударение различает слова:</p>
-      <Examples ids={['pote', 'potee', 'pou', 'pouRel']} />
-      <p>У заглавной буквы знак ставится слева. В словах ЗАГЛАВНЫМИ буквами ударение не пишут.</p>
-      <Examples ids={['anna', 'ela']} />
-
-      <h2>Две точки — διαλυτικά</h2>
-      <p>
-        Точки над ι или υ значат: читать гласные <b>раздельно</b>, а не как сочетание.
-      </p>
-      <Examples
-        ids={['troley', 'kaiki']}
-        note={{ troley: 'εϊ — «эи», а не «и»', kaiki: 'αϊ — «аи», а не «э»' }}
-      />
-      <p>
-        Если ударение падает на <b>первую</b> гласную, точки не нужны — знак ударения и так показывает, что
-        гласные раздельные. Без ударения на ней — обычное сочетание:
-      </p>
-      <Examples ids={['tsai', 'kai']} note={{ tsai: 'ά + ι — раздельно', kai: 'αι — «э»' }} />
-
-      <h2>Сигма в конце слова</h2>
-      <p>Внутри слова — σ, в конце — ς. Это одна и та же буква.</p>
-      <Examples ids={['filos', 'simera']} />
-
-      <h2>Знаки препинания</h2>
-      <p>
-        <b>;</b> — греческий <b>вопросительный знак</b>:
-      </p>
-      <Examples ids={['tiKaneis']} />
-      <p>
-        <b>·</b> (точка сверху, άνω τελεία) — как наши точка с запятой или двоеточие:
-      </p>
-      <Examples ids={['aderfia']} />
-
-      <h2>Как печатать по-гречески</h2>
-      <p>В заданиях вы будете писать по-гречески. Добавьте греческую раскладку — это минута:</p>
-      <ul>
-        <li>
-          <b>macOS:</b> Системные настройки → Клавиатура → Источники ввода → «+» → Греческий.
-        </li>
-        <li>
-          <b>Windows:</b> Параметры → Время и язык → Язык → Добавить язык → Ελληνικά.
-        </li>
-        <li>
-          <b>iPhone / Android:</b> настройки клавиатуры → Добавить клавиатуру → Греческий.
-        </li>
-      </ul>
-      <p>
-        <b>Ударение</b> на компьютере: сначала клавиша, где у латиницы стоит <b>;</b> (у русской раскладки — «ж»),
-        потом гласная: <span lang="el">ά έ ή ί ό ύ ώ</span>. На телефоне — долгое нажатие на гласную.
-        Конечная <span lang="el">ς</span> — клавиша, где у латиницы <b>W</b>.
-      </p>
-      <p>
-        Нет раскладки под рукой — в каждом упражнении есть экранные греческие буквы. А ошибка только в ударении
-        засчитывается как «почти».
-      </p>
-
-      <Callout kind="ok" title="Вы готовы читать">
-        <p>
-          Закрепите на тренажёрах, сдайте экзамен по алфавиту — и переходите к{' '}
-          <Link to={routes.lesson(1)}>уроку 1</Link>: там уже нужно читать глаголы.
-        </p>
-      </Callout>
-    </div>
-  );
-}
-
-/** «Алфавит»: отдельная часть до базового курса. */
-export function AlphabetPage() {
-  const [params] = useSearchParams();
+/** Справочник алфавита: всё на виду, без порядка — чтобы подсмотреть и повторить. */
+function Reference({ section: raw }: { section: string | null }) {
   const navigate = useNavigate();
-  // На телефоне список разделов свёрнут, как список шагов в уроке.
   const [navOpen, setNavOpen] = useState(false);
-  const index = Math.max(
-    0,
-    SECTIONS.findIndex((s) => s.id === params.get('section')),
-  );
+  const index = Math.max(0, SECTIONS.findIndex((s) => s.id === raw));
   const section = SECTIONS[index]!;
   const prev = SECTIONS[index - 1];
   const next = SECTIONS[index + 1];
 
-  const ids = useMemo(() => SECTIONS.map((s) => s.id), []);
-  const progress = useLessonProgress(progressKey.alphabet, ids);
-  const { markDone, setDone } = progress;
-  // Экзамен засчитан, только если сдан (как в уроках).
-  const examPassed = readExamResult('alphabet')?.passed ?? false;
-  useEffect(() => setDone('exam', examPassed), [examPassed, setDone]);
-  const doneCount = ids.filter((id) => progress.isDone(id)).length;
-
-  const go = (id: string) => {
-    // Разделы для чтения засчитываются, когда ученик идёт дальше.
-    if (section.kind === 'Читаем') markDone(section.id);
-    navigate(routes.alphabet(id));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const sidebar = (
     <>
-      <SidebarSection title="Перед курсом">
-        <div className={styles.partTitle}>Алфавит и чтение</div>
+      <SidebarSection title="Урок 0">
+        <div className={styles.courseTitle}>{COURSE.title}</div>
+        <Link to={routes.alphabet()} className={styles.headerLink}>
+          <Arrow direction="left" /> К карте урока
+        </Link>
       </SidebarSection>
-      <SidebarSection title="Разделы">
-        <div className={styles.overall}>
-          <ProgressBar value={doneCount / ids.length} thin />
-          <span>
-            {doneCount} из {ids.length}
-          </span>
-        </div>
-        <button
-          type="button"
-          className={styles.navToggle}
-          onClick={() => setNavOpen((v) => !v)}
-          aria-expanded={navOpen}
-        >
-          <span>
-            Раздел {index + 1} из {SECTIONS.length}: {section.title}
-          </span>
+      <SidebarSection title="Справочник">
+        <button type="button" className={styles.navToggle} onClick={() => setNavOpen((v) => !v)} aria-expanded={navOpen}>
+          <span>{section.title}</span>
           <span className={styles.chevron}>{navOpen ? '▴' : '▾'}</span>
         </button>
         <ol className={navOpen ? `${styles.links} ${styles.linksOpen}` : styles.links}>
-          {SECTIONS.map((s, i) => (
+          {SECTIONS.map((s) => (
             <li key={s.id}>
               <Link
-                to={routes.alphabet(s.id)}
+                to={routes.alphabetReference(s.id)}
                 className={s.id === section.id ? styles.linkActive : styles.link}
                 onClick={() => setNavOpen(false)}
               >
-                <span className={progress.isDone(s.id) ? `${styles.marker} ${styles.markerDone}` : styles.marker}>
-                  {progress.isDone(s.id) ? <Check /> : `${i + 1}.`}
-                </span>
                 {s.title}
-                {s.kind === 'Практика' && <span className={styles.tag}>практика</span>}
-                {s.kind === 'Экзамен' && <span className={`${styles.tag} ${styles.tagExam}`}>экзамен</span>}
+                {s.practice && <span className={styles.tag}>практика</span>}
               </Link>
             </li>
           ))}
@@ -293,28 +197,28 @@ export function AlphabetPage() {
     </>
   );
 
+  const go = (id: string) => {
+    navigate(routes.alphabetReference(id));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <SidebarLayout sidebar={sidebar}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'Уроки', to: routes.home() }, { label: 'Алфавит', to: routes.alphabet() }]} />
-        <div className={section.kind === 'Экзамен' ? `${styles.kind} ${styles.kindExam}` : styles.kind}>{section.kind}</div>
+        <Breadcrumbs items={[...CRUMBS, { label: 'Справочник' }]} />
+        <div className={styles.kind}>Справочник алфавита</div>
         <h1 className={styles.title}>{section.title}</h1>
       </header>
 
       <Callout>{section.intro}</Callout>
 
-      {/* key: при смене раздела тренажёр начинается заново, а не переносит состояние другого. */}
       <div className={styles.body} key={section.id}>
-        {section.render(() => markDone(section.id))}
+        {section.render()}
       </div>
 
       <PrevNext
         prev={prev && { label: 'Назад', title: prev.title, onClick: () => go(prev.id) }}
-        next={
-          next
-            ? { label: 'Дальше', title: next.title, onClick: () => go(next.id) }
-            : { label: 'Алфавит пройден', title: 'К уроку 1', onClick: () => navigate(routes.lesson(1)) }
-        }
+        next={next && { label: 'Дальше', title: next.title, onClick: () => go(next.id) }}
       />
     </SidebarLayout>
   );

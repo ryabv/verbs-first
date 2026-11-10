@@ -7,7 +7,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-top: 18px;
+  margin: 0;
   padding: 0;
   border: none;
   background: none;
@@ -80,7 +80,7 @@
   .stepsWrap { display: none; }
   .stepsWrapOpen { margin-top: 14px; }
   .stageTitle { font-size: 1.05rem; margin-bottom: 8px; }
-  .mapLink { margin-top: 12px; }
+  .mapLink { margin: 0; }
   .steps .step { padding: 6px 0; }
   .overall { margin-bottom: 10px; }
   .head { margin-top: 24px; }

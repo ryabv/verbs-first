@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { READING_COURSE } from '@/entities/alphabet';
 import { getLesson, getLessonCatalog, lessonStages } from '@/entities/lesson';
 import { readExamResult } from '@/features/exam';
 import { doneWithExam, isStageDone, progressKey, readProgress } from '@/features/lesson-progress';
@@ -11,6 +12,11 @@ import styles from './HomePage.module.css';
 export function HomePage() {
   const lessons = getLessonCatalog();
   const alphabetExam = readExamResult('alphabet');
+  // Урок 0: сколько этапов курса чтения пройдено.
+  const readingStages = lessonStages(READING_COURSE);
+  const readingDone = new Set(readProgress(progressKey.reading).completed);
+  const readingIsDone = doneWithExam(readingStages, (id) => readingDone.has(id), Boolean(alphabetExam?.passed));
+  const readingCount = readingStages.filter((st) => isStageDone(st, readingIsDone)).length;
   const exams = Object.fromEntries(lessons.filter((l) => l.available).map((l) => [l.id, readExamResult(l.id)]));
 
   return (
@@ -34,7 +40,7 @@ export function HomePage() {
       <section className={styles.part}>
         <h2 className={styles.partTitle}>
           <span className={styles.partLabel}>Перед курсом</span>
-          Алфавит
+          Урок 0
         </h2>
         <Link to={routes.alphabet()} className={styles.alphabet}>
           <span className={styles.alphabetGlyphs} lang="el">
@@ -43,12 +49,15 @@ export function HomePage() {
           <span>
             <span className={styles.title}>Алфавит и чтение</span>
             <span className={styles.meta}>
-              24 буквы, сочетания букв, ударение · 3 тренажёра и экзамен
-              {alphabetExam && (
-                <span className={alphabetExam.passed ? styles.done : undefined}>
-                  {' '}
-                  (сдан на {alphabetExam.best}%{alphabetExam.passed ? <> <Check /></> : ', нужно 80%'})
+              Буквы по три-четыре за раз — сразу в слогах и словах, на слух и из плиток.{' '}
+              {readingCount === readingStages.length ? (
+                <span className={styles.done}>
+                  Пройден <Check />
                 </span>
+              ) : readingCount > 0 ? (
+                `Пройдено этапов: ${readingCount} из ${readingStages.length}`
+              ) : (
+                `${readingStages.length - 1} этапов и экзамен`
               )}
               . Если уже читаете по-гречески — сразу к урокам.
             </span>

@@ -1,3 +1,4 @@
+import type { QuizItem, ReadingExample } from '@/entities/alphabet/@x/lesson';
 import type { SentenceForm, Tense } from '@/entities/verb/@x/lesson';
 
 export interface Phrase {
@@ -114,6 +115,23 @@ export interface TableScope {
   forms?: SentenceForm[];
 }
 
+/** Буква или сочетание в курсе чтения: звук и как запомнить. */
+export interface LetterIntro {
+  /** Строчная буква или сочетание: 'α', 'ου'. Заглавная берётся из алфавита. */
+  char: string;
+  sound: string;
+  /** Как запомнить: на что похожа, чем отличается от русской. */
+  tip: string;
+  /** Слово-пример — только из уже знакомых букв. */
+  example: ReadingExample;
+}
+
+/** Вид текста курса чтения: записка, открытка, объявление, табличка. */
+export type TextLook = 'note' | 'postcard' | 'announcement' | 'sign';
+
+/** Слог: как пишется и как читается. */
+export type Syllable = [greek: string, reading: string];
+
 export type LessonStep =
   | (StepBase & { kind: 'theory'; sectionIds: string[] })
   /** Таблицы глаголов. verbIds не задан — глаголы урока (без опорных: είμαι идёт своим шагом). */
@@ -137,7 +155,27 @@ export type LessonStep =
    * Любопытное: этимология, факт о языке. paragraphs — рассказ, examples — греческие примеры
    * с озвучкой, words — немного новых слов (их можно добавить в карточки).
    */
-  | (StepBase & { kind: 'story'; paragraphs: string[]; examples?: Phrase[]; words?: Phrase[] });
+  | (StepBase & { kind: 'story'; paragraphs: string[]; examples?: Phrase[]; words?: Phrase[] })
+  // ---- курс чтения (урок 0) ----
+  /** Новые буквы: звук, как запомнить, слово-пример. */
+  | (StepBase & { kind: 'letters'; letters: LetterIntro[] })
+  /** Слоги: нажать — услышать и увидеть чтение. Ряды — по согласной. */
+  | (StepBase & { kind: 'syllables'; rows: Syllable[][] })
+  /** Лесенка слов: от коротких к длинным; прочитать самому, потом проверить. */
+  | (StepBase & { kind: 'ladder'; words: ReadingExample[] })
+  /** Выбор ответа. listen — вопрос звучит, ответ выбирается по написанию. */
+  | (StepBase & { kind: 'choice'; question: string; items: QuizItem[]; listen?: boolean })
+  /** Собрать слово из плиток-букв; extra — лишние буквы-ловушки. */
+  | (StepBase & { kind: 'build'; words: ReadingExample[]; extra: string })
+  /**
+   * Короткий жизненный текст (записка, открытка, объявление): прочитать целиком,
+   * нажать на строку — чтение, перевод, озвучка. look — как выглядит.
+   */
+  | (StepBase & { kind: 'text'; look: TextLook; sentences: ReadingExample[] })
+  /** Алфавит по порядку. */
+  | (StepBase & { kind: 'order' })
+  /** Правила ударения и знаков. */
+  | (StepBase & { kind: 'rules' });
 
 export type StepKind = LessonStep['kind'];
 
@@ -165,6 +203,20 @@ export interface Lesson {
   homework: LessonStep[];
   /** Названия частей ДЗ: «Настоящее время»… */
   homeworkParts: HomeworkPart[];
+}
+
+/**
+ * Курс из этапов без глаголов и ДЗ — курс чтения (урок 0). Путь, карта и медальоны — те же, что у урока.
+ */
+export interface Course {
+  id: string;
+  title: string;
+  summary: string;
+  steps: LessonStep[];
+  stages: StageInfo[];
+  branches: LessonBranch[];
+  /** Надпись медальона за экзамен. */
+  examAward: string;
 }
 
 /** Строка оглавления: урок может быть ещё не наполнен. */

@@ -18,6 +18,14 @@ export const KIND_LABELS: Record<StepKind, string> = {
   words: 'Слова',
   exam: 'Экзамен',
   story: 'Любопытно',
+  letters: 'Новые буквы',
+  syllables: 'Слоги',
+  ladder: 'Читаем слова',
+  choice: 'Практика',
+  build: 'Собери слово',
+  order: 'Практика',
+  rules: 'Читаем',
+  text: 'Текст',
 };
 
 /** Чип в списке шагов — только у заданий; название шага его не повторяет. */
@@ -31,6 +39,10 @@ const KIND_TAGS: Partial<Record<StepKind, string>> = {
   words: 'карточки',
   exam: 'экзамен',
   story: 'интересное',
+  choice: 'практика',
+  build: 'практика',
+  order: 'практика',
+  text: 'текст',
 };
 
 const SECTION_TITLES: Record<PathSection, string> = {

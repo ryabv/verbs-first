@@ -8,7 +8,7 @@ import { progressKey } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
 import { ReadingView } from '@/features/text-reading';
 import { LessonMap } from '@/widgets/lesson-map';
-import { LessonPath } from '@/widgets/lesson-path';
+import { LessonPath, StepContent } from '@/widgets/lesson-path';
 import { VerbAlgorithm } from '@/widgets/verb-algorithm';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
@@ -100,7 +100,7 @@ export function LessonPage() {
   if (!openStepId) {
     return (
       <LessonMap
-        lesson={lesson}
+        course={{ id: lesson.id, kicker: `Урок ${lesson.id}`, title: lesson.title, summary: lesson.summary }}
         stages={stages}
         branches={branches}
         storageKey={progressKey.lesson(lesson.id)}
@@ -142,7 +142,7 @@ export function LessonPage() {
 
   return (
     <LessonPath
-      lesson={lesson}
+      examId={lesson.id}
       stages={stages}
       branches={branches}
       storageKey={progressKey.lesson(lesson.id)}
@@ -152,7 +152,9 @@ export function LessonPage() {
         openMap();
         window.scrollTo({ top: 0 });
       }}
-      renderVerbs={verbsRenderer(lesson)}
+      renderStep={(step, onGoal) => (
+        <StepContent lesson={lesson} step={step} onGoal={onGoal} renderVerbs={verbsRenderer(lesson)} />
+      )}
       sidebarHeader={header}
       crumbs={crumbs}
     />

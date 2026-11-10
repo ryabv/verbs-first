@@ -1,0 +1,132 @@
+/* Упражнения курса чтения: слоги, лесенка слов, «собери слово». */
+
+.counter { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-top: 1rem; font-size: 0.9rem; color: var(--text-muted); }
+
+/* ---------- слоги ---------- */
+.syllables { display: grid; gap: 0.6rem; }
+.syllableRow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+.syllable {
+  font: inherit;
+  color: inherit;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 0.7rem 0.4rem 0.5rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.syllable:hover { border-color: var(--accent); }
+.syllable:active { transform: scale(0.97); }
+.syllable:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.syllableOpen { border-color: var(--olive); background: var(--olive-soft); }
+.syllableGreek { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.syllableReading { font-size: 0.95rem; color: var(--text-subtle); }
+.syllableOpen .syllableReading { color: var(--olive); font-weight: 600; }
+
+/* ---------- лесенка ---------- */
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+/* Ступенька: сдвиг вправо растёт от первого слова к последнему. */
+.rung { margin-left: calc(var(--step) * min(22%, 9rem)); }
+.rungCard {
+  font: inherit;
+  color: inherit;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  width: 100%;
+  min-height: 3.2rem;
+  padding: 0.5rem 0.9rem;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  text-align: left;
+}
+button.rungCard { cursor: pointer; transition: border-color 0.15s; }
+button.rungCard:hover { border-color: var(--accent); }
+button.rungCard:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.rungOpen { border-color: var(--olive-soft); background: var(--surface-muted); align-items: center; }
+.rungGreek { font-size: 1.45rem; font-weight: 700; }
+.rungHint { margin-left: auto; font-size: 0.8rem; color: var(--text-subtle); }
+.rungReading { color: var(--olive); font-weight: 600; }
+.rungRussian { color: var(--text-muted); }
+
+/* ---------- собери слово ---------- */
+.build { font-size: 16px; }
+.progress { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
+.card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
+.finish { font-size: 1.1rem; font-weight: 600; color: var(--success); margin-bottom: 1rem; }
+.task { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+.taskReading { font-size: 1.5rem; font-weight: 700; }
+.taskRussian { color: var(--text-muted); }
+.listen {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+.listen:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.answer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-height: 3.4rem;
+  padding: 0.4rem;
+  margin-bottom: 1rem;
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+.answerOk { background: var(--success-soft); }
+.answerBad { background: var(--danger-soft); animation: shake 0.35s; }
+.slot, .slotFilled, .tile {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+.slot { border: 2px dashed var(--border-strong); }
+.slotFilled { border: 2px solid var(--accent); background: var(--bg); color: var(--text); cursor: pointer; }
+.answerOk .slotFilled { border-color: var(--success); color: var(--success); cursor: default; }
+.answerBad .slotFilled { border-color: var(--danger); }
+.tiles { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.tile { border: 2px solid var(--border-strong); background: var(--bg); color: var(--text); cursor: pointer; box-shadow: 0 2px 0 var(--border-strong); }
+.tile:hover:not(:disabled) { border-color: var(--accent); }
+.tile:disabled { opacity: 0.25; cursor: default; box-shadow: none; }
+.tile:focus-visible, .slotFilled:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.result { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); }
+.resultOk { background: var(--success-soft); color: var(--success); }
+.resultBad { background: var(--danger-soft); color: var(--danger); }
+.next { margin-top: 1rem; }
+
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .answerBad { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .card { padding: 16px; border-width: 2px; }
+  .syllableRow { gap: 0.4rem; }
+  .syllableGreek { font-size: 1.6rem; }
+  .rung { margin-left: calc(var(--step) * 12%); }
+  .slot, .slotFilled, .tile { width: 2.4rem; height: 2.4rem; font-size: 1.3rem; }
+  .next { width: 100%; min-height: 2.9rem; }
+}

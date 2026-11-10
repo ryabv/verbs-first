@@ -1,5 +1,9 @@
 export type {
+  Course,
   Lesson,
+  LetterIntro,
+  Syllable,
+  TextLook,
   LessonCatalogItem,
   LessonStep,
   StepKind,

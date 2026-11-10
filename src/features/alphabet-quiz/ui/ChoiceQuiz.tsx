@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { QuizItem } from '@/entities/alphabet';
 import { SpeakButton } from '@/features/pronounce';
+import { speak } from '@/shared/lib/speech';
+import { SpeakerIcon } from '@/shared/ui/icon';
 import { Button } from '@/shared/ui/button';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './ChoiceQuiz.module.css';
@@ -29,10 +31,12 @@ interface Props {
   question: string;
   /** Все вопросы решены (для прогресса раздела). */
   onComplete?: () => void;
+  /** «Услышь и выбери»: вопрос звучит (prompt не показываем до ответа), варианты — по-гречески. */
+  listen?: boolean;
 }
 
 /** Тренажёр с вариантами: каждый вопрос до верного ответа, ошибка возвращается через пару вопросов. */
-export function ChoiceQuiz({ items, question, onComplete }: Props) {
+export function ChoiceQuiz({ items, question, onComplete, listen = false }: Props) {
   const [round, setRound] = useState(0);
   const [queue, setQueue] = useState(() => shuffle(items.map((_, i) => i)));
   const [mistakes, setMistakes] = useState(0);
@@ -85,6 +89,7 @@ export function ChoiceQuiz({ items, question, onComplete }: Props) {
           item={items[current]!}
           all={items}
           question={question}
+          listen={listen}
           onResult={resolve}
         />
       )}
@@ -96,10 +101,11 @@ interface QuestionProps {
   item: QuizItem;
   all: readonly QuizItem[];
   question: string;
+  listen: boolean;
   onResult: (correct: boolean) => void;
 }
 
-function Question({ item, all, question, onResult }: QuestionProps) {
+function Question({ item, all, question, listen, onResult }: QuestionProps) {
   const [options] = useState(() => optionsFor(item, all));
   const [picked, setPicked] = useState<string | null>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -110,15 +116,28 @@ function Question({ item, all, question, onResult }: QuestionProps) {
   }, [picked]);
 
   const speakText = item.speak ?? item.prompt;
+  // На слух: слово звучит сразу при появлении вопроса.
+  useEffect(() => {
+    if (listen) void speak(speakText);
+  }, [listen, speakText]);
 
   return (
     <div className={styles.card}>
       <div className={styles.meta}>{question}</div>
-      <div className={styles.prompt} lang="el">
-        {item.prompt}
-        {/* Озвучка — только после ответа, иначе она подсказывает. */}
-        {picked && <SpeakButton text={speakText} />}
-      </div>
+      {listen ? (
+        <div className={styles.prompt}>
+          <button type="button" className={styles.listen} onClick={() => void speak(speakText)} aria-label="Послушать ещё раз">
+            <SpeakerIcon />
+          </button>
+          {picked && <span lang="el">{item.prompt}</span>}
+        </div>
+      ) : (
+        <div className={styles.prompt} lang="el">
+          {item.prompt}
+          {/* Озвучка — только после ответа, иначе она подсказывает. */}
+          {picked && <SpeakButton text={speakText} />}
+        </div>
+      )}
 
       <div className={styles.options}>
         {options.map((option) => {
@@ -134,6 +153,7 @@ function Question({ item, all, question, onResult }: QuestionProps) {
               key={option}
               type="button"
               className={`${styles.option} ${state}`}
+              lang={listen ? 'el' : undefined}
               disabled={picked !== null}
               onClick={() => setPicked(option)}
             >

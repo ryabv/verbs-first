@@ -2,7 +2,7 @@
  * Какие слова на сайте нельзя добавить в карточки словарной формой.
  * Запуск: pnpm lexicon:check. Непокрытые слова — дописать в src/entities/dictionary/data/words.ts.
  */
-import { COMBINATIONS, LETTERS, STRESS_EXAMPLES } from '@/entities/alphabet';
+import { COMBINATIONS, LETTERS, READING_COURSE, STRESS_EXAMPLES } from '@/entities/alphabet';
 import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 
@@ -23,6 +23,15 @@ for (const l of lessons) {
 LETTERS.forEach((l) => texts.push(l.example.greek));
 COMBINATIONS.forEach((c) => c.examples.forEach((e) => texts.push(e.greek)));
 Object.values(STRESS_EXAMPLES).forEach((e) => texts.push(e.greek));
+// Урок 0: тексты, многословные слова лесенки (меню), примеры ответвлений.
+// Одно слово целиком — сам себе словарная форма; разбиваются только фразы.
+for (const s of [...READING_COURSE.steps, ...READING_COURSE.branches.flatMap((b) => b.steps)]) {
+  const add = (greek: string) => analyzePhrase(greek).filter((t) => t.isWord).length > 1 && texts.push(greek);
+  if (s.kind === 'text') s.sentences.forEach((p) => add(p.greek));
+  if (s.kind === 'ladder' || s.kind === 'build') s.words.forEach((w) => add(w.plain ?? w.greek));
+  if (s.kind === 'letters') s.letters.forEach((l) => add(l.example.greek));
+  if (s.kind === 'story') [...(s.examples ?? []), ...(s.words ?? [])].forEach((p) => add(p.greek));
+}
 
 const missing = new Map<string, number>();
 for (const t of texts) {

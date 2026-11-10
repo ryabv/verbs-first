@@ -1,4 +1,9 @@
-import type { Lesson, LessonStep } from '../model/types';
+import type { Course, Lesson, LessonStep } from '../model/types';
+
+/** Из чего строится путь: урок или курс без ДЗ (курс чтения). */
+type PathSource = Lesson | Course;
+const homeworkOf = (src: PathSource) => ('homework' in src ? src.homework : []);
+const partsOf = (src: PathSource) => ('homeworkParts' in src ? src.homeworkParts : []);
 
 /** Части пути урока: урок → домашнее задание → экзамен. */
 export type PathSection = 'lesson' | 'homework' | 'exam';
@@ -12,13 +17,13 @@ export function sectionOf(step: LessonStep): PathSection {
  * Весь путь урока одним списком: этапы урока, после каждого — части ДЗ по его теме
  * (homeworkParts[].after), в конце экзамен.
  */
-export function lessonPath(lesson: Lesson): LessonStep[] {
+export function lessonPath(lesson: PathSource): LessonStep[] {
   const exam = lesson.steps.filter((s) => s.kind === 'exam');
   const main = lesson.steps.filter((s) => s.kind !== 'exam');
   const lastStage = Math.max(0, ...main.map((s) => s.stage ?? 0));
   const homeworkAfter = (stage: number) =>
-    lesson.homework.filter((s) => {
-      const after = lesson.homeworkParts[(s.part ?? 1) - 1]?.after ?? lastStage;
+    homeworkOf(lesson).filter((s) => {
+      const after = partsOf(lesson)[(s.part ?? 1) - 1]?.after ?? lastStage;
       return Math.min(after, lastStage) === stage;
     });
   const path: LessonStep[] = [];
@@ -53,7 +58,7 @@ export interface LessonStage {
  * Весь путь урока по этапам: этапы урока (step.stage), части домашнего задания, экзамен.
  * Порядок шагов — как в lessonPath.
  */
-export function lessonStages(lesson: Lesson): LessonStage[] {
+export function lessonStages(lesson: PathSource): LessonStage[] {
   const stages: LessonStage[] = [];
   const keyOf = (s: LessonStep) =>
     s.kind === 'exam' ? 'exam' : s.part !== undefined ? `hw-${s.part}` : `stage-${s.stage ?? lesson.stages.length}`;
@@ -68,7 +73,7 @@ export function lessonStages(lesson: Lesson): LessonStage[] {
     const n = stages.length + 1;
     const section = step.kind === 'exam' ? 'exam' : step.part !== undefined ? 'homework' : 'lesson';
     if (section === 'exam') {
-      stages.push({ id, section, n, num: 1, kicker: 'Экзамен', title: step.title, award: `Урок ${lesson.id} сдан`, steps: [step] });
+      stages.push({ id, section, n, num: 1, kicker: 'Экзамен', title: step.title, award: 'examAward' in lesson ? lesson.examAward : `Урок ${lesson.id} сдан`, steps: [step] });
     } else if (section === 'homework') {
       const part = step.part!;
       stages.push({
@@ -77,7 +82,7 @@ export function lessonStages(lesson: Lesson): LessonStage[] {
         n,
         num: part,
         kicker: `Домашнее задание · ${part}`,
-        title: lesson.homeworkParts[part - 1]?.title ?? `Часть ${part}`,
+        title: partsOf(lesson)[part - 1]?.title ?? `Часть ${part}`,
         award: `Часть ${part} выполнена`,
         steps: [step],
       });
@@ -96,7 +101,7 @@ export function stageOfStep(stages: readonly LessonStage[], stepId: string): Les
 }
 
 /** Ответвления урока как «этапы» с section 'branch'; n и num — номер родительского этапа урока. */
-export function lessonBranches(lesson: Lesson): LessonStage[] {
+export function lessonBranches(lesson: PathSource): LessonStage[] {
   return lesson.branches.map((b) => ({
     id: `branch-${b.id}`,
     section: 'branch',

@@ -67,3 +67,10 @@
   .links { display: none; }
   .links.linksOpen { display: grid; margin-top: 14px; }
 }
+
+/* Шаг «Любопытно» в курсе чтения — как в уроке. */
+.storyWords { margin-top: 28px; display: grid; gap: 12px; }
+.storyWords > button { justify-self: start; }
+.storyWordsTitle { margin: 0; font-size: 1.2rem; }
+.courseTitle { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+.headerLink { font-size: 0.9rem; }
