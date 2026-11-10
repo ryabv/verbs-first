@@ -1,7 +1,7 @@
 import { Link, NavLink } from 'react-router';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
-import { CardsIcon } from '@/shared/ui/icon';
+import { BookIcon, CardsIcon } from '@/shared/ui/icon';
 import { Laurel, Meander, Scroll } from '@/shared/ui/ornament';
 import styles from './AppHeader.module.css';
 
@@ -25,6 +25,10 @@ export function AppHeader() {
         <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <CardsIcon className={styles.navIcon} />
           Карточки
+        </NavLink>
+        <NavLink to={routes.texts()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
+          <BookIcon className={styles.navIcon} />
+          Тексты
         </NavLink>
       </nav>
       <div className={styles.tools}>

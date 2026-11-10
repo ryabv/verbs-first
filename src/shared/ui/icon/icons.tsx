@@ -53,3 +53,14 @@ export function CardsIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Раскрытая книга — раздел «Тексты». */
+export function BookIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 6.5C10.3 5.2 7.8 4.6 3 4.8v13.4c4.8-.2 7.3.4 9 1.8 1.7-1.4 4.2-2 9-1.8V4.8c-4.8-.2-7.3.4-9 1.7z" fill="currentColor" fillOpacity={0.12} />
+      <path d="M12 6.5V20" />
+      <path d="M6 8.5c1.5 0 2.7.2 3.6.6M6 11.5c1.5 0 2.7.2 3.6.6M14.4 9.1c.9-.4 2.1-.6 3.6-.6M14.4 12.1c.9-.4 2.1-.6 3.6-.6" />
+    </Svg>
+  );
+}
