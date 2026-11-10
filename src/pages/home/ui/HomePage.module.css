@@ -52,4 +52,4 @@
 }
 
 /* Медальоны этапов урока: полученные — терракотовые. */
-.medals { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.medals { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 8px; }

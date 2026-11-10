@@ -8,6 +8,7 @@ import { buildLessonExam, Exam, MAX_LISTENS } from '@/features/exam';
 import { SpeakButton } from '@/features/pronounce';
 import { SentenceTrainer } from '@/features/sentence-trainer';
 import { ReadingView } from '@/features/text-reading';
+import styles from './LessonPath.module.css';
 
 const speakAction = (text: string) => <SpeakButton text={text} />;
 
@@ -98,6 +99,28 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
 
     case 'words':
       return <LessonWords lesson={lesson} />;
+
+    case 'story':
+      return (
+        <>
+          {step.paragraphs.map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+          {step.examples && <PhraseList phrases={step.examples} renderAction={speakAction} renderGreek={exampleWord} />}
+          {step.words && step.words.length > 0 && (
+            <section className={styles.storyWords}>
+              <h2 className={styles.storyWordsTitle}>Новые слова</h2>
+              <PhraseList phrases={step.words} renderAction={speakAction} renderGreek={wordIn(decks.other, wordDeck)} />
+              <AddWords
+                words={step.words.map((w) => ({ ...w, kind: 'word' as const }))}
+                deckFor={wordDeck}
+                label="Добавить в карточки"
+                doneLabel="Слова уже в карточках"
+              />
+            </section>
+          )}
+        </>
+      );
 
     case 'translate':
     case 'dictation':

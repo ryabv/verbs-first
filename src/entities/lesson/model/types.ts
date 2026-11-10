@@ -82,11 +82,30 @@ interface StepBase {
   stage?: number;
 }
 
+/** Часть домашнего задания: идёт на карте сразу после своей темы. */
+export interface HomeworkPart {
+  title: string;
+  /** После какого этапа урока (номер, как step.stage). */
+  after: number;
+}
+
 /** Этап урока на карте: несколько коротких шагов, за прохождение — медальон. */
 export interface StageInfo {
   title: string;
   /** Надпись медальона: «Настоящее освоено». */
   award: string;
+}
+
+/**
+ * Ответвление от этапа: необязательные шаги — любопытное и дополнительная практика.
+ * На карте — пунктирная тропинка от точки этапа; на прогресс урока и медальоны не влияет.
+ */
+export interface LessonBranch {
+  id: string;
+  /** К какому этапу урока относится (номер, как step.stage). */
+  stage: number;
+  title: string;
+  steps: LessonStep[];
 }
 
 /** Какие клетки таблицы показывать в шаге «глаголы»: только уже пройденные. Пусто = все. */
@@ -113,7 +132,12 @@ export type LessonStep =
   /** Слова урока: добавить в карточки. */
   | (StepBase & { kind: 'words' })
   /** Экзамен по всему уроку (отдельный тип, строгие правила); задания собираются сами. */
-  | (StepBase & { kind: 'exam' });
+  | (StepBase & { kind: 'exam' })
+  /**
+   * Любопытное: этимология, факт о языке. paragraphs — рассказ, examples — греческие примеры
+   * с озвучкой, words — немного новых слов (их можно добавить в карточки).
+   */
+  | (StepBase & { kind: 'story'; paragraphs: string[]; examples?: Phrase[]; words?: Phrase[] });
 
 export type StepKind = LessonStep['kind'];
 
@@ -135,10 +159,12 @@ export interface Lesson {
   steps: LessonStep[];
   /** Этапы урока (до ДЗ): по одному времени или теме за раз. */
   stages: StageInfo[];
+  /** Необязательные ответвления от этапов: любопытное и доп. практика. */
+  branches: LessonBranch[];
   /** Домашнее задание: шаги, разбитые на части (поле part). Идёт в пути после урока, перед экзаменом. */
   homework: LessonStep[];
   /** Названия частей ДЗ: «Настоящее время»… */
-  homeworkParts: string[];
+  homeworkParts: HomeworkPart[];
 }
 
 /** Строка оглавления: урок может быть ещё не наполнен. */

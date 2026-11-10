@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { sectionOf, type LessonStep, type PathSection, type StepKind } from '@/entities/lesson';
+import { sectionOf, type HomeworkPart, type LessonStep, type PathSection, type StepKind } from '@/entities/lesson';
 import type { StepStatus } from '@/features/lesson-progress';
 import { Check } from '@/shared/ui/ornament';
 import styles from './LessonPath.module.css';
@@ -17,6 +17,7 @@ export const KIND_LABELS: Record<StepKind, string> = {
   composition: 'Сочинение',
   words: 'Слова',
   exam: 'Экзамен',
+  story: 'Любопытно',
 };
 
 /** Чип в списке шагов — только у заданий; название шага его не повторяет. */
@@ -29,6 +30,7 @@ const KIND_TAGS: Partial<Record<StepKind, string>> = {
   composition: 'сочинение',
   words: 'карточки',
   exam: 'экзамен',
+  story: 'интересное',
 };
 
 const SECTION_TITLES: Record<PathSection, string> = {
@@ -40,14 +42,14 @@ const SECTION_TITLES: Record<PathSection, string> = {
 interface Props {
   steps: LessonStep[];
   /** Названия частей домашнего задания (part 1 → [0]). */
-  partTitles?: readonly string[];
+  partTitles?: readonly HomeworkPart[];
   statusOf: (id: string) => StepStatus;
   onSelect: (id: string) => void;
   /** Заголовки «Урок / Домашнее задание / Экзамен» и частей ДЗ. Для списка одного этапа не нужны. */
   grouped?: boolean;
 }
 
-const NO_TITLES: readonly string[] = [];
+const NO_TITLES: readonly HomeworkPart[] = [];
 
 export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect, grouped = false }: Props) {
   return (
@@ -68,7 +70,7 @@ export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect, gr
             {newPart && (
               <li className={styles.part}>
                 Часть {step.part}
-                {partTitles[step.part! - 1] && ` · ${partTitles[step.part! - 1]}`}
+                {partTitles[step.part! - 1] && ` · ${partTitles[step.part! - 1]!.title}`}
               </li>
             )}
             <li>

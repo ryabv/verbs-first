@@ -1,4 +1,5 @@
 import type { Lesson } from '../model/types';
+import { lesson01Branches } from './lesson-01-branches';
 import { lesson01Homework, lesson01HomeworkParts, nikosReading } from './lesson-01-homework';
 
 export const lesson01: Lesson = {
@@ -467,6 +468,7 @@ export const lesson01: Lesson = {
       ],
     },
   ],
+  branches: lesson01Branches,
   homework: lesson01Homework,
   homeworkParts: lesson01HomeworkParts,
   coreVerbIds: ['eimai'],

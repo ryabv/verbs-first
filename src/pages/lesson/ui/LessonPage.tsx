@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { getLesson, GrammarSectionView, lessonStages, PhraseList, type Lesson, type TableScope } from '@/entities/lesson';
+import { getLesson, GrammarSectionView, lessonBranches, lessonStages, PhraseList, type Lesson, type TableScope } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { ConjugationDrill } from '@/features/conjugation-drill';
@@ -90,6 +90,7 @@ export function LessonPage() {
 
   const next = getLesson(lesson.id + 1);
   const stages = lessonStages(lesson);
+  const branches = lessonBranches(lesson);
   // Старые ссылки ?mode=homework ведут на первый шаг домашнего задания.
   const openStepId = params.get('step') ?? (params.get('mode') === 'homework' ? lesson.homework[0]?.id : undefined);
   const openStep = (id: string) => setParams({ step: id });
@@ -101,6 +102,7 @@ export function LessonPage() {
       <LessonMap
         lesson={lesson}
         stages={stages}
+        branches={branches}
         storageKey={progressKey.lesson(lesson.id)}
         crumbs={[crumbs[0]!, { label: `Урок ${lesson.id}` }]}
         onOpenStep={openStep}
@@ -142,6 +144,7 @@ export function LessonPage() {
     <LessonPath
       lesson={lesson}
       stages={stages}
+      branches={branches}
       storageKey={progressKey.lesson(lesson.id)}
       openStepId={openStepId}
       onStepChange={syncStep}

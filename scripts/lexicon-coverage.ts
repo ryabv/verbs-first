@@ -15,8 +15,9 @@ for (const l of lessons) {
   l.topic.phrases.forEach((p) => texts.push(p.greek));
   l.topic.presentation.sample.forEach((p) => texts.push(p.greek));
   l.readings.forEach((r) => r.sentences.forEach((s) => texts.push(s.greek)));
-  [...l.steps, ...l.homework].forEach((s) => {
+  [...l.steps, ...l.homework, ...l.branches.flatMap((b) => b.steps)].forEach((s) => {
     if (s.kind === 'composition') s.composition.sample.forEach((p) => texts.push(p.greek));
+    if (s.kind === 'story') [...(s.examples ?? []), ...(s.words ?? [])].forEach((p) => texts.push(p.greek));
   });
 }
 LETTERS.forEach((l) => texts.push(l.example.greek));

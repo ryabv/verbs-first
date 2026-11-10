@@ -95,6 +95,20 @@ export function Amphora(props: Props) {
   );
 }
 
+/** Сова Афины — мудрость и любопытство: значок необязательных ответвлений урока. */
+export function Owl(props: Props) {
+  return (
+    <Svg {...props}>
+      <path d="M7 4.5 8.6 7M17 4.5 15.4 7" />
+      <path d="M7 4.5C5.8 7.5 5.3 10 5.3 13c0 4.6 3 8 6.7 8s6.7-3.4 6.7-8c0-3-.5-5.5-1.7-8.5-1.4 1.5-3 2.4-5 2.4s-3.6-.9-5-2.4z" />
+      <circle cx="9.5" cy="11.2" r="1.8" />
+      <circle cx="14.5" cy="11.2" r="1.8" />
+      <path d="M11.4 13.6 12 14.7l.6-1.1" />
+      <path d="M9 17.2l1 .9 1-.9 1 .9 1-.9 1 .9 1-.9" />
+    </Svg>
+  );
+}
+
 /** Свиток — античный учебник. */
 export function Scroll(props: Props) {
   return (
@@ -175,6 +189,53 @@ export function Medallion({
       <span className={styles.medalLetter} lang="el">
         {stageLetter(n)}
       </span>
+    </span>
+  );
+}
+
+/**
+ * Знак точки на карте урока — по виду этапа:
+ * lesson — медальон с буквой; homework — табличка для письма со свитком и номером части;
+ * exam — фасад храма (до сдачи бледный, сдан — терракотовый).
+ */
+export function StageMark({
+  kind,
+  num,
+  earned,
+  size = '3.5rem',
+  compact = false,
+  className,
+}: {
+  kind: 'lesson' | 'homework' | 'exam';
+  num: number;
+  earned: boolean;
+  size?: string;
+  /** Мелкий ряд (главная): все знаки одного размера, в табличке без номера. */
+  compact?: boolean;
+  className?: string;
+}) {
+  if (kind === 'lesson') return <Medallion n={num} earned={earned} size={size} className={className} />;
+  const base = kind === 'homework' ? styles.tablet : styles.seal;
+  const cls = [base, earned ? styles.markEarned : '', className ?? ''].filter(Boolean).join(' ');
+  // Табличка чуть меньше медальона, храм экзамена — крупнее.
+  const side = compact ? size : `calc(${size} * ${kind === 'homework' ? 0.86 : 1.14})`;
+  const box = { width: side, height: side, fontSize: `calc(${side} * 0.4)` };
+  if (kind === 'homework') {
+    return (
+      <span className={cls} style={box} aria-hidden="true">
+        <Scroll size={compact ? '1.25em' : '0.95em'} />
+        {!compact && <span className={styles.tabletNum}>{num}</span>}
+      </span>
+    );
+  }
+  // Экзамен — фасад храма: фронтон, колонны, ступени.
+  return (
+    <span className={cls} style={box} aria-hidden="true">
+      <svg viewBox="0 0 40 40" width="100%" height="100%" className={styles.templeSvg}>
+        <path className={styles.templeBody} d="M20 3 37 13.5H3Z M4 15.5h32v3H4Z M2.5 33h35v2.5h-35Z M1 36.5h38V39H1Z" />
+        <path className={styles.templeBody} d="M7 19.5h4v12.5H7Z M14.3 19.5h4v12.5h-4Z M21.7 19.5h4v12.5h-4Z M29 19.5h4v12.5h-4Z" />
+        {earned && <circle className={styles.templeMark} cx="20" cy="10.3" r="2" />}
+      </svg>
     </span>
   );
 }

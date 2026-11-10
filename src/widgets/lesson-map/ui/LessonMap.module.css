@@ -7,6 +7,8 @@
 .overall { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; color: var(--text-subtle); max-width: 26rem; }
 .overall > :first-child { flex: 1; }
 .links { margin-top: 10px; font-size: 0.9rem; }
+.branchesNote { display: flex; align-items: center; gap: 0.4rem; margin-top: 8px; font-size: 0.85rem; color: var(--text-muted); }
+.branchesNote svg { color: var(--olive); flex: none; }
 
 .continue { margin: 4px 0 8px; }
 .finishActions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
@@ -35,6 +37,10 @@
 .road path { fill: none; stroke-width: 5; stroke-linecap: round; }
 .roadDone { stroke: var(--olive); }
 .roadTodo { stroke: var(--meander); stroke-dasharray: 2 11; }
+/* Ответвления — тонкая пунктирная тропинка в сторону. */
+.road .branchTodo, .road .branchDone { stroke-width: 2.5; stroke-dasharray: 1 7; }
+.branchTodo { stroke: var(--meander); }
+.branchDone { stroke: var(--olive); }
 
 .nodes { list-style: none; margin: 0; padding: 0; }
 .node { position: absolute; transform: translateX(-50%); width: 11.5rem; display: grid; justify-items: center; }
@@ -87,6 +93,26 @@
 .nodeBtn:hover .labelTitle { color: var(--brand); }
 
 
+/* ---------- ответвления ---------- */
+.branch { position: absolute; transform: translateX(-50%); width: 7rem; display: grid; justify-items: center; }
+.branchIcon {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px dashed var(--border-strong);
+  color: var(--text-subtle);
+  transition: transform 0.15s;
+}
+.nodeBtn:hover .branchIcon { transform: scale(1.08); border-color: var(--olive); color: var(--olive); }
+.branchNodeDone .branchIcon { border: 1.5px solid var(--olive); background: var(--olive-soft); color: var(--olive); }
+.branchLabel { display: grid; gap: 1px; line-height: 1.2; padding: 1px 6px 2px; border-radius: var(--radius); background: var(--bg); }
+.branchTitle { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+.nodeBtn:hover .branchTitle { color: var(--olive); }
+.branchNodeDone .labelMeta { color: var(--olive); }
+
 /* Только что полученный медальон «чеканится». */
 .fresh { animation: pop 0.9s cubic-bezier(0.3, 1.6, 0.5, 1) 0.3s both; }
 
@@ -110,5 +136,6 @@
   .page { padding: 0 16px 40px; }
   .head { margin-top: 20px; }
   .title { font-size: 26px; }
-  .node { width: 10rem; }
+  .node { width: 11rem; }
+  .branch { width: 6rem; }
 }

@@ -13,13 +13,15 @@ interface Props {
   deckFor: (word: WordToAdd) => DeckRef;
   /** Подпись кнопки, например «Слова с ошибками — в карточки». */
   label: string;
+  /** Когда все слова уже в карточках. */
+  doneLabel?: string;
 }
 
 /** Добавить несколько слов разом (каждое — в свой набор). Уже добавленные не дублируются. */
-export function AddWords({ words, deckFor, label }: Props) {
+export function AddWords({ words, deckFor, label, doneLabel = 'Слова из ошибок уже в карточках' }: Props) {
   const { cards } = useCards();
   const missing = words.filter((w) => !inDeck(cards, w.greek, deckFor(w).id));
-  if (missing.length === 0) return <span><Check /> Слова из ошибок уже в карточках</span>;
+  if (missing.length === 0) return <span><Check /> {doneLabel}</span>;
   return (
     <Button variant="secondary" onClick={() => missing.forEach((w) => addWord(deckFor(w), w.greek, w.russian))}>
       {label}: {missing.length}

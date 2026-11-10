@@ -19,6 +19,8 @@ export const DICTIONARY: DictEntry[] = [
     russian: 'говорить; звать (με λένε — меня зовут)',
     forms: ['λες', 'λέει', 'λέμε', 'λέτε', 'λένε'],
   },
+  { greek: 'θέλω', russian: 'хотеть', forms: ['θέλεις', 'θέλει', 'θέλουμε', 'θέλετε', 'θέλουν'] },
+  { greek: 'δέχομαι', russian: 'принимать' },
 
   // Служебные слова
   {
@@ -34,6 +36,9 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'κάθε', russian: 'каждый' },
   { greek: 'πώς', russian: 'как' },
   { greek: 'καλά', russian: 'хорошо' },
+  { greek: 'ναι', russian: 'да' },
+  { greek: 'όχι', russian: 'нет' },
+  { greek: 'γεια', russian: 'привет; пока (букв. «здоровья»)' },
 
   // Местоимения
   { greek: 'εσύ', russian: 'ты' },
@@ -42,6 +47,7 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'του', russian: 'его' },
   { greek: 'της', russian: 'её' },
   { greek: 'σας', russian: 'ваш; вам, вас' },
+  { greek: 'μας', russian: 'наш; нам, нас' },
 
   // Существительные и прилагательные: словарная форма + формы из текстов
   { greek: 'το βιβλίο', russian: 'книга', forms: ['βιβλία'] },
@@ -50,6 +56,12 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'ο καφές', russian: 'кофе', forms: ['καφέ'] },
   { greek: 'η μέρα', russian: 'день' },
   { greek: 'μικρός', russian: 'маленький', forms: ['μικρή', 'μικρό'] },
+  { greek: 'καλός', russian: 'хороший', forms: ['καλή', 'καλό'] },
+  { greek: 'η αγορά', russian: 'рынок; площадь' },
+  { greek: 'ο δούλος', russian: 'раб, слуга' },
+  { greek: 'ο καιρός', russian: 'погода; время' },
+  { greek: 'ο ξένος', russian: 'иностранец; чужой' },
+  { greek: 'η υγεία', russian: 'здоровье', forms: ['υγειά'] },
 
   // Имена и места
   { greek: 'η Ρωσία', russian: 'Россия' },

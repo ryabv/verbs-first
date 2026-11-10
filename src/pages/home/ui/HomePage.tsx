@@ -5,7 +5,7 @@ import { doneWithExam, isStageDone, progressKey, readProgress } from '@/features
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
 import { Callout } from '@/shared/ui/callout';
-import { Check, Laurel, Medallion } from '@/shared/ui/ornament';
+import { Check, Laurel, StageMark } from '@/shared/ui/ornament';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
@@ -110,7 +110,14 @@ export function HomePage() {
                   {stages.length > 0 && (
                     <div className={styles.medals} title="Медальоны за этапы урока">
                       {stages.map((st) => (
-                        <Medallion key={st.id} n={st.n} earned={isStageDone(st, isDone)} size="1.6rem" />
+                        <StageMark
+                          key={st.id}
+                          kind={st.section === 'homework' ? 'homework' : st.section === 'exam' ? 'exam' : 'lesson'}
+                          num={st.num}
+                          earned={isStageDone(st, isDone)}
+                          size="1.6rem"
+                          compact
+                        />
                       ))}
                     </div>
                   )}

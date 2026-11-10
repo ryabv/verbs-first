@@ -67,10 +67,11 @@ function collectTexts(): Set<string> {
     lesson.topic.phrases.forEach((p) => add(p.greek));
     lesson.vocabulary.forEach((g) => g.words.forEach((w) => add(w.greek)));
     lesson.topic.presentation.sample.forEach((p) => add(p.greek));
-    for (const step of [...lesson.steps, ...lesson.homework]) {
+    for (const step of [...lesson.steps, ...lesson.homework, ...lesson.branches.flatMap((b) => b.steps)]) {
       if (step.kind === 'translate' || step.kind === 'dictation' || step.kind === 'oral')
         step.items.forEach((item) => item.greek[0] && add(item.greek[0]));
       if (step.kind === 'composition') step.composition.sample.forEach((p) => add(p.greek));
+      if (step.kind === 'story') [...(step.examples ?? []), ...(step.words ?? [])].forEach((p) => add(p.greek));
     }
     for (const reading of lesson.readings) {
       reading.sentences.forEach((p) => add(p.greek));

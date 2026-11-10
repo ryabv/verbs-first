@@ -25,6 +25,8 @@ interface Props {
   lesson: Lesson;
   /** Весь путь по этапам: урок → домашнее задание → экзамен (lessonStages). */
   stages: LessonStage[];
+  /** Необязательные ответвления от этапов (lessonBranches). */
+  branches: LessonStage[];
   /** Ключ прогресса в хранилище (progressKey.lesson). */
   storageKey: string;
   /** Слот для просмотра таблиц глаголов (виджет verb-algorithm передаёт страница). */
@@ -38,8 +40,10 @@ interface Props {
 }
 
 /** Путь ученика внутри этапа: шаги этапа в сайдбаре, текущий шаг — как статья учебника. */
-export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKey, renderVerbs, sidebarHeader, crumbs, onOpenMap }: Props) {
-  const steps = useMemo(() => stages.flatMap((st) => st.steps), [stages]);
+export function LessonPath({ openStepId, onStepChange, lesson, stages, branches, storageKey, renderVerbs, sidebarHeader, crumbs, onOpenMap }: Props) {
+  // Шаги ответвлений — после основного пути: так «дальше» внутри ответвления не уводит в основной путь.
+  const all = useMemo(() => [...stages, ...branches], [stages, branches]);
+  const steps = useMemo(() => all.flatMap((st) => st.steps), [all]);
   const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
   const progress = useLessonProgress(storageKey, stepIds);
   const { goTo, currentId, setDone } = progress;
@@ -81,7 +85,9 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
   const { markDone } = progress;
   const onGoal = useCallback(() => step && markDone(step.id), [markDone, step]);
 
-  const stage = step && stageOfStep(stages, step.id);
+  const stage = step && stageOfStep(all, step.id);
+  const isBranch = stage?.section === 'branch';
+  const parent = isBranch ? stages.find((st) => st.id === stage.parent) : undefined;
   if (!step || !stage) return null;
 
   const indexInStage = stage.steps.indexOf(step);
@@ -90,7 +96,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
   const isStageEnd = !nextStep;
   const doneInStage = stage.steps.filter((s) => progress.isDone(s.id)).length;
   // Мягкий порядок: этап открыт, но если раньше есть непройденный — подскажем начать с него.
-  const missed = stages.slice(0, stage.n - 1).find((st) => !isStageDone(st, progress.isDone));
+  const missed = isBranch ? undefined : stages.slice(0, stage.n - 1).find((st) => !isStageDone(st, progress.isDone));
 
   // На компьютере — в начало страницы; на телефоне сайдбар стоит над шагом, поэтому к заголовку шага.
   const scrollTop = () => {
@@ -119,9 +125,9 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
   const sidebar = (
     <>
       {sidebarHeader}
-      <SidebarSection title={`Этап ${stage.n} из ${stages.length}`}>
+      <SidebarSection title={isBranch ? `Ответвление · ${parent?.title ?? ''}` : `Этап ${stage.n} из ${stages.length}`}>
         <div className={styles.stageTitle}>
-          {stage.kicker && <div className={styles.stageKicker}>{stage.kicker}</div>}
+          {stage.kicker && !isBranch && <div className={styles.stageKicker}>{stage.kicker}</div>}
           {stage.title}
         </div>
         <div className={styles.overall}>
@@ -162,7 +168,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
   return (
     <SidebarLayout sidebar={sidebar}>
       <header className={styles.head} ref={headRef}>
-        <Breadcrumbs items={[...crumbs, { label: stage.title }]} />
+        <Breadcrumbs items={[...crumbs, ...(parent ? [{ label: parent.title }] : []), { label: stage.title }]} />
         <div className={step.kind === 'exam' ? `${styles.kind} ${styles.kindExam}` : styles.kind}>{KIND_LABELS[step.kind]}</div>
         <h1 className={styles.title}>{step.title}</h1>
       </header>
@@ -181,6 +187,12 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
           >
             Перейти к этапу «{missed.title}»
           </Button>
+        </Callout>
+      )}
+
+      {isBranch && indexInStage === 0 && (
+        <Callout kind="ok" title="Необязательное ответвление">
+          Для тех, кто хочет задержаться на теме. На прогресс урока не влияет — можно вернуться сюда позже.
         </Callout>
       )}
 
@@ -204,7 +216,7 @@ export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKe
             : { label: 'Назад', title: 'Карта урока', onClick: onOpenMap }
         }
         next={{
-          label: isStageEnd ? 'Конец этапа' : 'Следующий шаг',
+          label: isStageEnd ? (isBranch ? 'Конец ответвления' : 'Конец этапа') : 'Следующий шаг',
           title: isStageEnd ? (step.kind === 'exam' ? 'Завершить урок' : 'К карте урока') : nextStep.title,
           onClick: goNext,
           disabled: finishLocked,

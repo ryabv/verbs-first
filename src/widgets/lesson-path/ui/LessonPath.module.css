@@ -121,3 +121,8 @@
 /* Экзамен — отдельный тип, не «практика». */
 .kindTagExam { background: transparent; border: 1px solid var(--warning); color: var(--warning); }
 .kindExam { color: var(--warning); font-weight: 600; }
+
+/* Новые слова в шаге «Любопытно». */
+.storyWords { margin-top: 28px; display: grid; gap: 12px; }
+.storyWords > button { justify-self: start; }
+.storyWordsTitle { margin: 0; font-size: 1.2rem; }

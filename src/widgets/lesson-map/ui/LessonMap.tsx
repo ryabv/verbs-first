@@ -14,13 +14,15 @@ import { plural } from '@/shared/lib/plural';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
-import { Medallion } from '@/shared/ui/ornament';
+import { Owl, StageMark } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './LessonMap.module.css';
 
 interface Props {
   lesson: Lesson;
   stages: LessonStage[];
+  /** Необязательные ответвления (lessonBranches): пунктирные тропинки в сторону от этапов. */
+  branches: LessonStage[];
   /** Ключ прогресса (progressKey.lesson). */
   storageKey: string;
   crumbs: Crumb[];
@@ -32,13 +34,18 @@ interface Props {
   finish: { title: string; text: ReactNode; actions: ReactNode };
 }
 
+/** Вид знака точки: медальон темы, табличка ДЗ, храм экзамена. */
+const markKind = (st: LessonStage) => (st.section === 'homework' ? 'homework' : st.section === 'exam' ? 'exam' : 'lesson');
+
 /** Высота строки дорожки, px. */
-const ROW = 150;
+const ROW = 158;
+/** Центр медальона от верха строки, px (кольцо 4.4rem). */
+const MEDAL_Y = 35;
 /** Горизонтальное положение точки этапа, % ширины: дорожка петляет змейкой. */
 const xOf = (i: number) => 50 + 22 * Math.sin((i * Math.PI) / 2);
 
 /** Карта урока: этапы на нарисованной дорожке, за каждый — медальон. */
-export function LessonMap({ lesson, stages, storageKey, crumbs, onOpenStep, links, finish }: Props) {
+export function LessonMap({ lesson, stages, branches, storageKey, crumbs, onOpenStep, links, finish }: Props) {
   const stepIds = useMemo(() => stages.flatMap((st) => st.steps.map((s) => s.id)), [stages]);
   const progress = useLessonProgress(storageKey, stepIds);
   // Экзамен засчитан, только если сдан (как и в пути урока).
@@ -75,6 +82,16 @@ export function LessonMap({ lesson, stages, storageKey, crumbs, onOpenStep, link
   const next = allDone ? undefined : stages[frontier];
   const height = stages.length * ROW;
 
+  // Ответвление отходит от своего этапа в сторону — туда, где нет соседней точки дорожки.
+  const branchNodes = branches.flatMap((br) => {
+    const i = stages.findIndex((st) => st.id === br.parent);
+    if (i === -1) return [];
+    const xs = xOf(i);
+    const side = xs > 50 ? -1 : xs < 50 ? 1 : xOf(i + 1) > 50 ? -1 : 1;
+    return [{ br, i, xs, xb: side < 0 ? 13 : 87, done: isStageDone(br, progress.isDone) }];
+  });
+  const branchesDone = branchNodes.filter((b) => b.done).length;
+
   return (
     <div className={styles.page}>
       <header className={styles.head}>
@@ -88,14 +105,21 @@ export function LessonMap({ lesson, stages, storageKey, crumbs, onOpenStep, link
             {doneCount} из {stages.length} {plural(stages.length, ['этапа', 'этапов', 'этапов'])}
           </span>
         </div>
+        {branchNodes.length > 0 && (
+          <div className={styles.branchesNote}>
+            <Owl /> Ответвления — необязательно, для любопытных: {branchesDone} из {branchNodes.length}
+          </div>
+        )}
         {links && <div className={styles.links}>{links}</div>}
       </header>
 
       {lastFresh && (
         <output className={styles.award}>
-          <Medallion n={lastFresh.n} earned size="4.5rem" className={styles.awardMedal} />
+          <StageMark kind={markKind(lastFresh)} num={lastFresh.num} earned size="4.5rem" className={styles.awardMedal} />
           <div>
-            <div className={styles.awardKicker}>Новый медальон</div>
+            <div className={styles.awardKicker}>
+              {lastFresh.section === 'homework' ? 'Домашнее задание' : lastFresh.section === 'exam' ? 'Экзамен сдан' : 'Новый медальон'}
+            </div>
             <div className={styles.awardTitle}>{lastFresh.award}</div>
             {fresh.length > 1 && (
               <div className={styles.awardMore}>
@@ -137,6 +161,11 @@ export function LessonMap({ lesson, stages, storageKey, crumbs, onOpenStep, link
             const d = `M${x0} ${y0} C${x0} ${y0 + ROW / 2} ${x1} ${y1 - ROW / 2} ${x1} ${y1}`;
             return <path key={i} d={d} className={done[i - 1] ? styles.roadDone : styles.roadTodo} vectorEffect="non-scaling-stroke" />;
           })}
+          {branchNodes.map(({ br, i, xs, xb, done: bd }) => {
+            const y = i * ROW + MEDAL_Y;
+            const d = `M${xs} ${y} Q${(xs + xb) / 2} ${y + 26} ${xb} ${y}`;
+            return <path key={br.id} d={d} className={bd ? styles.branchDone : styles.branchTodo} vectorEffect="non-scaling-stroke" />;
+          })}
         </svg>
 
         <ol className={styles.nodes}>
@@ -153,23 +182,55 @@ export function LessonMap({ lesson, stages, storageKey, crumbs, onOpenStep, link
                   }}
                   className={styles.nodeBtn}
                   onClick={() => open(st)}
-                  aria-label={`Этап ${st.n}: ${st.title}${done[i] ? ', пройден' : ''}`}
+                  aria-label={`${st.kicker ?? `Этап ${st.num}`}: ${st.title}${done[i] ? ', пройден' : ''}`}
                 >
                   {state === 'current' && <span className={styles.here}>Вы здесь</span>}
                   <span className={styles.ring}>
-                    <Medallion n={st.n} earned={done[i]!} size="3.6rem" className={fresh.includes(st.id) ? styles.fresh : undefined} />
+                    <StageMark
+                      kind={markKind(st)}
+                      num={st.num}
+                      earned={done[i]!}
+                      size="3.6rem"
+                      className={fresh.includes(st.id) ? styles.fresh : undefined}
+                    />
                   </span>
                   <span className={styles.label}>
                     {st.kicker && <span className={styles.labelKicker}>{st.kicker}</span>}
                     <span className={styles.labelTitle}>{st.title}</span>
                     <span className={styles.labelMeta}>
-                      {done[i] ? st.award : `${count} из ${st.steps.length} ${plural(st.steps.length, ['шага', 'шагов', 'шагов'])}`}
+                      {done[i]
+                        ? st.award
+                        : st.section === 'exam'
+                          ? 'сдать от 80%'
+                          : `${count} из ${st.steps.length} ${plural(st.steps.length, ['шага', 'шагов', 'шагов'])}`}
                     </span>
                   </span>
                 </button>
               </li>
             );
           })}
+          {branchNodes.map(({ br, i, xb, done: bd }) => (
+            <li
+              key={br.id}
+              className={`${styles.branch} ${bd ? styles.branchNodeDone : ''}`}
+              style={{ left: `${xb}%`, top: i * ROW + MEDAL_Y - 22 }}
+            >
+              <button
+                type="button"
+                className={styles.nodeBtn}
+                onClick={() => open(br)}
+                aria-label={`Ответвление: ${br.title}${bd ? ', пройдено' : ', необязательно'}`}
+              >
+                <span className={styles.branchIcon}>
+                  <Owl size="1.5rem" />
+                </span>
+                <span className={styles.branchLabel}>
+                  <span className={styles.branchTitle}>{br.title}</span>
+                  <span className={styles.labelMeta}>{bd ? 'пройдено' : 'по желанию'}</span>
+                </span>
+              </button>
+            </li>
+          ))}
         </ol>
       </div>
     </div>

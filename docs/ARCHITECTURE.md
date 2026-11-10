@@ -132,8 +132,9 @@ interface Lesson {
   vocabulary: VocabGroup[];           // новые слова по группам {id, title, words: Phrase[]} (кроме глаголов и фраз темы)
   steps: LessonStep[];                // путь урока; у каждого шага stage (этап)
   stages: StageInfo[];                // этапы урока {title, award}: точки на карте и медальоны
-  homework: LessonStep[];             // ДЗ: те же шаги с полем part (часть 1, 2, 3)
-  homeworkParts: string[];            // названия частей ДЗ
+  branches: LessonBranch[];           // ответвления {id, stage, title, steps}: необязательные шаги этапа
+  homework: LessonStep[];             // ДЗ: те же шаги с полем part (часть 1, 2, 3, 4)
+  homeworkParts: HomeworkPart[];      // части ДЗ {title, after}: after — после какого этапа урока
 }
 ```
 
@@ -152,6 +153,7 @@ interface Lesson {
 | `oral` | `SentenceTrainer` вслух + самопроверка | `items` | то же |
 | `composition` | `CompositionEditor` | `composition: CompositionTask` | по кнопке |
 | `words` | `LessonWords` (слова урока → карточки) | — | по кнопке |
+| `story` | «Любопытно»: рассказ, примеры с озвучкой, новые слова → карточки | `paragraphs`, `examples?`, `words?` | по кнопке |
 
 Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `stage?` (этап урока, 1… → `stages[n-1]`), `part?` (часть ДЗ).
 `SentenceItem = { russian; greek: string[] }` — `greek[0]` эталон, остальные тоже верны.
@@ -183,12 +185,19 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - `/` — `HomePage`, `/lesson/:lessonId` — `LessonPage`, `/cards[?lesson=N]` — `CardsPage`
   (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?section=letters|combinations|stress|sounds|words|order|exam]` —
   `AlphabetPage` (разделы описаны массивом `SECTIONS` в самой странице).
-- Урок — **один путь** `lessonPath(lesson)` (`entities/lesson/lib/path.ts`): шаги урока (без
-  экзамена) → `homework` → шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
+- Урок — **один путь** `lessonPath(lesson)` (`entities/lesson/lib/path.ts`): этапы урока, после
+  каждого — части `homework` с `after` = этот этап, в конце шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
   `exam`); `StepList` рисует заголовки частей и «Часть N · название» из `homeworkParts`,
   нумерация — внутри части. Никаких «дней» (без давления сроками).
-- **Этапы:** `lessonStages(lesson)` делит путь на `LessonStage {id, section, n, title, kicker?, award, steps}`:
+- **Этапы:** `lessonStages(lesson)` делит путь на `LessonStage {id, section, n, num, title, kicker?, award, steps}`
+  (`n` — номер на карте, `num` — номер внутри вида: буква темы, номер части ДЗ). Знак точки —
+  `StageMark` из `shared/ui/ornament`: тема — медальон, ДЗ — табличка, экзамен — фасад храма.
   этапы урока по `step.stage` (`stage-N`), части ДЗ по `part` (`hw-N`), экзамен (`exam`).
+- **Ответвления:** `lessonBranches(lesson)` — те же `LessonStage` с `section: 'branch'`, `parent`
+  (id этапа) и `n` = номер этапа. На карте — пунктир в сторону от этапа (туда, где нет соседней
+  точки), в `LessonPath` их шаги идут после основного пути; конец ответвления — снова карта.
+  В прогресс этапов, медальоны и экзамен не входят. Греческое из `story` (примеры и слова) —
+  в `lexicon:check` и `pnpm audio`.
 - `/lesson/:id` **без `?step`** — карта урока (`widgets/lesson-map`): дорожка-змейка (SVG за
   абсолютно позиционированными точками), медальоны `Medallion` из `shared/ui/ornament`,
   кнопка «Дальше: <этап>», финал урока и «Пройти заново». Клик по этапу → первый непройденный
@@ -213,6 +222,9 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - Этап пройден, когда пройдены все его шаги (`isStageDone`); экзамен засчитан, только если
   сдан (`doneWithExam`). Показанные медальоны — `verbs-first:awards-seen:<id>`: новые
   (полученные, но не показанные) карта анимирует один раз.
+- Алфавит — тот же `useLessonProgress` с ключом `progressKey.alphabet` (`verbs-first:alphabet:progress`):
+  разделы «Читаем» засчитываются по «Дальше», тренажёры — по `onComplete`, экзамен — только если сдан.
+  Старый ключ ДЗ вливается только у ключей уроков (`verbs-first:lesson:*`).
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
   `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
   `verbs-first:exam:<lessonId|alphabet>` (`{ best, passed }`),
@@ -359,7 +371,7 @@ public/audio/manifest.json  { "нормализованный текст": "фа
   чтобы поле не теряло фокус.
 - Иконки — inline SVG в `shared/ui/icon` (`currentColor`), не эмодзи.
 - Греческие мотивы — `shared/ui/ornament`: `Laurel`/`Wreath` (венок — только награда),
-  `Amphora`, `Column`, `Meander` (полоса-маска, цвет `--meander`), `Check` (галочка-мазок) и `Arrow`
+  `Amphora`, `Owl` (значок ответвлений), `Column`, `Meander` (полоса-маска, цвет `--meander`), `Check` (галочка-мазок) и `Arrow`
   (стрела-копьё) — вместо символов ✓ ← → в интерфейсе.
 - Полоса прогресса — одна на всё приложение: `shared/ui/progress-bar` (`ProgressBar value={0…1}`,
   `thin` для сайдбара): «бегущая волна», бледный узор заполняется оливковым. Цвета — `--olive`, `--brand`.
