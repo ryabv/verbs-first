@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReadingExample } from '@/entities/alphabet';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import { SpeakerIcon } from '@/shared/ui/icon';
 import { ProgressBar } from '@/shared/ui/progress-bar';
@@ -74,6 +74,7 @@ interface PuzzleProps {
 }
 
 function Puzzle({ word, extra, onSolved, onMistake }: PuzzleProps) {
+  const pending = useSpeechPending(word.greek);
   const target = [...word.greek.normalize('NFC')];
   const [tiles] = useState(() => shuffle([...target, ...extra.normalize('NFC')]));
   /** Индексы плиток в порядке выбора. */
@@ -110,8 +111,8 @@ function Puzzle({ word, extra, onSolved, onMistake }: PuzzleProps) {
   return (
     <div className={styles.card}>
       <div className={styles.task}>
-        <button type="button" className={styles.listen} onClick={() => void speak(word.greek)} aria-label="Послушать ещё раз">
-          <SpeakerIcon />
+        <button type="button" className={styles.listen} onClick={() => void speak(word.greek)} aria-label="Послушать ещё раз" aria-busy={pending}>
+          <SpeakerIcon pending={pending} />
         </button>
         <div>
           <div className={styles.taskReading}>[{word.reading}]</div>

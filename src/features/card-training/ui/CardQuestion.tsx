@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { checkGreek, checkRussian, shuffle, type Card } from '@/entities/card';
 import { SpeakButton } from '@/features/pronounce';
 import type { AnswerVerdict } from '@/shared/lib/greek';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import { SpeakerIcon } from '@/shared/ui/icon';
@@ -42,6 +42,8 @@ function Question({ card, pool, allCards, settings, onResult }: Props) {
     if (verdict) nextRef.current?.focus();
   }, [verdict]);
 
+  const pending = useSpeechPending(settings.prompt === 'audio' ? card.greek : undefined);
+
   // На слух: сразу проигрываем слово.
   useEffect(() => {
     if (settings.prompt === 'audio') void speak(card.greek);
@@ -57,8 +59,8 @@ function Question({ card, pool, allCards, settings, onResult }: Props) {
           </div>
         )}
         {settings.prompt === 'audio' && (
-          <Button variant="secondary" onClick={() => void speak(card.greek)}>
-            <SpeakerIcon className={styles.icon} /> Прослушать
+          <Button variant="secondary" onClick={() => void speak(card.greek)} aria-busy={pending}>
+            <SpeakerIcon className={styles.icon} pending={pending} /> Прослушать
           </Button>
         )}
         <div className={styles.hint}>{lang === 'gr' ? 'по-гречески' : 'перевод'}</div>

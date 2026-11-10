@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { speechText } from './text';
 
 /**
@@ -23,20 +24,72 @@ function loadManifest(): Promise<Manifest> {
 }
 
 
+// ---------- «грузится»: если звук не пошёл быстро, кнопка показывает ожидание ----------
+
+/** Через сколько показывать ожидание: быстрый звук не должен мигать индикатором. */
+const PENDING_DELAY_MS = 300;
+let pendingKey: string | null = null;
+let pendingTimer: ReturnType<typeof setTimeout> | undefined;
+const listeners = new Set<() => void>();
+let lastCall = 0;
+
+function setPending(key: string | null) {
+  if (pendingKey === key) return;
+  pendingKey = key;
+  for (const listener of listeners) listener();
+}
+
+function startPending(key: string) {
+  clearTimeout(pendingTimer);
+  setPending(null);
+  pendingTimer = setTimeout(() => setPending(key), PENDING_DELAY_MS);
+}
+
+function stopPending() {
+  clearTimeout(pendingTimer);
+  setPending(null);
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** true, пока этот текст запрошен, но звук ещё не пошёл (дольше PENDING_DELAY_MS). */
+export function useSpeechPending(text: string | undefined): boolean {
+  const key = text ? speechText(text) : null;
+  return useSyncExternalStore(
+    subscribe,
+    () => key !== null && pendingKey === key,
+    () => false,
+  );
+}
+
 /** Произнести текст. Возвращает false, если озвучить нечем. */
 export async function speak(text: string): Promise<boolean> {
   const key = speechText(text);
+  const call = ++lastCall;
+  startPending(key);
   const file = (await loadManifest())[key];
+  // Пока грузился манифест, нажали другую кнопку — эту фразу уже не играем.
+  if (call !== lastCall) return true;
 
   if (file) {
     window.speechSynthesis?.cancel();
     player?.pause();
-    player = new Audio(AUDIO_BASE + file);
-    await player.play().catch(() => undefined);
+    const audio = new Audio(AUDIO_BASE + file);
+    player = audio;
+    // Ожидание снимаем, когда звук пошёл или стало ясно, что не пойдёт — и только для текущего плеера.
+    const done = () => player === audio && stopPending();
+    audio.addEventListener('playing', done, { once: true });
+    audio.addEventListener('error', done, { once: true });
+    await audio.play().catch(done);
     return true;
   }
 
-  return speakWithBrowserVoice(key);
+  const ok = await speakWithBrowserVoice(key);
+  if (call === lastCall) stopPending();
+  return ok;
 }
 
 // ---------- запасной вариант: голос браузера ----------

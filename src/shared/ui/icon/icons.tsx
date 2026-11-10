@@ -1,4 +1,5 @@
 import type { SVGProps } from 'react';
+import styles from './icons.module.css';
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number | string };
 
@@ -23,12 +24,19 @@ function Svg({ size = '1em', children, ...rest }: IconProps) {
   );
 }
 
-export function SpeakerIcon(props: IconProps) {
+/** Динамик. pending — звук ещё грузится: вместо волн крутится дуга. */
+export function SpeakerIcon({ pending = false, ...props }: IconProps & { pending?: boolean }) {
   return (
     <Svg {...props}>
       <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" fillOpacity={0.15} />
-      <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-      <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+      {pending ? (
+        <path className={styles.spin} d="M17.5 7.5a4.5 4.5 0 1 1-3.9 2.3" />
+      ) : (
+        <>
+          <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+          <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </>
+      )}
     </Svg>
   );
 }

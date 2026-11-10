@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import { Check, Column, Wreath } from '@/shared/ui/ornament';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
@@ -137,6 +137,7 @@ function WriteCard({ question, onSubmit }: { question: WriteQuestion; onSubmit: 
     if (keyboard.autoFocus) inputRef.current?.focus();
   }, [keyboard.autoFocus]);
 
+  const pending = useSpeechPending(question.audio);
   const listen = () => {
     if (!question.audio || listens >= MAX_LISTENS) return;
     setListens((n) => n + 1);
@@ -154,8 +155,8 @@ function WriteCard({ question, onSubmit }: { question: WriteQuestion; onSubmit: 
       <div className={styles.label}>{question.label}</div>
       {question.audio ? (
         <div className={styles.listen}>
-          <Button variant="secondary" onClick={listen} disabled={listens >= MAX_LISTENS}>
-            <SpeakerIcon className={styles.icon} />
+          <Button variant="secondary" onClick={listen} disabled={listens >= MAX_LISTENS} aria-busy={pending}>
+            <SpeakerIcon className={styles.icon} pending={pending} />
             {listens === 0 ? 'Прослушать' : listens < MAX_LISTENS ? 'Ещё раз (последний)' : 'Прослушано'}
           </Button>
           <span className={styles.listenHint}>

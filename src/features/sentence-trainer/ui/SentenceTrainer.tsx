@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { SentenceItem } from '@/entities/lesson';
 import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import { SpeakerIcon } from '@/shared/ui/icon';
@@ -82,6 +82,7 @@ function WrittenCard({ mode, item, onResult }: CardProps & { mode: 'translate' |
     if (keyboard.autoFocus) inputRef.current?.focus();
   }, [keyboard.autoFocus]);
   const expected = item.greek[0] ?? '';
+  const pending = useSpeechPending(mode === 'dictation' ? expected : undefined);
 
   // Диктант: сразу проигрываем фразу (после клика «Дальше» браузер это разрешает).
   useEffect(() => {
@@ -107,8 +108,8 @@ function WrittenCard({ mode, item, onResult }: CardProps & { mode: 'translate' |
         <div className={styles.prompt}>{item.russian}</div>
       ) : (
         <div className={styles.listen}>
-          <Button variant="secondary" onClick={() => void speak(expected)}>
-            <SpeakerIcon className={styles.icon} /> Прослушать ещё раз
+          <Button variant="secondary" onClick={() => void speak(expected)} aria-busy={pending}>
+            <SpeakerIcon className={styles.icon} pending={pending} /> Прослушать ещё раз
           </Button>
         </div>
       )}

@@ -1,0 +1,14 @@
+/* Дуга ожидания у динамика: вращается вокруг своего центра (17.5, 12 в координатах 24×24). */
+.spin {
+  transform-origin: 17.5px 12px;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+}

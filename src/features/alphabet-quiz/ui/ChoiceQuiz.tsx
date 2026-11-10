@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { QuizItem } from '@/entities/alphabet';
 import { SpeakButton } from '@/features/pronounce';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { SpeakerIcon } from '@/shared/ui/icon';
 import { Button } from '@/shared/ui/button';
 import { ProgressBar } from '@/shared/ui/progress-bar';
@@ -116,6 +116,7 @@ function Question({ item, all, question, listen, onResult }: QuestionProps) {
   }, [picked]);
 
   const speakText = item.speak ?? item.prompt;
+  const pending = useSpeechPending(listen ? speakText : undefined);
   // На слух: слово звучит сразу при появлении вопроса.
   useEffect(() => {
     if (listen) void speak(speakText);
@@ -126,8 +127,8 @@ function Question({ item, all, question, listen, onResult }: QuestionProps) {
       <div className={styles.meta}>{question}</div>
       {listen ? (
         <div className={styles.prompt}>
-          <button type="button" className={styles.listen} onClick={() => void speak(speakText)} aria-label="Послушать ещё раз">
-            <SpeakerIcon />
+          <button type="button" className={styles.listen} onClick={() => void speak(speakText)} aria-label="Послушать ещё раз" aria-busy={pending}>
+            <SpeakerIcon pending={pending} />
           </button>
           {picked && <span lang="el">{item.prompt}</span>}
         </div>

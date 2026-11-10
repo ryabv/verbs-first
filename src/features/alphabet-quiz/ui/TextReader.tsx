@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import type { ReadingExample } from '@/entities/alphabet';
 import type { TextLook } from '@/entities/lesson';
 import { SpeakButton } from '@/features/pronounce';
-import { speak } from '@/shared/lib/speech';
+import { speak, useSpeechPending } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import { SpeakerIcon } from '@/shared/ui/icon';
 import styles from './TextReader.module.css';
@@ -28,6 +28,7 @@ interface Props {
 export function TextReader({ sentences, look, renderWord }: Props) {
   const [open, setOpen] = useState<ReadonlySet<number>>(() => new Set());
   const whole = sentences.map((s) => s.greek).join(' ');
+  const pending = useSpeechPending(whole);
 
   const reveal = (i: number) => {
     void speak(sentences[i]!.greek);
@@ -52,8 +53,8 @@ export function TextReader({ sentences, look, renderWord }: Props) {
       </figure>
 
       <div className={styles.actions}>
-        <Button variant="secondary" onClick={() => void speak(whole)}>
-          <SpeakerIcon /> Послушать весь текст
+        <Button variant="secondary" onClick={() => void speak(whole)} aria-busy={pending}>
+          <SpeakerIcon pending={pending} /> Послушать весь текст
         </Button>
         {open.size < sentences.length && (
           <Button variant="ghost" onClick={() => setOpen(new Set(sentences.map((_, i) => i)))}>
