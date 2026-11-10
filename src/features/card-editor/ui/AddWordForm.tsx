@@ -6,13 +6,13 @@ import styles from './AddWordForm.module.css';
 
 const NEW_DECK = '__new__';
 
-/** Добавить любое слово в любой набор (или в новый). */
-export function AddWordForm() {
+/** Добавить любое слово в любой набор (или в новый). defaultDeckId — набор, выбранный сразу. */
+export function AddWordForm({ defaultDeckId = DEFAULT_DECK_ID }: { defaultDeckId?: string }) {
   const { decks, cards } = useCards();
   const keyboard = useGreekKeyboard();
   const [greek, setGreek] = useState('');
   const [russian, setRussian] = useState('');
-  const [deckId, setDeckId] = useState(DEFAULT_DECK_ID);
+  const [deckId, setDeckId] = useState(defaultDeckId);
   const [newDeckTitle, setNewDeckTitle] = useState('');
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 

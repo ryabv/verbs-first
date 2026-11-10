@@ -26,7 +26,13 @@ const VERDICT: Record<AnswerVerdict, string> = {
 const OPTIONS = 4;
 
 /** Одна карточка: вопрос в выбранном виде и ответ выбранным способом. */
-export function CardQuestion({ card, pool, allCards, settings, onResult }: Props) {
+export function CardQuestion(props: Props) {
+  // «Карточки»: настоящая карточка с переворотом — своя разметка.
+  if (props.settings.answer === 'self') return <FlipCard card={props.card} onResult={props.onResult} />;
+  return <Question {...props} />;
+}
+
+function Question({ card, pool, allCards, settings, onResult }: Props) {
   const lang = answerLanguage(settings);
   const [verdict, setVerdict] = useState<AnswerVerdict | null>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -62,7 +68,6 @@ export function CardQuestion({ card, pool, allCards, settings, onResult }: Props
         <Choose card={card} pool={pool} allCards={allCards} lang={lang} verdict={verdict} onVerdict={setVerdict} />
       )}
       {settings.answer === 'write' && <Write card={card} lang={lang} verdict={verdict} onVerdict={setVerdict} />}
-      {settings.answer === 'self' && <SelfCheck card={card} onResult={onResult} />}
 
       {verdict && (
         <>
@@ -128,10 +133,26 @@ function Choose({
   });
 
   const right = textOf(card);
+  const pick = (text: string) => {
+    setPicked(text);
+    onVerdict(text === right ? 'correct' : 'wrong');
+  };
+
+  // Клавиши 1–4 — варианты по порядку.
+  useEffect(() => {
+    if (verdict) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement).closest('input, textarea')) return;
+      const option = options[Number(e.key) - 1];
+      if (option) pick(option);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   return (
     <div className={styles.options}>
-      {options.map((text) => {
+      {options.map((text, i) => {
         const state = !verdict ? '' : text === right ? styles.optRight : text === picked ? styles.optWrong : '';
         return (
           <button
@@ -140,11 +161,9 @@ function Choose({
             lang={lang === 'gr' ? 'el' : 'ru'}
             className={`${styles.optionBtn} ${state}`}
             disabled={verdict !== null}
-            onClick={() => {
-              setPicked(text);
-              onVerdict(text === right ? 'correct' : 'wrong');
-            }}
+            onClick={() => pick(text)}
           >
+            <kbd className={styles.key}>{i + 1}</kbd>
             {text}
           </button>
         );
@@ -204,28 +223,68 @@ function Write({ card, lang, verdict, onVerdict }: AnswerProps) {
   );
 }
 
-// ---------- вспомнить и проверить себя ----------
+// ---------- карточки: вспомнить, перевернуть, ответить себе ----------
 
-function SelfCheck({ card, onResult }: { card: Card; onResult: (ok: boolean) => void }) {
-  const [shown, setShown] = useState(false);
-  if (!shown) {
-    return (
-      <Button variant="secondary" onClick={() => setShown(true)}>
-        Показать ответ
-      </Button>
-    );
-  }
+function FlipCard({ card, onResult }: { card: Card; onResult: (ok: boolean) => void }) {
+  const [flipped, setFlipped] = useState(false);
+  const knowRef = useRef<HTMLButtonElement>(null);
+
+  const flip = () => {
+    if (flipped) return;
+    setFlipped(true);
+    void speak(card.greek);
+  };
+
+  useEffect(() => {
+    if (flipped) knowRef.current?.focus();
+  }, [flipped]);
+
+  // Пробел или Enter — перевернуть; потом 1 — не вспомнил(а), 2 — помню.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (!flipped && (e.key === ' ' || e.key === 'Enter')) {
+        e.preventDefault();
+        flip();
+      } else if (flipped && e.key === '1') onResult(false);
+      else if (flipped && e.key === '2') onResult(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   return (
-    <>
-      <div className={styles.selfAnswer}>
-        <Reveal card={card} />
-      </div>
-      <div className={styles.selfButtons}>
-        <Button onClick={() => onResult(true)}>Помню</Button>
-        <Button variant="secondary" onClick={() => onResult(false)}>
-          Не вспомнил(а)
-        </Button>
-      </div>
-    </>
+    <div className={styles.flipWrap}>
+      <button
+        type="button"
+        className={flipped ? `${styles.flip} ${styles.flipped}` : styles.flip}
+        onClick={flip}
+        aria-label={flipped ? `${card.russian} — ${card.greek}` : `${card.russian}. Перевернуть`}
+      >
+        <span className={`${styles.face} ${styles.front}`}>
+          <span className={styles.faceText}>{card.russian}</span>
+          <span className={styles.faceHint}>вспомните по-гречески и переверните</span>
+        </span>
+        <span className={`${styles.face} ${styles.back}`} aria-hidden={!flipped}>
+          <span className={styles.faceText} lang="el">
+            {card.greek}
+          </span>
+          <span className={styles.faceHint}>{card.russian}</span>
+        </span>
+      </button>
+      {flipped ? (
+        <div className={styles.selfButtons}>
+          <Button variant="secondary" onClick={() => onResult(false)}>
+            <kbd className={styles.key}>1</kbd> Не вспомнил(а)
+          </Button>
+          <Button ref={knowRef} onClick={() => onResult(true)}>
+            <kbd className={styles.key}>2</kbd> Помню
+          </Button>
+          <SpeakButton text={card.greek} />
+        </div>
+      ) : (
+        <div className={styles.flipHint}>Нажмите на карточку или пробел</div>
+      )}
+    </div>
   );
 }

@@ -13,6 +13,9 @@ export {
   inDeck,
   recentDecks,
   recordAnswer,
+  updateCard,
+  renameDeck,
+  streakOf,
   hasCard,
   findCard,
   addWord,
@@ -21,5 +24,22 @@ export {
   DEFAULT_DECK_ID,
   type DeckRef,
 } from './model/store';
-export { statusOf, pickSession, shuffle, LEARNED_BOX, type CardStatus } from './lib/srs';
+export {
+  statusOf,
+  isDue,
+  isDueAny,
+  isLearned,
+  learnedShare,
+  planToday,
+  pickSession,
+  pickPractice,
+  nextReview,
+  daysUntil,
+  shuffle,
+  LEARNED_BOX,
+  NEW_PER_SESSION,
+  SESSION_LIMIT,
+  type CardStatus,
+  type Plan,
+} from './lib/srs';
 export { cardKey, checkGreek, checkRussian, greekVariants } from './lib/answers';

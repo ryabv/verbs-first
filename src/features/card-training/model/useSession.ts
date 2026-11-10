@@ -38,6 +38,8 @@ export function useSession(cards: readonly Card[], dir: Direction) {
   const total = cards.length;
   const done = total - state.queue.length;
   const firstTry = Object.values(state.first).filter(Boolean).length;
+  /** Слова, где ошиблись с первого раза, — их покажем в итоге. */
+  const missed = cards.filter((c) => state.first[c.id] === false);
 
-  return { current, resolve, total, done, firstTry, finished: state.queue.length === 0, attempt: state.attempt };
+  return { current, resolve, total, done, firstTry, missed, finished: state.queue.length === 0, attempt: state.attempt };
 }

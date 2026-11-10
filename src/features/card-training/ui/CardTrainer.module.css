@@ -1,40 +1,69 @@
-.setup, .session { font-size: 16px; }
-.empty { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); }
-.emptyIcon { flex: none; color: var(--brand); }
+.today, .session { font-size: 16px; }
 
-.option { display: grid; gap: 0.4rem; margin-bottom: 1rem; }
-.optionLabel { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
-.segmented { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.seg, .segActive {
-  font: inherit;
-  font-size: 0.95rem;
-  padding: 0.45rem 0.9rem;
+/* ---------- режимы ---------- */
+.modes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.5rem; margin: 0 0 1rem; padding: 0; border: none; min-inline-size: 0; }
+.modesLegend { padding: 0; margin-bottom: 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.mode {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.2rem;
+  padding: 0.7rem 0.75rem;
   border: 2px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: var(--bg);
-  color: var(--text);
   cursor: pointer;
+  transition: border-color 0.15s;
 }
-.seg:hover { border-color: var(--border-strong); }
-.segActive { border-color: var(--brand); color: var(--brand); }
-.direction { font-size: 0.9rem; color: var(--text-muted); margin: 0 0 1rem; }
-.start { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
+.mode:hover { border-color: var(--border-strong); }
+.modeActive, .modeActive:hover { border-color: var(--brand); background: var(--surface-muted); }
+.mode:has(.modeInput:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.modeInput { position: absolute; opacity: 0; pointer-events: none; }
+.modeTitle { font-weight: 700; }
+.modeActive .modeTitle { color: var(--brand); }
+.modeText { font-size: 0.8rem; line-height: 1.35; color: var(--text-muted); }
+/* На телефоне описания в плитках скрыты — показываем описание выбранного режима под ними. */
+.modeHint { display: none; margin: -0.5rem 0 1rem; font-size: 0.85rem; color: var(--text-muted); }
 
+/* ---------- план на сегодня ---------- */
+.plan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  padding: 18px 22px;
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+.planNumbers { display: flex; gap: 2rem; }
+.planNum { display: grid; line-height: 1.15; }
+.planNum b { font-family: var(--font-display); font-size: 2.4rem; color: var(--text); }
+.planNum span { font-size: 0.85rem; color: var(--text-muted); }
+.planNum small { font-size: 0.75rem; color: var(--text-subtle); }
+.planDone { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; color: var(--olive); }
+.planNote { margin: 0.3rem 0 0; max-width: 36rem; color: var(--text-muted); font-size: 0.95rem; }
+.planActions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+/* ---------- сессия ---------- */
 .progress { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
 .exit { font: inherit; font-size: 0.9rem; background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; }
 .exit:hover { color: var(--brand); }
 
-.card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
-.promptBox { display: grid; justify-items: start; gap: 0.3rem; margin-bottom: 1.2rem; }
-.prompt { font-size: 1.7rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; }
+.card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 28px; }
+.promptBox { display: grid; justify-items: center; gap: 0.3rem; margin: 0.5rem 0 1.5rem; text-align: center; }
+.prompt { font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
 .hint { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
 .icon { vertical-align: -0.15em; margin-right: 0.3em; }
 
 .options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
 .optionBtn {
   font: inherit;
-  font-size: 1.05rem;
-  min-height: 3rem;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 3.2rem;
   padding: 0.5rem 0.75rem;
   border: 2px solid var(--border);
   border-radius: var(--radius);
@@ -47,6 +76,20 @@
 .optionBtn:disabled { cursor: default; }
 .optRight, .optRight:disabled { border-color: var(--success); background: var(--success-soft); color: var(--success); }
 .optWrong, .optWrong:disabled { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+/* Подсказка клавиши — только там, где есть клавиатура. */
+.key {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.3rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
 
 .form { display: flex; gap: 0.5rem; }
 .input {
@@ -71,15 +114,80 @@
 .revealRussian { color: var(--text-muted); }
 .next { margin-top: 1rem; }
 
-.selfAnswer { padding: 0.8rem 1rem; background: var(--surface-muted); border-radius: var(--radius); margin-bottom: 1rem; }
-.selfButtons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+/* ---------- карточка с переворотом ---------- */
+.flipWrap { display: grid; gap: 1rem; }
+.flip {
+  font: inherit;
+  color: inherit;
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 15rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  perspective: 1200px;
+}
+.flip:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--radius); }
+.face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  border: 3px solid var(--surface-muted);
+  border-radius: calc(var(--radius) * 2);
+  background: var(--bg);
+  box-shadow: 0 3px 0 var(--border);
+  backface-visibility: hidden;
+  transition: transform 0.5s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.back { transform: rotateY(180deg); border-color: var(--olive-soft); background: var(--surface-muted); }
+.flipped .front { transform: rotateY(-180deg); }
+.flipped .back { transform: rotateY(0); }
+.faceText { font-size: 2.2rem; font-weight: 700; text-align: center; }
+.back .faceText { color: var(--brand); }
+.faceHint { font-size: 0.85rem; color: var(--text-subtle); text-align: center; }
+.flipHint { text-align: center; font-size: 0.85rem; color: var(--text-subtle); }
+.selfButtons { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; }
+.selfButtons :global(button) { display: inline-flex; align-items: center; gap: 0.5rem; }
 
+/* ---------- итог ---------- */
 .finish { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
-.finishTitle { font-size: 1.3rem; font-weight: 700; color: var(--success); }
+.finishTitle { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--olive); }
+.finishStats { margin: 0.3rem 0 1rem; color: var(--text-muted); }
+.finishLabel { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
+.missed { list-style: none; margin: 0 0 1rem; padding: 4px 0; border-radius: var(--radius); background: var(--surface-muted); }
+.missed li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.5rem; padding: 4px 14px; }
+.missed li + li { border-top: 1px solid var(--border); }
+.missedGreek { font-weight: 600; }
+.missedRussian { color: var(--text-muted); }
+.finishActions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
+@media (prefers-reduced-motion: reduce) {
+  .face { transition: none; }
+}
+@media (max-width: 900px) {
+  .modes { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
+}
+/* Сенсорный экран без клавиатуры — подсказки клавиш не нужны. */
+@media (hover: none) {
+  .key { display: none; }
+  .flipHint { display: none; }
+}
 @media (max-width: 600px) {
   .card, .finish { padding: 16px; border-width: 2px; }
-  .prompt { font-size: 1.4rem; }
+  .prompt { font-size: 1.6rem; }
   .options { grid-template-columns: 1fr; }
-  .selfButtons :global(button), .next { flex: 1 1 100%; width: 100%; min-height: 2.9rem; }
+  .modes { grid-template-columns: 1fr 1fr; }
+  .modeText { display: none; }
+  .modeHint { display: block; }
+  .plan { padding: 16px; }
+  .planActions, .planActions :global(button) { width: 100%; }
+  .flip { height: 12rem; }
+  .faceText { font-size: 1.8rem; }
+  .selfButtons :global(button), .next, .finishActions :global(button) { flex: 1 1 auto; min-height: 2.9rem; }
 }

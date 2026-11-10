@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { cardKey } from '../lib/answers';
-import { newSrs, schedule } from '../lib/srs';
+import { addDays, dayKey, newSrs, schedule } from '../lib/srs';
 import type { Card, CardsState, Deck, Direction, WordInput } from './types';
 
 /**
@@ -14,7 +14,7 @@ export const DEFAULT_DECK_ID = 'my-words';
 /** Свой набор по умолчанию: сюда идут слова, у которых нет набора урока. */
 export const DEFAULT_DECK: Deck = { id: DEFAULT_DECK_ID, title: 'Мои слова', createdAt: 0 };
 
-const EMPTY: CardsState = { decks: [DEFAULT_DECK], cards: [] };
+const EMPTY: CardsState = { decks: [DEFAULT_DECK], cards: [], days: [] };
 
 /** Старый формат: один набор в поле deckId. */
 function migrateCard(card: Card & { deckId?: string }): Card {
@@ -33,6 +33,7 @@ function load(): CardsState {
     return {
       decks: decks.some((d) => d.id === DEFAULT_DECK_ID) ? decks : [DEFAULT_DECK, ...decks],
       cards,
+      days: Array.isArray(parsed.days) ? parsed.days : [],
     };
   } catch {
     return EMPTY;
@@ -118,7 +119,7 @@ function withoutDeck(cards: readonly Card[], deckId: string, only?: (c: Card) =>
 export function removeDeck(deckId: string): void {
   if (deckId === DEFAULT_DECK_ID) return;
   const s = getState();
-  setState({ decks: s.decks.filter((d) => d.id !== deckId), cards: withoutDeck(s.cards, deckId) });
+  setState({ ...s, decks: s.decks.filter((d) => d.id !== deckId), cards: withoutDeck(s.cards, deckId) });
 }
 
 /**
@@ -154,6 +155,7 @@ export function addCards(deckId: string, words: readonly WordInput[]): number {
   if (!fresh.length && !linked.size) return 0;
   const now = Date.now();
   setState({
+    ...s,
     // oxlint-disable-next-line no-map-spread
     decks: s.decks.map((d) => (d.id === deckId ? { ...d, usedAt: now } : d)),
     cards: [
@@ -187,16 +189,50 @@ export function cardsInDecks(cards: readonly Card[], deckIds: readonly string[] 
   return deckIds === null ? [...cards] : cards.filter((c) => c.deckIds.some((id) => deckIds.includes(id)));
 }
 
-export function recordAnswer(cardId: string, dir: Direction, correct: boolean): void {
+/** Ответ в тренировке: новый срок повторения слова и отметка «сегодня занимался». */
+export function recordAnswer(cardId: string, dir: Direction, correct: boolean, now = Date.now()): void {
   const s = getState();
+  const today = dayKey(now);
   setState({
     ...s,
     // Неизменяемое обновление: useSyncExternalStore сравнивает ссылки.
     // oxlint-disable-next-line no-map-spread
     cards: s.cards.map((c) =>
-      c.id === cardId ? { ...c, progress: { ...c.progress, [dir]: schedule(c.progress[dir], correct) } } : c,
+      c.id === cardId ? { ...c, progress: { ...c.progress, [dir]: schedule(c.progress[dir], correct, now) } } : c,
     ),
+    days: s.days.includes(today) ? s.days : [...s.days, today].slice(-400),
   });
+}
+
+/** Исправить слово или перевод. Прогресс сохраняется. */
+export function updateCard(cardId: string, patch: WordInput): void {
+  const greek = patch.greek.trim();
+  const russian = patch.russian.trim();
+  if (!greek || !russian) return;
+  const s = getState();
+  // oxlint-disable-next-line no-map-spread
+  setState({ ...s, cards: s.cards.map((c) => (c.id === cardId ? { ...c, greek, russian } : c)) });
+}
+
+/** Переименовать свой набор (наборы уроков называются по уроку). */
+export function renameDeck(deckId: string, title: string): void {
+  const t = title.trim();
+  const s = getState();
+  if (!t) return;
+  // oxlint-disable-next-line no-map-spread
+  setState({ ...s, decks: s.decks.map((d) => (d.id === deckId && d.lessonId === undefined ? { ...d, title: t } : d)) });
+}
+
+/** Сколько дней подряд занимались — по сегодня или по вчера (сегодня ещё не поздно). */
+export function streakOf(days: readonly string[], now = Date.now()): number {
+  const set = new Set(days);
+  let t = set.has(dayKey(now)) ? now : addDays(now, -1);
+  let n = 0;
+  while (set.has(dayKey(t))) {
+    n++;
+    t = addDays(t, -1);
+  }
+  return n;
 }
 
 /** Карточка с этим словом, если есть (без учёта ударений). */

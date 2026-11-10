@@ -1,49 +1,57 @@
-import { useMemo, useState } from 'react';
-import { pickSession, statusOf, type Card } from '@/entities/card';
+import { useState } from 'react';
+import { daysUntil, nextReview, pickPractice, pickSession, planToday, type Card } from '@/entities/card';
+import { SpeakButton } from '@/features/pronounce';
+import { plural } from '@/shared/lib/plural';
 import { Button } from '@/shared/ui/button';
-import {
-  ANSWER_LABELS,
-  directionOf,
-  PROMPT_LABELS,
-  readSettings,
-  writeSettings,
-  type AnswerMode,
-  type Prompt,
-  type TrainingSettings,
-} from '../model/settings';
+import { ProgressBar } from '@/shared/ui/progress-bar';
+import { directionOf, MODE_IDS, MODES, readMode, writeMode, type Mode } from '../model/settings';
 import { useSession } from '../model/useSession';
 import { CardQuestion } from './CardQuestion';
-import { Amphora } from '@/shared/ui/ornament';
-import { ProgressBar } from '@/shared/ui/progress-bar';
 import styles from './CardTrainer.module.css';
 
 interface Props {
-  /** Карточки выбранных наборов. */
+  /** Карточки, которые тренируем (все или один набор). */
   pool: readonly Card[];
   /** Все карточки — для вариантов ответа, если в наборе мало слов. */
   allCards: readonly Card[];
+  /** Идёт сессия: странице стоит спрятать остальное, чтобы ничто не отвлекало. */
+  onSessionChange?: (active: boolean) => void;
 }
 
-const PROMPTS = Object.keys(PROMPT_LABELS) as Prompt[];
-const ANSWERS = Object.keys(ANSWER_LABELS) as AnswerMode[];
+const cards = (n: number) => plural(n, ['карточка', 'карточки', 'карточек']);
+const words = (n: number) => plural(n, ['слово', 'слова', 'слов']);
 
-/** Тренажёр карточек: настройка → сессия → итог. */
-export function CardTrainer({ pool, allCards }: Props) {
-  const [settings, setSettingsState] = useState<TrainingSettings>(readSettings);
+/** «завтра», «через 3 дня», «сегодня позже». */
+export function whenText(at: number): string {
+  const d = daysUntil(at);
+  if (d <= 0) return 'сегодня';
+  if (d === 1) return 'завтра';
+  if (d === 2) return 'послезавтра';
+  return `через ${d} ${plural(d, ['день', 'дня', 'дней'])}`;
+}
+
+/** Тренировка: план на сегодня → сессия → итог. */
+export function CardTrainer({ pool, allCards, onSessionChange }: Props) {
+  const [mode, setModeState] = useState<Mode>(readMode);
   const [session, setSession] = useState<{ id: number; cards: Card[] } | null>(null);
+  const settings = MODES[mode].settings;
   const dir = directionOf(settings);
+  const plan = planToday(pool, dir);
+  const next = nextReview(pool, dir);
+  const planned = pickSession(pool, dir).length;
 
-  const setSettings = (next: TrainingSettings) => {
-    setSettingsState(next);
-    writeSettings(next);
+  const setMode = (m: Mode) => {
+    setModeState(m);
+    writeMode(m);
   };
-
-  const counts = useMemo(() => {
-    const c = { new: 0, learning: 0, learned: 0 };
-    for (const card of pool) c[statusOf(card, dir)]++;
-    return c;
-  }, [pool, dir]);
-  const planned = Math.min(pool.length, 20);
+  const start = (list: Card[]) => {
+    setSession((s) => ({ id: (s?.id ?? 0) + 1, cards: list }));
+    onSessionChange?.(true);
+  };
+  const exit = () => {
+    setSession(null);
+    onSessionChange?.(false);
+  };
 
   if (session) {
     return (
@@ -51,90 +59,82 @@ export function CardTrainer({ pool, allCards }: Props) {
         key={session.id}
         cards={session.cards}
         allCards={allCards}
-        settings={settings}
-        onExit={() => setSession(null)}
-        onRestart={() => setSession({ id: session.id + 1, cards: pickSession(pool, dir) })}
+        mode={mode}
+        onExit={exit}
+        onMore={planned > 0 ? () => start(pickSession(pool, dir)) : undefined}
+        pool={pool}
       />
     );
   }
 
-  if (pool.length === 0) {
-    return (
-      <p className={styles.empty}>
-        <Amphora className={styles.emptyIcon} size="2.5rem" />
-        В выбранных наборах пока нет карточек. Добавьте слова из уроков или свои.
-      </p>
-    );
-  }
+  const nothing = planned === 0;
+  const started = pool.some((c) => c.progress[dir].seen > 0);
 
   return (
-    <div className={styles.setup}>
-      <div className={styles.option}>
-        <span className={styles.optionLabel}>Показываем</span>
-        <div className={styles.segmented}>
-          {PROMPTS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              aria-pressed={settings.prompt === p}
-              className={settings.prompt === p ? styles.segActive : styles.seg}
-              onClick={() => setSettings({ ...settings, prompt: p })}
-            >
-              {PROMPT_LABELS[p]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className={styles.option}>
-        <span className={styles.optionLabel}>Отвечаем</span>
-        <div className={styles.segmented}>
-          {ANSWERS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              aria-pressed={settings.answer === a}
-              className={settings.answer === a ? styles.segActive : styles.seg}
-              onClick={() => setSettings({ ...settings, answer: a })}
-            >
-              {ANSWER_LABELS[a]}
-            </button>
-          ))}
-        </div>
-      </div>
-      <p className={styles.direction}>
-        {dir === 'ru-gr'
-          ? 'Тренируем: вспомнить греческое слово'
-          : 'Тренируем: понять греческое слово'}{' '}
-        · новых {counts.new} · учатся {counts.learning} · выучено {counts.learned}
-      </p>
+    <div className={styles.today}>
+      <fieldset className={styles.modes}>
+        <legend className={styles.modesLegend}>Как тренируемся</legend>
+        {MODE_IDS.map((m) => (
+          <label key={m} className={mode === m ? `${styles.mode} ${styles.modeActive}` : styles.mode}>
+            <input type="radio" name="card-mode" className={styles.modeInput} checked={mode === m} onChange={() => setMode(m)} />
+            <span className={styles.modeTitle}>{MODES[m].title}</span>
+            <span className={styles.modeText}>{MODES[m].text}</span>
+          </label>
+        ))}
+      </fieldset>
+      <p className={styles.modeHint}>{MODES[mode].text}</p>
 
-      <div className={styles.start}>
-        <Button onClick={() => setSession({ id: 1, cards: pickSession(pool, dir) })}>
-          Начать: {planned} {plural(planned)}
-        </Button>
+      <div className={styles.plan}>
+        {nothing ? (
+          <div>
+            <div className={styles.planDone}>На сегодня всё!</div>
+            <p className={styles.planNote}>
+              {next
+                ? `Следующее повторение — ${whenText(next.at)}: ${next.count} ${words(next.count)}. Слова возвращаются, когда начинают забываться, — так они запоминаются надолго.`
+                : 'Добавьте слова из уроков — и они появятся здесь.'}
+            </p>
+          </div>
+        ) : (
+          <div className={styles.planNumbers}>
+            <div className={styles.planNum}>
+              <b>{plan.due.length}</b>
+              <span>повторить</span>
+            </div>
+            <div className={styles.planNum}>
+              <b>{Math.min(plan.fresh.length, Math.max(0, planned - plan.due.length))}</b>
+              <span>новых</span>
+              {plan.freshTotal > plan.fresh.length && <small>ещё {plan.freshTotal - plan.fresh.length} ждут</small>}
+            </div>
+          </div>
+        )}
+        <div className={styles.planActions}>
+          {!nothing && <Button onClick={() => start(pickSession(pool, dir))}>Начать: {planned} {cards(planned)}</Button>}
+          {nothing && started && (
+            <Button variant="secondary" onClick={() => start(pickPractice(pool, dir))}>
+              Потренироваться ещё
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function plural(n: number) {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return 'карточка';
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'карточки';
-  return 'карточек';
-}
-
 interface SessionProps {
   cards: Card[];
   allCards: readonly Card[];
-  settings: TrainingSettings;
+  pool: readonly Card[];
+  mode: Mode;
   onExit: () => void;
-  onRestart: () => void;
+  /** Ещё сессия (если в плане что-то осталось). */
+  onMore?: () => void;
 }
 
-function Session({ cards, allCards, settings, onExit, onRestart }: SessionProps) {
-  const session = useSession(cards, directionOf(settings));
+function Session({ cards: list, allCards, pool, mode, onExit, onMore }: SessionProps) {
+  const settings = MODES[mode].settings;
+  const dir = directionOf(settings);
+  const session = useSession(list, dir);
+  const next = session.finished ? nextReview(pool, dir) : null;
 
   return (
     <div className={styles.session}>
@@ -143,16 +143,18 @@ function Session({ cards, allCards, settings, onExit, onRestart }: SessionProps)
         <span>
           {session.done} / {session.total}
         </span>
-        <button type="button" className={styles.exit} onClick={onExit}>
-          Закончить
-        </button>
+        {!session.finished && (
+          <button type="button" className={styles.exit} onClick={onExit}>
+            Закончить
+          </button>
+        )}
       </div>
 
       {session.current ? (
         <CardQuestion
           key={`${session.current.id}-${session.attempt}`}
           card={session.current}
-          pool={cards}
+          pool={list}
           allCards={allCards}
           settings={settings}
           onResult={session.resolve}
@@ -160,14 +162,30 @@ function Session({ cards, allCards, settings, onExit, onRestart }: SessionProps)
       ) : (
         <div className={styles.finish}>
           <div className={styles.finishTitle}>Сессия закончена!</div>
-          <p>
-            С первого раза: {session.firstTry} из {session.total}. Слова с ошибками попадут в следующую сессию
-            первыми.
+          <p className={styles.finishStats}>
+            С первого раза — {session.firstTry} из {session.total}.
+            {next && ` Следующее повторение — ${whenText(next.at)}.`}
           </p>
-          <div className={styles.start}>
-            <Button onClick={onRestart}>Ещё сессия</Button>
-            <Button variant="secondary" onClick={onExit}>
-              К настройкам
+          {session.missed.length > 0 && (
+            <>
+              <div className={styles.finishLabel}>Где ошиблись — вернутся первыми:</div>
+              <ul className={styles.missed}>
+                {session.missed.map((c) => (
+                  <li key={c.id}>
+                    <span lang="el" className={styles.missedGreek}>
+                      {c.greek}
+                    </span>
+                    <SpeakButton text={c.greek} />
+                    <span className={styles.missedRussian}>{c.russian}</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <div className={styles.finishActions}>
+            {onMore && <Button onClick={onMore}>Ещё сессия</Button>}
+            <Button variant={onMore ? 'secondary' : 'primary'} onClick={onExit}>
+              Готово
             </Button>
           </div>
         </div>

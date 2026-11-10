@@ -1,161 +1,211 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import {
   cardsInDeck,
   cardsInDecks,
-  DEFAULT_DECK_ID,
-  removeDeck,
-  removeFromDeck,
-  statusOf,
+  createDeck,
+  isDueAny,
+  isLearned,
+  learnedShare,
+  streakOf,
   useCards,
+  type Card,
   type Deck,
 } from '@/entities/card';
 import { AddWordForm } from '@/features/card-editor';
 import { CardTrainer } from '@/features/card-training';
-import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
+import { plural } from '@/shared/lib/plural';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
+import { Button } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
-import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
-import { Amphora } from '@/shared/ui/ornament';
+import { Scroll } from '@/shared/ui/ornament';
+import { ProgressBar } from '@/shared/ui/progress-bar';
+import { DeckView } from './DeckView';
 import styles from './CardsPage.module.css';
 
-/** Карточки: независимый сервис слов, связанный с уроками через наборы. */
+const words = (n: number) => plural(n, ['слово', 'слова', 'слов']);
+
+/** Карточки: «Сегодня» (что повторить), наборы плитками; ?deck=… — страница набора. */
 export function CardsPage() {
-  const { decks, cards } = useCards();
-  const [params] = useSearchParams();
-  const lessonParam = Number(params.get('lesson')) || undefined;
+  const { decks, cards, days } = useCards();
+  const [params, setParams] = useSearchParams();
+  const [training, setTraining] = useState(false);
+  const [adding, setAdding] = useState(false);
 
-  // null — все наборы.
-  const [selected, setSelected] = useState<string[] | null>(() =>
-    lessonParam ? decks.filter((d) => d.lessonId === lessonParam).map((d) => d.id) : null,
-  );
-  const isSelected = (id: string) => selected === null || selected.includes(id);
-  const toggle = (id: string) => {
-    const current = selected ?? decks.map((d) => d.id);
-    setSelected(current.includes(id) ? current.filter((x) => x !== id) : [...current, id]);
-  };
+  const deck = decks.find((d) => d.id === params.get('deck'));
+  if (deck) return <DeckView key={deck.id} deck={deck} />;
 
-  // Слово из нескольких выбранных наборов попадает в тренировку один раз.
-  const pool = useMemo(() => cardsInDecks(cards, selected), [cards, selected]);
-  const learned = cards.filter((c) => statusOf(c, 'ru-gr') === 'learned' && statusOf(c, 'gr-ru') === 'learned').length;
-
-  const lessonDecks = decks.filter((d) => d.lessonId !== undefined).toSorted((a, b) => a.lessonId! - b.lessonId!);
-  const ownDecks = decks.filter((d) => d.lessonId === undefined);
-  const countIn = (deckId: string) => cardsInDeck(cards, deckId).length;
-
-  const deckItem = (deck: Deck) => (
-    <li key={deck.id}>
-      <label className={styles.deck}>
-        <input type="checkbox" checked={isSelected(deck.id)} onChange={() => toggle(deck.id)} />
-        <span className={styles.deckTitle}>{deck.title}</span>
-        <span className={styles.deckCount}>{countIn(deck.id)}</span>
-      </label>
-    </li>
-  );
-
-  const sidebar = (
-    <>
-      <SidebarSection title="Наборы">
-        <div className={styles.selectAll}>
-          <button type="button" onClick={() => setSelected(null)}>
-            Все
-          </button>
-          <button type="button" onClick={() => setSelected([])}>
-            Ни одного
-          </button>
-        </div>
-      </SidebarSection>
-      {lessonDecks.length > 0 && (
-        <SidebarSection title="Из уроков">
-          <ul className={styles.decks}>{lessonDecks.map(deckItem)}</ul>
-        </SidebarSection>
-      )}
-      <SidebarSection title="Свои наборы">
-        <ul className={styles.decks}>{ownDecks.map(deckItem)}</ul>
-      </SidebarSection>
-    </>
-  );
+  // ?lesson=N — пришли из урока: тренируем слова этого урока.
+  const lessonId = Number(params.get('lesson')) || undefined;
+  const lessonDeckIds = lessonId ? decks.filter((d) => d.lessonId === lessonId).map((d) => d.id) : null;
+  const pool = lessonDeckIds?.length ? cardsInDecks(cards, lessonDeckIds) : cards;
+  const streak = streakOf(days);
+  const learned = cards.filter(isLearned).length;
 
   return (
-    <SidebarLayout sidebar={sidebar}>
+    <div className={styles.page}>
       <header className={styles.head}>
         <Breadcrumbs items={[{ label: 'Уроки', to: routes.home() }, { label: 'Карточки' }]} />
-        <h1 className={styles.title}>Карточки</h1>
-        <p className={styles.lead}>
-          Всего слов: {cards.length}
-          {learned > 0 && <> · выучено в обе стороны: {learned}</>}
-        </p>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>Карточки</h1>
+          {!training && (
+            <Button variant="secondary" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
+              {adding ? 'Скрыть' : '+ Добавить слово'}
+            </Button>
+          )}
+        </div>
+        {cards.length > 0 && (
+          <p className={styles.lead}>
+            {cards.length} {words(cards.length)} · выучено в обе стороны: {learned}
+            {streak > 0 && (
+              <span className={styles.streak}>
+                {' '}
+                · занимаетесь {streak} {plural(streak, ['день', 'дня', 'дней'])} подряд
+              </span>
+            )}
+          </p>
+        )}
       </header>
 
-      {cards.length === 0 && (
+      {adding && !training && (
+        <section className={styles.addPanel}>
+          <AddWordForm />
+        </section>
+      )}
+
+      {cards.length === 0 ? (
         <Callout title="Пока пусто">
-          <Amphora className={styles.emptyIcon} size="3rem" />
           <p>
-            Добавьте слова из урока — на шаге «Слова урока» или в{' '}
-            <Link to={`${routes.lesson(1)}?mode=reference&tab=words`}>справочнике урока 1</Link> — или впишите своё
-            слово ниже.
+            Слова появляются здесь, когда вы добавляете их из уроков: нажмите на любое греческое слово — и «в
+            карточки». Начать можно со <Link to={routes.alphabet()}>слов урока 0</Link> или с{' '}
+            <Link to={`${routes.lesson(1)}?mode=reference&tab=words`}>слов урока 1</Link>. Или впишите своё слово —
+            кнопка «Добавить слово» выше.
           </p>
         </Callout>
-      )}
-
-      {cards.length > 0 && (
+      ) : (
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Тренировка</h2>
-          <CardTrainer pool={pool} allCards={cards} />
+          <div className={styles.sectionHead}>
+            <h2 className={styles.sectionTitle}>{lessonDeckIds?.length ? `Сегодня · слова урока ${lessonId}` : 'Сегодня'}</h2>
+            {lessonDeckIds?.length ? (
+              <button type="button" className={styles.linkBtn} onClick={() => setParams({})}>
+                Все карточки
+              </button>
+            ) : null}
+          </div>
+          <CardTrainer pool={pool} allCards={cards} onSessionChange={setTraining} />
         </section>
       )}
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Добавить слово</h2>
-        <AddWordForm />
-      </section>
+      {!training && cards.length > 0 && <Decks decks={decks} cards={cards} />}
+    </div>
+  );
+}
 
-      {pool.length > 0 && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Слова в выбранных наборах</h2>
-          {decks
-            .filter((d) => isSelected(d.id) && countIn(d.id) > 0)
-            .map((deck) => (
-              <details key={deck.id} className={styles.deckList}>
-                <summary>
-                  {deck.title} <span className={styles.deckCount}>{countIn(deck.id)}</span>
-                </summary>
-                <ul className={styles.words}>
-                  {cardsInDeck(cards, deck.id).map((card) => (
-                      <li key={card.id} className={styles.word}>
-                        <span className={styles.greek} lang="el">
-                          {card.greek}
-                          <SpeakButton text={card.greek} />
-                        </span>
-                        <span className={styles.russian}>{card.russian}</span>
-                        <button
-                          type="button"
-                          className={styles.remove}
-                          onClick={() => removeFromDeck(card.id, deck.id)}
-                          aria-label={`Убрать «${card.greek}» из набора`}
-                          title="Убрать из набора"
-                        >
-                          ×
-                        </button>
-                      </li>
-                  ))}
-                </ul>
-                {deck.id !== DEFAULT_DECK_ID && (
-                  <button
-                    type="button"
-                    className={styles.removeDeck}
-                    onClick={() => {
-                      if (window.confirm(`Удалить набор «${deck.title}»? Слова, которых нет в других наборах, удалятся.`)) removeDeck(deck.id);
-                    }}
-                  >
-                    Удалить набор
-                  </button>
-                )}
-              </details>
+/** Наборы плитками: уроки — по урокам, дальше свои. */
+function Decks({ decks, cards }: { decks: Deck[]; cards: Card[] }) {
+  const [naming, setNaming] = useState(false);
+  const [, setParams] = useSearchParams();
+  const byLesson = new Map<number, Deck[]>();
+  for (const d of decks.filter((x) => x.lessonId !== undefined).toSorted((a, b) => a.lessonId! - b.lessonId!)) {
+    byLesson.set(d.lessonId!, [...(byLesson.get(d.lessonId!) ?? []), d]);
+  }
+  const own = decks.filter((d) => d.lessonId === undefined && (cardsInDeck(cards, d.id).length > 0 || d.id !== 'my-words'));
+
+  const create = (title: string) => {
+    const deck = createDeck(title);
+    setNaming(false);
+    setParams({ deck: deck.id });
+  };
+
+  return (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>Наборы</h2>
+      {[...byLesson].map(([lesson, list]) => (
+        <div key={lesson} className={styles.group}>
+          <h3 className={styles.groupTitle}>Урок {lesson}</h3>
+          <ul className={styles.tiles}>
+            {list.map((d) => (
+              <DeckTile key={d.id} deck={d} cards={cards} title={d.title.replace(/^Урок \d+ · /, '')} />
             ))}
-        </section>
-      )}
-    </SidebarLayout>
+          </ul>
+        </div>
+      ))}
+      <div className={styles.group}>
+        <h3 className={styles.groupTitle}>Свои наборы</h3>
+        <ul className={styles.tiles}>
+          {own.map((d) => (
+            <DeckTile key={d.id} deck={d} cards={cards} title={d.title} />
+          ))}
+          <li>
+            {!naming ? (
+              <button type="button" className={`${styles.tile} ${styles.tileNew}`} onClick={() => setNaming(true)}>
+                + Новый набор
+              </button>
+            ) : (
+              <NewDeckForm onCreate={create} onCancel={() => setNaming(false)} />
+            )}
+          </li>
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+function DeckTile({ deck, cards, title }: { deck: Deck; cards: Card[]; title: string }) {
+  const list = cardsInDeck(cards, deck.id);
+  const due = list.filter((c) => isDueAny(c)).length;
+  const fresh = list.filter((c) => c.progress['gr-ru'].seen === 0 && c.progress['ru-gr'].seen === 0).length;
+  return (
+    <li>
+      <Link to={`${routes.cards()}?deck=${encodeURIComponent(deck.id)}`} className={styles.tile}>
+        <span className={styles.tileHead}>
+          <Scroll className={styles.tileIcon} />
+          <span className={styles.tileTitle}>{title}</span>
+        </span>
+        <span className={styles.tileMeta}>
+          {list.length} {words(list.length)}
+          {due > 0 && <span className={styles.tileDue}> · повторить {due}</span>}
+          {due === 0 && fresh > 0 && <> · новых {fresh}</>}
+        </span>
+        <span className={styles.tileBar}>
+          <ProgressBar value={learnedShare(list)} thin />
+        </span>
+      </Link>
+    </li>
+  );
+}
+
+/** Название нового набора: поле сразу в фокусе, Esc — отмена. */
+function NewDeckForm({ onCreate, onCancel }: { onCreate: (title: string) => void; onCancel: () => void }) {
+  const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => inputRef.current?.focus(), []);
+  return (
+    <form
+      className={`${styles.tile} ${styles.tileForm}`}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (title.trim()) onCreate(title);
+      }}
+    >
+      <input
+        ref={inputRef}
+        className={styles.tileInput}
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Например: Еда"
+        aria-label="Название набора"
+        onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+      />
+      <div className={styles.tileFormActions}>
+        <Button type="submit" disabled={!title.trim()}>
+          Создать
+        </Button>
+        <button type="button" className={styles.linkBtn} onClick={onCancel}>
+          Отмена
+        </button>
+      </div>
+    </form>
   );
 }

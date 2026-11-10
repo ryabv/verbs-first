@@ -1,1 +1,1 @@
-export { CardTrainer } from './ui/CardTrainer';
+export { CardTrainer, whenText } from './ui/CardTrainer';

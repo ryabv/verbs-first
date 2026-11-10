@@ -8,6 +8,8 @@ export interface Srs {
   box: number;
   /** Сколько раз отвечали. 0 — новое слово. */
   seen: number;
+  /** Когда повторить (начало дня, мс). Нет — пора (карточки до интервалов). */
+  due?: number;
 }
 
 /**
@@ -43,4 +45,6 @@ export interface WordInput {
 export interface CardsState {
   decks: Deck[];
   cards: Card[];
+  /** Дни, когда занимались карточками (2026-11-10), — для серии дней подряд. */
+  days: string[];
 }
