@@ -32,6 +32,7 @@
 @media (max-width: 900px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-  .sidebarInner { position: static; max-height: none; padding: 14px 16px; }
+  /* На телефоне — обычный блок: свой скролл и contain мешали прокрутке страницы. */
+  .sidebarInner { position: static; max-height: none; overflow: visible; overscroll-behavior: auto; padding: 14px 16px; }
   .main { padding: 0 16px 32px; }
 }
