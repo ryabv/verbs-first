@@ -24,7 +24,7 @@
 .wreath { position: absolute; inset: 0; color: var(--olive); }
 .rho { position: relative; margin-top: -0.2rem; font-size: 1.5rem; font-weight: 700; line-height: 1; color: var(--brand); }
 .nav { display: flex; gap: 1.5rem; }
-.nav a { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); font-size: 0.95rem; }
+.nav a { white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); font-size: 0.95rem; }
 /* Иконка — в цвет ссылки (активная — терракотовая). */
 .navIcon { flex: none; width: 1.15em; height: 1.15em; vertical-align: 0; }
 .nav a:hover { color: var(--brand); }
@@ -42,4 +42,10 @@
   .mark { width: 2.3rem; height: 2.3rem; }
   .nav { gap: 0.9rem; }
   .nav a { gap: 0.3rem; }
+}
+
+/* Совсем узкий телефон (320–400px): вместо надписи — только знак ρ в венке, иначе кнопка темы не помещается.
+   Название остаётся для экранных чтецов. */
+@media (max-width: 400px) {
+  .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }

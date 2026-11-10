@@ -13,7 +13,7 @@ export function AppHeader() {
           <Laurel className={styles.wreath} size="100%" />
           <span className={styles.rho}>ρ</span>
         </span>
-        <span>
+        <span className={styles.wordmark}>
           Verbs<b>First</b>
         </span>
       </Link>
