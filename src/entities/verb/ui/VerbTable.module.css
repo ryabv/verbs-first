@@ -3,7 +3,7 @@
 
 .grid {
   display: grid;
-  grid-template-columns: 6.5rem repeat(3, minmax(0, 1fr));
+  grid-template-columns: 6.5rem repeat(var(--cols, 3), minmax(0, 1fr));
   gap: 0.5rem;
 }
 .row { display: contents; }
@@ -40,7 +40,7 @@
 
 /* Узко: заголовки строк уходят наверх, ячейки занимают всю ширину. */
 @container (max-width: 34rem) {
-  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.35rem; }
+  .grid { grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr)); gap: 0.35rem; }
   .grid > div:first-child { display: none; }
   .rowHead { grid-column: 1 / -1; margin-top: 0.4rem; }
   .colHead span:last-child { display: none; }
