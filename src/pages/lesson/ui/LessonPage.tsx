@@ -1,12 +1,13 @@
 import { useCallback, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { getLesson, GrammarSectionView, lessonPath, PhraseList, type Lesson } from '@/entities/lesson';
+import { getLesson, GrammarSectionView, lessonStages, PhraseList, type Lesson, type TableScope } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { ConjugationDrill } from '@/features/conjugation-drill';
 import { progressKey } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
 import { ReadingView } from '@/features/text-reading';
+import { LessonMap } from '@/widgets/lesson-map';
 import { LessonPath } from '@/widgets/lesson-path';
 import { VerbAlgorithm } from '@/widgets/verb-algorithm';
 import { routes } from '@/shared/config/routes';
@@ -35,8 +36,15 @@ const TABS: { id: TabId; label: string }[] = [
 const speakAction = (text: string) => <SpeakButton text={text} />;
 /** Таблицы глаголов: начальная форма по тапу добавляется в набор «Глаголы» урока. */
 const verbsRenderer = (lesson: Lesson) =>
-  function renderVerbs(verbs: Verb[]) {
-    return <VerbAlgorithm verbs={verbs} renderWord={wordIn(lessonDecks(lesson).verbs)} />;
+  function renderVerbs(verbs: Verb[], scope?: TableScope) {
+    return (
+      <VerbAlgorithm
+        verbs={verbs}
+        tenses={scope?.tenses}
+        forms={scope?.forms}
+        renderWord={wordIn(lessonDecks(lesson).verbs)}
+      />
+    );
   };
 
 export function LessonPage() {
@@ -81,45 +89,69 @@ export function LessonPage() {
   }
 
   const next = getLesson(lesson.id + 1);
+  const stages = lessonStages(lesson);
   // Старые ссылки ?mode=homework ведут на первый шаг домашнего задания.
   const openStepId = params.get('step') ?? (params.get('mode') === 'homework' ? lesson.homework[0]?.id : undefined);
+  const openStep = (id: string) => setParams({ step: id });
+  const openMap = () => setParams({});
+
+  // Без шага в адресе — карта урока: этапы на дорожке и медальоны за них.
+  if (!openStepId) {
+    return (
+      <LessonMap
+        lesson={lesson}
+        stages={stages}
+        storageKey={progressKey.lesson(lesson.id)}
+        crumbs={[crumbs[0]!, { label: `Урок ${lesson.id}` }]}
+        onOpenStep={openStep}
+        links={
+          <Link to={`${routes.lesson(lesson.id)}?mode=reference`}>
+            Справочник урока <Arrow />
+          </Link>
+        }
+        finish={{
+          title: `Урок ${lesson.id} пройден!`,
+          text: (
+            <p>
+              Урок, домашнее задание и экзамен позади: «таблица умножения» для {lesson.verbIds.length} глаголов у вас в
+              руках. Повторяйте слова в карточках — и вперёд.
+            </p>
+          ),
+          actions: (
+            <>
+              {next ? (
+                <Link to={routes.lesson(next.id)} className={buttonClassName('primary')}>
+                  Следующий урок
+                </Link>
+              ) : (
+                <Link to={routes.home()} className={buttonClassName('primary')}>
+                  Ко всем урокам
+                </Link>
+              )}
+              <Link to={routes.cards({ lesson: lesson.id })} className={buttonClassName('secondary')}>
+                Слова урока в карточках
+              </Link>
+            </>
+          ),
+        }}
+      />
+    );
+  }
 
   return (
     <LessonPath
       lesson={lesson}
-      steps={lessonPath(lesson)}
+      stages={stages}
       storageKey={progressKey.lesson(lesson.id)}
       openStepId={openStepId}
       onStepChange={syncStep}
-      stepsTitle="План урока"
+      onOpenMap={() => {
+        openMap();
+        window.scrollTo({ top: 0 });
+      }}
       renderVerbs={verbsRenderer(lesson)}
       sidebarHeader={header}
       crumbs={crumbs}
-      finish={{
-        title: `Урок ${lesson.id} пройден!`,
-        text: (
-          <p>
-            Урок, домашнее задание и экзамен позади: «таблица умножения» для {lesson.verbIds.length} глаголов у вас в
-            руках. Повторяйте слова в карточках — и вперёд.
-          </p>
-        ),
-        actions: (
-          <>
-            {next ? (
-              <Link to={routes.lesson(next.id)} className={buttonClassName('primary')}>
-                Следующий урок
-              </Link>
-            ) : (
-              <Link to={routes.home()} className={buttonClassName('primary')}>
-                Ко всем урокам
-              </Link>
-            )}
-            <Link to={routes.cards({ lesson: lesson.id })} className={buttonClassName('secondary')}>
-              Слова урока в карточках
-            </Link>
-          </>
-        ),
-      }}
     />
   );
 }
@@ -132,7 +164,7 @@ function LessonSidebarHeader({ lesson, mode }: { lesson: Lesson; mode: Mode }) {
       <div className={styles.lessonTitle}>{lesson.title}</div>
       {mode === 'reference' ? (
         <Link to={base} className={styles.headerLink}>
-          <Arrow direction="left" /> К занятиям урока
+          <Arrow direction="left" /> К карте урока
         </Link>
       ) : (
         <Link to={`${base}?mode=reference`} className={styles.headerLink}>

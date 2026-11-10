@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { Lesson, LessonStep, StepKind } from '@/entities/lesson';
+import { stageOfStep, type Lesson, type LessonStage, type StepKind, type TableScope } from '@/entities/lesson';
 import type { Verb } from '@/entities/verb';
 import { readExamResult } from '@/features/exam';
-import { useLessonProgress } from '@/features/lesson-progress';
+import { isStageDone, stageEntryStep, useLessonProgress } from '@/features/lesson-progress';
+import { Arrow } from '@/shared/ui/ornament';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
-import { Laurel } from '@/shared/ui/ornament';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
 import { StepContent } from './StepContent';
@@ -23,35 +23,43 @@ interface Props {
   /** Текущий шаг сменился — записать в адрес. initial: первая запись (заменить, а не добавить в историю). */
   onStepChange?: (id: string, initial: boolean) => void;
   lesson: Lesson;
-  /** Весь путь: урок → домашнее задание → экзамен (lessonPath). */
-  steps: LessonStep[];
+  /** Весь путь по этапам: урок → домашнее задание → экзамен (lessonStages). */
+  stages: LessonStage[];
   /** Ключ прогресса в хранилище (progressKey.lesson). */
   storageKey: string;
-  /** Заголовок списка шагов в сайдбаре. */
-  stepsTitle: string;
   /** Слот для просмотра таблиц глаголов (виджет verb-algorithm передаёт страница). */
-  renderVerbs: (verbs: Verb[]) => ReactNode;
+  renderVerbs: (verbs: Verb[], scope?: TableScope) => ReactNode;
   /** Верх сайдбара: название урока, ссылка на справочник. */
   sidebarHeader: ReactNode;
+  /** Крошки до карты урока включительно. */
   crumbs: Crumb[];
-  /** Экран после последнего шага. */
-  finish: { title: string; text: ReactNode; actions: ReactNode };
+  /** Вернуться на карту урока (в конце этапа — там ждёт медальон). */
+  onOpenMap: () => void;
 }
 
-/** Путь ученика: шаги в сайдбаре, текущий шаг — как статья учебника. */
-export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey, stepsTitle, renderVerbs, sidebarHeader, crumbs, finish }: Props) {
+/** Путь ученика внутри этапа: шаги этапа в сайдбаре, текущий шаг — как статья учебника. */
+export function LessonPath({ openStepId, onStepChange, lesson, stages, storageKey, renderVerbs, sidebarHeader, crumbs, onOpenMap }: Props) {
+  const steps = useMemo(() => stages.flatMap((st) => st.steps), [stages]);
   const stepIds = useMemo(() => steps.map((s) => s.id), [steps]);
   const progress = useLessonProgress(storageKey, stepIds);
   const { goTo, currentId, setDone } = progress;
 
   // Адрес ↔ текущий шаг. synced — последний шаг, о котором договорились адрес и состояние:
   // изменился адрес (ссылка, «назад») — идём на шаг; изменился шаг — пишем в адрес.
+  // pending — шаг из адреса, на который ещё не перешли: пока переход не применился, адрес не трогаем
+  // (иначе повторный запуск эффекта успеет записать в адрес старый шаг).
   const synced = useRef<string | undefined>(undefined);
+  const pending = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (openStepId && openStepId !== synced.current && stepIds.includes(openStepId)) {
       synced.current = openStepId;
+      pending.current = openStepId;
       goTo(openStepId);
       return;
+    }
+    if (pending.current) {
+      if (currentId !== pending.current) return;
+      pending.current = undefined;
     }
     if (currentId && currentId !== synced.current) {
       const initial = synced.current === undefined;
@@ -65,7 +73,6 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
   useEffect(() => {
     for (const s of steps) if (s.kind === 'exam') setDone(s.id, examPassed);
   }, [steps, examPassed, setDone]);
-  const [celebrate, setCelebrate] = useState(false);
   // На телефоне список шагов свёрнут, чтобы задание было на первом экране.
   const [stepsOpen, setStepsOpen] = useState(false);
   const headRef = useRef<HTMLElement>(null);
@@ -74,12 +81,16 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
   const { markDone } = progress;
   const onGoal = useCallback(() => step && markDone(step.id), [markDone, step]);
 
-  if (!step) return null;
+  const stage = step && stageOfStep(stages, step.id);
+  if (!step || !stage) return null;
 
-  const isLast = progress.currentIndex === steps.length - 1;
-  const prevStep = steps[progress.currentIndex - 1];
-  const nextStep = steps[progress.currentIndex + 1];
-  const percent = Math.round((progress.completedCount / steps.length) * 100);
+  const indexInStage = stage.steps.indexOf(step);
+  const prevStep = stage.steps[indexInStage - 1];
+  const nextStep = stage.steps[indexInStage + 1];
+  const isStageEnd = !nextStep;
+  const doneInStage = stage.steps.filter((s) => progress.isDone(s.id)).length;
+  // Мягкий порядок: этап открыт, но если раньше есть непройденный — подскажем начать с него.
+  const missed = stages.slice(0, stage.n - 1).find((st) => !isStageDone(st, progress.isDone));
 
   // На компьютере — в начало страницы; на телефоне сайдбар стоит над шагом, поэтому к заголовку шага.
   const scrollTop = () => {
@@ -87,24 +98,37 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
     const top = narrow && headRef.current ? headRef.current.getBoundingClientRect().top + window.scrollY - 8 : 0;
     window.scrollTo({ top, behavior: 'smooth' });
   };
-  // Последний шаг-задание (экзамен) не завершить, пока оно не выполнено.
-  const finishLocked = isLast && GOAL_KINDS.has(step.kind) && !progress.isDone(step.id);
+  // Экзамен не завершить, пока он не сдан.
+  const finishLocked = step.kind === 'exam' && !progress.isDone(step.id);
   const goNext = () => {
     if (finishLocked) return;
     // Упражнение засчитывается только по выполнении; пропуск — просто переход дальше.
-    if (GOAL_KINDS.has(step.kind) && !progress.isDone(step.id) && nextStep) progress.goTo(nextStep.id);
+    const skip = GOAL_KINDS.has(step.kind) && !progress.isDone(step.id);
+    // Конец этапа — на карту (там медальон). Текущий шаг не двигаем: иначе он успеет записаться в адрес
+    // поверх перехода на карту; карта сама ведёт к первому непройденному этапу.
+    if (isStageEnd) {
+      if (!skip) progress.markDone(step.id);
+      onOpenMap();
+      return;
+    }
+    if (skip) progress.goTo(nextStep.id);
     else progress.completeAndNext();
-    if (isLast) setCelebrate(true);
     scrollTop();
   };
 
   const sidebar = (
     <>
       {sidebarHeader}
-      <SidebarSection title={stepsTitle}>
+      <SidebarSection title={`Этап ${stage.n} из ${stages.length}`}>
+        <div className={styles.stageTitle}>
+          {stage.kicker && <div className={styles.stageKicker}>{stage.kicker}</div>}
+          {stage.title}
+        </div>
         <div className={styles.overall}>
-          <ProgressBar value={percent / 100} thin />
-          <span>{percent}%</span>
+          <ProgressBar value={doneInStage / stage.steps.length} thin />
+          <span>
+            {doneInStage}/{stage.steps.length}
+          </span>
         </div>
         <button
           type="button"
@@ -113,61 +137,52 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
           aria-expanded={stepsOpen}
         >
           <span>
-            Шаг {progress.currentIndex + 1} из {steps.length}: {step.title}
+            Шаг {indexInStage + 1} из {stage.steps.length}: {step.title}
           </span>
           <span className={styles.chevron}>{stepsOpen ? '▴' : '▾'}</span>
         </button>
         <div className={stepsOpen ? styles.stepsWrapOpen : styles.stepsWrap}>
           <StepList
-            steps={steps}
-            partTitles={lesson.homeworkParts}
+            steps={stage.steps}
             statusOf={progress.statusOf}
             onSelect={(id) => {
-              setCelebrate(false);
               setStepsOpen(false);
               progress.goTo(id);
               scrollTop();
             }}
           />
         </div>
+        <button type="button" className={styles.mapLink} onClick={onOpenMap}>
+          <Arrow direction="left" /> Карта урока
+        </button>
       </SidebarSection>
     </>
   );
 
-  if (celebrate) {
-    return (
-      <SidebarLayout sidebar={sidebar}>
-        <header className={styles.head}>
-          <Breadcrumbs items={[...crumbs, { label: 'Итог' }]} />
-          <Laurel className={styles.finishLaurel} size="4.5rem" />
-          <h1 className={styles.title}>{finish.title}</h1>
-        </header>
-        <Callout kind="ok" title="Что дальше">
-          {finish.text}
-        </Callout>
-        <div className={styles.finishActions}>
-          {finish.actions}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              progress.reset();
-              setCelebrate(false);
-            }}
-          >
-            Пройти заново
-          </Button>
-        </div>
-      </SidebarLayout>
-    );
-  }
-
   return (
     <SidebarLayout sidebar={sidebar}>
       <header className={styles.head} ref={headRef}>
-        <Breadcrumbs items={[...crumbs, { label: `Шаг ${progress.currentIndex + 1} из ${steps.length}` }]} />
+        <Breadcrumbs items={[...crumbs, { label: stage.title }]} />
         <div className={step.kind === 'exam' ? `${styles.kind} ${styles.kindExam}` : styles.kind}>{KIND_LABELS[step.kind]}</div>
         <h1 className={styles.title}>{step.title}</h1>
       </header>
+
+      {missed && (
+        <Callout kind="warn" title="Лучше по порядку">
+          <p>
+            Этот этап опирается на предыдущие, а этап «{missed.title}» ещё не пройден.
+          </p>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              progress.goTo(stageEntryStep(missed, progress.isDone));
+              scrollTop();
+            }}
+          >
+            Перейти к этапу «{missed.title}»
+          </Button>
+        </Callout>
+      )}
 
       {step.intro && <Callout>{step.intro}</Callout>}
 
@@ -177,21 +192,23 @@ export function LessonPath({ openStepId, onStepChange, lesson, steps, storageKey
 
       <PrevNext
         prev={
-          prevStep && {
-            label: 'Предыдущий шаг',
-            title: prevStep.title,
-            onClick: () => {
-              progress.goTo(prevStep.id);
-              scrollTop();
-            },
-          }
+          prevStep
+            ? {
+                label: 'Предыдущий шаг',
+                title: prevStep.title,
+                onClick: () => {
+                  progress.goTo(prevStep.id);
+                  scrollTop();
+                },
+              }
+            : { label: 'Назад', title: 'Карта урока', onClick: onOpenMap }
         }
         next={{
-          label: isLast ? 'Последний шаг' : 'Следующий шаг',
-          title: isLast ? 'Завершить' : (nextStep?.title ?? ''),
+          label: isStageEnd ? 'Конец этапа' : 'Следующий шаг',
+          title: isStageEnd ? (step.kind === 'exam' ? 'Завершить урок' : 'К карте урока') : nextStep.title,
           onClick: goNext,
           disabled: finishLocked,
-          hint: step.kind === 'exam' ? 'Сначала сдайте экзамен' : 'Сначала выполните задание',
+          hint: 'Сначала сдайте экзамен',
         }}
       />
     </SidebarLayout>

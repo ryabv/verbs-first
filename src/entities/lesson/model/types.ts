@@ -78,11 +78,27 @@ interface StepBase {
   intro?: string;
   /** Часть домашнего задания (1, 2, 3…): шаги ДЗ группируются по частям. Без сроков — в своём темпе. */
   part?: number;
+  /** Этап урока (1, 2, 3… → lesson.stages[n - 1]): точка на карте урока. У шагов ДЗ этап — их часть. */
+  stage?: number;
+}
+
+/** Этап урока на карте: несколько коротких шагов, за прохождение — медальон. */
+export interface StageInfo {
+  title: string;
+  /** Надпись медальона: «Настоящее освоено». */
+  award: string;
+}
+
+/** Какие клетки таблицы показывать в шаге «глаголы»: только уже пройденные. Пусто = все. */
+export interface TableScope {
+  tenses?: Tense[];
+  forms?: SentenceForm[];
 }
 
 export type LessonStep =
   | (StepBase & { kind: 'theory'; sectionIds: string[] })
-  | (StepBase & { kind: 'verbs'; verbIds?: string[] })
+  /** Таблицы глаголов. verbIds не задан — глаголы урока (без опорных: είμαι идёт своим шагом). */
+  | (StepBase & { kind: 'verbs'; verbIds?: string[]; scope?: TableScope })
   | (StepBase & { kind: 'drill'; scope: DrillScope; goal: number })
   | (StepBase & { kind: 'reading'; readingId: string })
   | (StepBase & { kind: 'phrases' })
@@ -115,8 +131,10 @@ export interface Lesson {
   readings: ReadingText[];
   /** Новые слова урока по группам (кроме глаголов и фраз темы — они берутся сами). */
   vocabulary: VocabGroup[];
-  /** Путь ученика по уроку: теория и практика чередуются. */
+  /** Путь ученика по уроку: теория и практика чередуются. У каждого шага — stage. */
   steps: LessonStep[];
+  /** Этапы урока (до ДЗ): по одному времени или теме за раз. */
+  stages: StageInfo[];
   /** Домашнее задание: шаги, разбитые на части (поле part). Идёт в пути после урока, перед экзаменом. */
   homework: LessonStep[];
   /** Названия частей ДЗ: «Настоящее время»… */

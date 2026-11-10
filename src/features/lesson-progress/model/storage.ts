@@ -51,3 +51,23 @@ export function clearProgress(key: string): void {
     /* не критично */
   }
 }
+
+/** Медальоны, которые ученик уже видел на карте: новые показываем с анимацией один раз. */
+const awardsKey = (lessonId: number) => `verbs-first:awards-seen:${lessonId}`;
+
+export function readSeenAwards(lessonId: number): string[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(awardsKey(lessonId)) ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeSeenAwards(lessonId: number, stageIds: readonly string[]): void {
+  try {
+    localStorage.setItem(awardsKey(lessonId), JSON.stringify(stageIds));
+  } catch {
+    /* не критично */
+  }
+}

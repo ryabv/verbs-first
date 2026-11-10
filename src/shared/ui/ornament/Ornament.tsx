@@ -148,3 +148,33 @@ export function Arrow({ direction = 'right', ...props }: Props & { direction?: '
 export function Meander({ className }: { className?: string }) {
   return <div className={className ? `${styles.meander} ${className}` : styles.meander} aria-hidden="true" />;
 }
+
+/** Буквы для номеров этапов: Α, Β, Γ… */
+const STAGE_LETTERS = 'ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ';
+export const stageLetter = (n: number) => STAGE_LETTERS[(n - 1) % STAGE_LETTERS.length] ?? '';
+
+/**
+ * Медальон этапа: диск в венке с греческой буквой.
+ * Получен — терракотовый, как краснофигурная ваза; не получен — бледный.
+ */
+export function Medallion({
+  n,
+  earned,
+  size = '3.5rem',
+  className,
+}: {
+  n: number;
+  earned: boolean;
+  size?: string;
+  className?: string;
+}) {
+  const cls = [styles.medal, earned ? styles.medalEarned : '', className ?? ''].filter(Boolean).join(' ');
+  return (
+    <span className={cls} style={{ width: size, height: size, fontSize: `calc(${size} * 0.4)` }} aria-hidden="true">
+      <Laurel className={styles.medalLaurel} size="100%" />
+      <span className={styles.medalLetter} lang="el">
+        {stageLetter(n)}
+      </span>
+    </span>
+  );
+}

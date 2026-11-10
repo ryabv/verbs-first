@@ -51,7 +51,8 @@ src/
     alphabet/             «Алфавит»: буквы, сочетания, ударение, 2 тренажёра (?section=)
   widgets/
     app-header, app-footer
-    lesson-path/          «путь» по шагам: сайдбар со списком шагов, контент шага, prev/next, финал
+    lesson-map/           карта урока: этапы на дорожке, медальоны, финал урока
+    lesson-path/          шаги этапа: сайдбар со списком шагов этапа, контент шага, prev/next
     verb-algorithm/       список глаголов + таблица 3×3 / все лица выбранного глагола
   features/
     conjugation-drill/    тренажёр «таблицы умножения» (одна форма глагола)
@@ -129,7 +130,8 @@ interface Lesson {
   verbIds: string[];                  // 8 глаголов урока
   readings: ReadingText[];            // тексты: предложения + glossary + вопросы + findTense
   vocabulary: VocabGroup[];           // новые слова по группам {id, title, words: Phrase[]} (кроме глаголов и фраз темы)
-  steps: LessonStep[];                // путь урока
+  steps: LessonStep[];                // путь урока; у каждого шага stage (этап)
+  stages: StageInfo[];                // этапы урока {title, award}: точки на карте и медальоны
   homework: LessonStep[];             // ДЗ: те же шаги с полем part (часть 1, 2, 3)
   homeworkParts: string[];            // названия частей ДЗ
 }
@@ -140,7 +142,7 @@ interface Lesson {
 | kind | Что показывает | Данные шага | Засчитывается |
 |---|---|---|---|
 | `theory` | разделы `grammar` | `sectionIds` | по кнопке «дальше» |
-| `verbs` | таблицы глаголов | `verbIds?` | по кнопке |
+| `verbs` | таблицы глаголов | `verbIds?` (по умолчанию — глаголы урока без опорных), `scope? {tenses?, forms?}` — только пройденные клетки | по кнопке |
 | `drill` | `ConjugationDrill` | `scope {verbIds?, tenses?, forms?}`, `goal` | только по цели |
 | `reading` | `ReadingView` | `readingId` | по кнопке |
 | `phrases` | фразы темы | — | по кнопке |
@@ -151,7 +153,7 @@ interface Lesson {
 | `composition` | `CompositionEditor` | `composition: CompositionTask` | по кнопке |
 | `words` | `LessonWords` (слова урока → карточки) | — | по кнопке |
 
-Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `part?` (часть ДЗ).
+Общие поля шага: `id`, `title`, `intro?` (реплика «преподавателя»), `stage?` (этап урока, 1… → `stages[n-1]`), `part?` (часть ДЗ).
 `SentenceItem = { russian; greek: string[] }` — `greek[0]` эталон, остальные тоже верны.
 Названия шагов **не повторяют** тип (тип показывает чип и подпись над заголовком).
 
@@ -185,6 +187,16 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   экзамена) → `homework` → шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
   `exam`); `StepList` рисует заголовки частей и «Часть N · название» из `homeworkParts`,
   нумерация — внутри части. Никаких «дней» (без давления сроками).
+- **Этапы:** `lessonStages(lesson)` делит путь на `LessonStage {id, section, n, title, kicker?, award, steps}`:
+  этапы урока по `step.stage` (`stage-N`), части ДЗ по `part` (`hw-N`), экзамен (`exam`).
+- `/lesson/:id` **без `?step`** — карта урока (`widgets/lesson-map`): дорожка-змейка (SVG за
+  абсолютно позиционированными точками), медальоны `Medallion` из `shared/ui/ornament`,
+  кнопка «Дальше: <этап>», финал урока и «Пройти заново». Клик по этапу → первый непройденный
+  шаг этапа (`stageEntryStep`).
+- С `?step=<id>` — `LessonPath`: в сайдбаре только шаги текущего этапа и ссылка «Карта урока».
+  Последний шаг этапа ведёт на карту (шаг отмечается, текущий шаг не двигается — иначе он
+  перезаписал бы адрес поверх перехода на карту). Если раньше есть непройденный этап —
+  подсказка «Лучше по порядку» (мягкий порядок).
 - Текущий шаг всегда в адресе `?step=<id>` (`openStepId` ↔ `onStepChange`): переход по шагам добавляет запись в историю, «назад» возвращает к прошлому шагу; старое `?mode=homework` → первый шаг ДЗ.
   `?mode=reference&tab=grammar|verbs|reading|words|topic|drill` — справочник (ссылка
   «Справочник урока» в сайдбаре).
@@ -196,6 +208,11 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   (`verbs-first:homework:<id>`) вливается при чтении и удаляется при записи.
 - Все шаги открыты (свободная навигация). Шаги из `GOAL_KINDS` не засчитываются,
   если их пропустили кнопкой «дальше».
+- Прогресс пишется в хранилище сразу в `setState`, а не в эффекте: после шага ученик тут же
+  уходит на карту, и компонент размонтируется раньше эффекта.
+- Этап пройден, когда пройдены все его шаги (`isStageDone`); экзамен засчитан, только если
+  сдан (`doneWithExam`). Показанные медальоны — `verbs-first:awards-seen:<id>`: новые
+  (полученные, но не показанные) карта анимирует один раз.
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
   `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
   `verbs-first:exam:<lessonId|alphabet>` (`{ best, passed }`),

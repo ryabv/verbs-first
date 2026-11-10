@@ -43,11 +43,13 @@ interface Props {
   partTitles?: readonly string[];
   statusOf: (id: string) => StepStatus;
   onSelect: (id: string) => void;
+  /** Заголовки «Урок / Домашнее задание / Экзамен» и частей ДЗ. Для списка одного этапа не нужны. */
+  grouped?: boolean;
 }
 
 const NO_TITLES: readonly string[] = [];
 
-export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect }: Props) {
+export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect, grouped = false }: Props) {
   return (
     <ol className={styles.steps}>
       {steps.map((step, i) => {
@@ -55,8 +57,8 @@ export function StepList({ steps, partTitles = NO_TITLES, statusOf, onSelect }: 
         const tag = KIND_TAGS[step.kind];
         const prev = steps[i - 1];
         const section = sectionOf(step);
-        const newSection = !prev || sectionOf(prev) !== section;
-        const newPart = step.part !== undefined && step.part !== prev?.part;
+        const newSection = grouped && (!prev || sectionOf(prev) !== section);
+        const newPart = grouped && step.part !== undefined && step.part !== prev?.part;
         // Нумерация — внутри своей части пути.
         let n = 1;
         for (let j = i - 1; j >= 0 && sectionOf(steps[j]!) === section; j--) n++;

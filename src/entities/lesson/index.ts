@@ -11,9 +11,11 @@ export type {
   CompositionCheck,
   CompositionTask,
   SentenceItem,
+  StageInfo,
+  TableScope,
   VocabGroup,
 } from './model/types';
 export { getLesson, getLessonCatalog } from './api/lessonApi';
-export { lessonPath, sectionOf, type PathSection } from './lib/path';
+export { lessonPath, lessonStages, sectionOf, stageOfStep, type LessonStage, type PathSection } from './lib/path';
 export { GrammarSectionView } from './ui/GrammarSectionView';
 export { PhraseList } from './ui/PhraseList';

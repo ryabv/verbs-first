@@ -1,11 +1,11 @@
 import { Link } from 'react-router';
-import { getLessonCatalog } from '@/entities/lesson';
+import { getLesson, getLessonCatalog, lessonStages } from '@/entities/lesson';
 import { readExamResult } from '@/features/exam';
-import { progressKey, readProgress } from '@/features/lesson-progress';
+import { doneWithExam, isStageDone, progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
 import { Callout } from '@/shared/ui/callout';
-import { Check, Laurel } from '@/shared/ui/ornament';
+import { Check, Laurel, Medallion } from '@/shared/ui/ornament';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
@@ -64,7 +64,11 @@ export function HomePage() {
 
         <ol className={styles.list}>
           {lessons.map((lesson) => {
-            const done = lesson.available ? readProgress(progressKey.lesson(lesson.id)).completed.length : 0;
+            const full = lesson.available ? getLesson(lesson.id) : undefined;
+            const completed = new Set(full ? readProgress(progressKey.lesson(lesson.id)).completed : []);
+            const stages = full ? lessonStages(full) : [];
+            const isDone = doneWithExam(stages, (id) => completed.has(id), Boolean(exams[lesson.id]?.passed));
+            const done = stages.flatMap((st) => st.steps).filter((s) => isDone(s.id)).length;
             const percent = lesson.stepCount ? Math.min(100, Math.round((done / lesson.stepCount) * 100)) : 0;
             const status = !lesson.available
               ? 'скоро'
@@ -103,6 +107,13 @@ export function HomePage() {
                       </>
                     )}
                   </div>
+                  {stages.length > 0 && (
+                    <div className={styles.medals} title="Медальоны за этапы урока">
+                      {stages.map((st) => (
+                        <Medallion key={st.id} n={st.n} earned={isStageDone(st, isDone)} size="1.6rem" />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </li>
             );

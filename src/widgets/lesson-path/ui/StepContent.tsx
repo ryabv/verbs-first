@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { GrammarSectionView, PhraseList, type Lesson, type LessonStep } from '@/entities/lesson';
+import { GrammarSectionView, PhraseList, type Lesson, type LessonStep, type TableScope } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { AddWords, LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { CompositionEditor } from '@/features/composition-check';
@@ -16,7 +16,7 @@ interface Props {
   step: LessonStep;
   /** Упражнение выполнено (цель тренажёра, все фразы). */
   onGoal: () => void;
-  renderVerbs: (verbs: Verb[]) => ReactNode;
+  renderVerbs: (verbs: Verb[], scope?: TableScope) => ReactNode;
 }
 
 export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
@@ -43,7 +43,7 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
       );
 
     case 'verbs':
-      return <>{renderVerbs(getVerbs(step.verbIds ?? [...lesson.coreVerbIds, ...lesson.verbIds]))}</>;
+      return <>{renderVerbs(getVerbs(step.verbIds ?? lesson.verbIds), step.scope)}</>;
 
     case 'drill':
       return (
