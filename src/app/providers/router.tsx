@@ -3,6 +3,7 @@ import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
 import { HomePage } from '@/pages/home';
 import { LessonPage } from '@/pages/lesson';
+import { TextPage, TextsPage } from '@/pages/texts';
 import { AppFooter } from '@/widgets/app-footer';
 import { AppHeader } from '@/widgets/app-header';
 
@@ -27,6 +28,8 @@ const router = createBrowserRouter([
       { path: '/lesson/:lessonId', element: <LessonPage /> },
       { path: '/cards', element: <CardsPage /> },
       { path: '/alphabet', element: <AlphabetPage /> },
+      { path: '/texts', element: <TextsPage /> },
+      { path: '/texts/:textId', element: <TextPage /> },
     ],
   },
 ], { basename: process.env.BASE_URL.replace(/\/$/, '') || '/' });

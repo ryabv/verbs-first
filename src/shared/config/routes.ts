@@ -7,4 +7,7 @@ export const routes = {
   alphabetReference: (section?: string) => `/alphabet?mode=reference${section ? `&section=${section}` : ''}`,
   /** Карточки; lesson — сразу выбрать наборы этого урока. */
   cards: (opts: { lesson?: number } = {}) => (opts.lesson ? `/cards?lesson=${opts.lesson}` : '/cards'),
+  /** Тексты для чтения; id — один текст. */
+  texts: () => '/texts',
+  text: (id: string) => `/texts/${encodeURIComponent(id)}`,
 } as const;

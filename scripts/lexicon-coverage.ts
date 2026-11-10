@@ -4,6 +4,7 @@
  */
 import { COMBINATIONS, LETTERS, READING_COURSE, STRESS_EXAMPLES } from '@/entities/alphabet';
 import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
+import { LIBRARY_TEXTS } from '@/entities/library';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 
 const texts: string[] = [];
@@ -20,6 +21,8 @@ for (const l of lessons) {
     if (s.kind === 'story') [...(s.examples ?? []), ...(s.words ?? [])].forEach((p) => texts.push(p.greek));
   });
 }
+// Раздел «Тексты».
+LIBRARY_TEXTS.forEach((t) => t.sentences.forEach((s) => texts.push(s.greek)));
 LETTERS.forEach((l) => texts.push(l.example.greek));
 COMBINATIONS.forEach((c) => c.examples.forEach((e) => texts.push(e.greek)));
 Object.values(STRESS_EXAMPLES).forEach((e) => texts.push(e.greek));

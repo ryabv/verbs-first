@@ -24,6 +24,7 @@ import { WORD_QUIZ } from '@/entities/alphabet/data/quiz';
 import { STRESS_EXAMPLES } from '@/entities/alphabet/data/stress';
 import { DICTIONARY } from '@/entities/dictionary/data/words';
 import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
+import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
 import { PERSONS, SENTENCE_FORMS, TENSES } from '@/entities/verb/model/types';
@@ -91,6 +92,11 @@ function collectTexts(): Set<string> {
       reading.sentences.forEach((p) => add(p.greek));
       add(reading.sentences.map((p) => p.greek).join(' '));
     }
+  }
+  // Раздел «Тексты»: каждая фраза и текст целиком.
+  for (const t of LIBRARY_TEXTS) {
+    t.sentences.forEach((p) => add(p.greek));
+    add(t.sentences.map((p) => p.greek).join(' '));
   }
   // Отдельные слова: каждое слово фраз нажимается и озвучивается в окне слова.
   // Однобуквенные (ο, η) синтезатор читает как название буквы — их не озвучиваем.

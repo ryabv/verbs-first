@@ -81,3 +81,6 @@
   cursor: pointer;
 }
 .glossClose:hover { color: var(--text); }
+
+/* Незнакомое слово (по просьбе ученика): мягкая заливка, не мешает читать. */
+.unknown { background: var(--warning-soft); border-radius: 3px; }

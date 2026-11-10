@@ -12,12 +12,14 @@ interface Props {
   verbs: readonly Verb[];
   /** Слот в панели разбора: добавить слово в карточки (словарной формой). */
   renderAdd?: (token: TextToken) => ReactNode;
+  /** Подсветить слово как незнакомое (раздел «Тексты»). */
+  markUnknown?: (token: TextToken) => boolean;
 }
 
 type Mode = 'read' | 'find';
 type WordId = string; // "<номер предложения>:<номер токена>"
 
-export function ReadingView({ reading, verbs, renderAdd }: Props) {
+export function ReadingView({ reading, verbs, renderAdd, markUnknown }: Props) {
   const analyze = useMemo(() => createAnalyzer(verbs), [verbs]);
   const sentences = useMemo(() => reading.sentences.map((s) => analyze(s.greek)), [analyze, reading]);
 
@@ -68,8 +70,11 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
     setPicked(next);
   };
 
-  const wordClass = (id: WordId) => {
-    if (mode === 'read') return selected?.id === id ? `${styles.word} ${styles.selected}` : styles.word;
+  const wordClass = (id: WordId, token: TextToken) => {
+    if (mode === 'read') {
+      if (selected?.id === id) return `${styles.word} ${styles.selected}`;
+      return markUnknown?.(token) ? `${styles.word} ${styles.unknown}` : styles.word;
+    }
     if (!checked) return picked.has(id) ? `${styles.word} ${styles.picked}` : styles.word;
     if (picked.has(id)) return `${styles.word} ${target.has(id) ? styles.right : styles.wrong}`;
     return target.has(id) ? `${styles.word} ${styles.missed}` : styles.word;
@@ -102,7 +107,7 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
                   <button
                     key={ti}
                     type="button"
-                    className={wordClass(`${si}:${ti}`)}
+                    className={wordClass(`${si}:${ti}`, token)}
                     data-reading-word
                     onClick={() => onWord(`${si}:${ti}`, token)}
                   >
@@ -126,10 +131,8 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
               <button type="button" className={styles.glossClose} onClick={() => setSelected(null)} aria-label="Закрыть">
                 ×
               </button>
-              <b>{selected.token.text}</b> —{' '}
-              {selected.token.verb
-                ? describeVerb(selected.token.verb)
-                : (reading.glossary[selected.token.key] ?? 'нет в словаре урока')}
+              <b>{selected.token.text}</b>
+              {glossLine(selected.token, reading.glossary, Boolean(renderAdd))}
               {renderAdd && <div className={styles.glossAdd}>{renderAdd(selected.token)}</div>}
             </>
           ) : (
@@ -211,6 +214,12 @@ export function ReadingView({ reading, verbs, renderAdd }: Props) {
       )}
     </div>
   );
+}
+
+/** Строка разбора: форма глагола или значение из словарика текста. Без них перевод покажет карточка слова (renderAdd). */
+function glossLine(token: TextToken, glossary: Record<string, string>, hasCard: boolean): ReactNode {
+  const text = token.verb ? describeVerb(token.verb) : (glossary[token.key] ?? (hasCard ? null : 'нет в словаре урока'));
+  return text ? <> — {text}</> : null;
 }
 
 function Question({ question, options, answer }: { question: string; options: string[]; answer: number }) {
