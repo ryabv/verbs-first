@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
   COMBINATIONS,
@@ -10,13 +10,16 @@ import {
   WORD_QUIZ,
 } from '@/entities/alphabet';
 import { AlphabetOrder, ChoiceQuiz } from '@/features/alphabet-quiz';
-import { buildAlphabetExam, Exam } from '@/features/exam';
+import { buildAlphabetExam, Exam, readExamResult } from '@/features/exam';
+import { progressKey, useLessonProgress } from '@/features/lesson-progress';
 import { wordIn } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
+import { Check } from '@/shared/ui/ornament';
+import { ProgressBar } from '@/shared/ui/progress-bar';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
 import styles from './AlphabetPage.module.css';
@@ -30,7 +33,8 @@ interface Section {
   title: string;
   kind: 'Читаем' | 'Практика' | 'Экзамен';
   intro: string;
-  render: () => ReactNode;
+  /** done — раздел выполнен (тренажёр пройден, экзамен сдан). Разделы «Читаем» засчитываются по «Дальше». */
+  render: (done: () => void) => ReactNode;
 }
 
 const SECTIONS: Section[] = [
@@ -62,7 +66,7 @@ const SECTIONS: Section[] = [
     title: 'Буква → звук',
     kind: 'Практика',
     intro: 'Какой звук обозначает буква или сочетание? После ответа можно послушать название буквы.',
-    render: () => <ChoiceQuiz items={SOUND_QUIZ} question="Какой звук?" />,
+    render: (done) => <ChoiceQuiz items={SOUND_QUIZ} question="Какой звук?" onComplete={done} />,
   },
   {
     id: 'words',
@@ -70,7 +74,7 @@ const SECTIONS: Section[] = [
     kind: 'Практика',
     intro:
       'Прочитайте слово про себя и выберите правильное чтение. Варианты похожи — это типичные ошибки. После ответа послушайте слово и повторите вслух.',
-    render: () => <ChoiceQuiz items={WORD_QUIZ} question="Как читается?" />,
+    render: (done) => <ChoiceQuiz items={WORD_QUIZ} question="Как читается?" onComplete={done} />,
   },
   {
     id: 'order',
@@ -78,7 +82,7 @@ const SECTIONS: Section[] = [
     kind: 'Практика',
     intro:
       'Выучите алфавит по порядку: нажимайте буквы от α до ω. Каждая верная буква произносится вслух. Ошиблись дважды на одной букве — подсветим нужную. На компьютере можно печатать с греческой раскладки.',
-    render: () => <AlphabetOrder />,
+    render: (done) => <AlphabetOrder onComplete={done} />,
   },
   {
     id: 'exam',
@@ -86,9 +90,10 @@ const SECTIONS: Section[] = [
     kind: 'Экзамен',
     intro:
       'Проверка всего раздела: буквы, сочетания, чтение слов, ударение и знаки, порядок букв. Правила строже, чем в тренажёрах: ответ — только в конце.',
-    render: () => (
+    render: (done) => (
       <Exam
         id="alphabet"
+        onPassed={done}
         title="Экзамен по алфавиту"
         build={buildAlphabetExam}
         rules={[
@@ -228,7 +233,17 @@ export function AlphabetPage() {
   const prev = SECTIONS[index - 1];
   const next = SECTIONS[index + 1];
 
+  const ids = useMemo(() => SECTIONS.map((s) => s.id), []);
+  const progress = useLessonProgress(progressKey.alphabet, ids);
+  const { markDone, setDone } = progress;
+  // Экзамен засчитан, только если сдан (как в уроках).
+  const examPassed = readExamResult('alphabet')?.passed ?? false;
+  useEffect(() => setDone('exam', examPassed), [examPassed, setDone]);
+  const doneCount = ids.filter((id) => progress.isDone(id)).length;
+
   const go = (id: string) => {
+    // Разделы для чтения засчитываются, когда ученик идёт дальше.
+    if (section.kind === 'Читаем') markDone(section.id);
     navigate(routes.alphabet(id));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -239,6 +254,12 @@ export function AlphabetPage() {
         <div className={styles.partTitle}>Алфавит и чтение</div>
       </SidebarSection>
       <SidebarSection title="Разделы">
+        <div className={styles.overall}>
+          <ProgressBar value={doneCount / ids.length} thin />
+          <span>
+            {doneCount} из {ids.length}
+          </span>
+        </div>
         <button
           type="button"
           className={styles.navToggle}
@@ -251,13 +272,16 @@ export function AlphabetPage() {
           <span className={styles.chevron}>{navOpen ? '▴' : '▾'}</span>
         </button>
         <ol className={navOpen ? `${styles.links} ${styles.linksOpen}` : styles.links}>
-          {SECTIONS.map((s) => (
+          {SECTIONS.map((s, i) => (
             <li key={s.id}>
               <Link
                 to={routes.alphabet(s.id)}
                 className={s.id === section.id ? styles.linkActive : styles.link}
                 onClick={() => setNavOpen(false)}
               >
+                <span className={progress.isDone(s.id) ? `${styles.marker} ${styles.markerDone}` : styles.marker}>
+                  {progress.isDone(s.id) ? <Check /> : `${i + 1}.`}
+                </span>
                 {s.title}
                 {s.kind === 'Практика' && <span className={styles.tag}>практика</span>}
                 {s.kind === 'Экзамен' && <span className={`${styles.tag} ${styles.tagExam}`}>экзамен</span>}
@@ -281,7 +305,7 @@ export function AlphabetPage() {
 
       {/* key: при смене раздела тренажёр начинается заново, а не переносит состояние другого. */}
       <div className={styles.body} key={section.id}>
-        {section.render()}
+        {section.render(() => markDone(section.id))}
       </div>
 
       <PrevNext

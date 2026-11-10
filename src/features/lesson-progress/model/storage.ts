@@ -9,9 +9,13 @@ export interface StoredProgress {
  */
 export const progressKey = {
   lesson: (lessonId: number) => `verbs-first:lesson:${lessonId}`,
+  /** Разделы алфавита (до курса). */
+  alphabet: 'verbs-first:alphabet:progress',
 };
 
-const legacyHomeworkKey = (storageKey: string) => storageKey.replace('verbs-first:lesson:', 'verbs-first:homework:');
+/** Старый ключ ДЗ — только у уроков; у прочих ключей (алфавит) его нет. */
+const legacyHomeworkKey = (storageKey: string): string | null =>
+  storageKey.startsWith('verbs-first:lesson:') ? storageKey.replace('verbs-first:lesson:', 'verbs-first:homework:') : null;
 
 /** localStorage может быть недоступен (приватный режим) — тогда прогресс живёт только в памяти. */
 function readRaw(key: string): StoredProgress | null {
@@ -28,7 +32,8 @@ function readRaw(key: string): StoredProgress | null {
 /** Прогресс урока (с влитым старым прогрессом ДЗ, если он был). */
 export function readProgress(key: string): StoredProgress {
   const main = readRaw(key) ?? { completed: [] };
-  const legacy = readRaw(legacyHomeworkKey(key));
+  const legacyKey = legacyHomeworkKey(key);
+  const legacy = legacyKey ? readRaw(legacyKey) : null;
   if (!legacy) return main;
   return { ...main, completed: [...new Set([...main.completed, ...legacy.completed])] };
 }
@@ -37,7 +42,8 @@ export function writeProgress(key: string, progress: StoredProgress): void {
   try {
     localStorage.setItem(key, JSON.stringify(progress));
     // Старый прогресс ДЗ уже влит в progress (см. readProgress).
-    localStorage.removeItem(legacyHomeworkKey(key));
+    const legacyKey = legacyHomeworkKey(key);
+    if (legacyKey) localStorage.removeItem(legacyKey);
   } catch {
     /* не критично */
   }
@@ -46,7 +52,8 @@ export function writeProgress(key: string, progress: StoredProgress): void {
 export function clearProgress(key: string): void {
   try {
     localStorage.removeItem(key);
-    localStorage.removeItem(legacyHomeworkKey(key));
+    const legacyKey = legacyHomeworkKey(key);
+    if (legacyKey) localStorage.removeItem(legacyKey);
   } catch {
     /* не критично */
   }

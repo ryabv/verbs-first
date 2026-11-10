@@ -61,7 +61,8 @@ const nameOf = (l: Letter) => l.speakAs ?? l.name;
  * Тренажёр «Алфавит по порядку»: буквы перемешаны, нужно нажать их от α до ω.
  * Ошибка не останавливает — подсвечивается, а после двух ошибок подсказываем нужную букву.
  */
-export function AlphabetOrder() {
+/** onComplete — весь алфавит пройден по порядку (для прогресса раздела). */
+export function AlphabetOrder({ onComplete }: { onComplete?: () => void } = {}) {
   const [letterCase, setLetterCase] = useState<Case>('lower');
   const [showNames, setShowNames] = useState(false);
   const [order, setOrder] = useState(shuffledIndexes);
@@ -116,6 +117,7 @@ export function AlphabetOrder() {
         setBest(run);
       }
       setResult({ ms: run.ms, record });
+      onComplete?.();
     }
   };
 

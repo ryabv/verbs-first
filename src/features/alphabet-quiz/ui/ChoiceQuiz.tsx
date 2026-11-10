@@ -27,10 +27,12 @@ interface Props {
   items: readonly QuizItem[];
   /** Подпись к вопросу: «Какой звук?», «Как читается?». */
   question: string;
+  /** Все вопросы решены (для прогресса раздела). */
+  onComplete?: () => void;
 }
 
 /** Тренажёр с вариантами: каждый вопрос до верного ответа, ошибка возвращается через пару вопросов. */
-export function ChoiceQuiz({ items, question }: Props) {
+export function ChoiceQuiz({ items, question, onComplete }: Props) {
   const [round, setRound] = useState(0);
   const [queue, setQueue] = useState(() => shuffle(items.map((_, i) => i)));
   const [mistakes, setMistakes] = useState(0);
@@ -45,8 +47,10 @@ export function ChoiceQuiz({ items, question }: Props) {
   const resolve = (correct: boolean) => {
     const [head, ...rest] = queue;
     if (head === undefined) return;
-    if (correct) setQueue(rest);
-    else {
+    if (correct) {
+      setQueue(rest);
+      if (rest.length === 0) onComplete?.();
+    } else {
       const at = Math.min(RETRY_GAP - 1, rest.length);
       setQueue([...rest.slice(0, at), head, ...rest.slice(at)]);
       setMistakes((m) => m + 1);

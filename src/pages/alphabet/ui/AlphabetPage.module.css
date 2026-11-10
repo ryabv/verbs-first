@@ -1,8 +1,11 @@
 .partTitle { font-weight: 700; font-size: 1.05rem; }
-.links { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: s; }
-.links li { counter-increment: s; }
+.links { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .link, .linkActive { display: flex; gap: 0.4rem; color: var(--text); font-size: 0.95rem; }
-.link::before, .linkActive::before { content: counter(s) '.'; min-width: 1.4rem; color: var(--text-subtle); }
+.marker { flex-shrink: 0; min-width: 1.4rem; color: var(--text-subtle); }
+.markerDone { color: var(--success); }
+/* Прогресс разделов — как в уроке. */
+.overall { display: flex; align-items: center; gap: 0.6rem; font-size: 0.8rem; color: var(--text-subtle); margin-bottom: 14px; }
+.overall > :first-child { flex: 1; }
 .linkActive { color: var(--brand); }
 .tag {
   margin-left: 0.4rem;
