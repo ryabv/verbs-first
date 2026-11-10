@@ -170,10 +170,14 @@ entities/lesson/data/
   catalog.ts               названия всех 16 уроков (оглавление; урок «доступен», если есть в LESSONS)
   lesson-01.ts             урок 1
   lesson-01-homework.ts    ДЗ урока 1 и второй текст
-entities/lesson/api/lessonApi.ts   LESSONS = { 1: lesson01 } — регистрация уроков
+  lesson-02*.ts            урок 2 (то же деление: урок, ДЗ + текст, ответвления)
+entities/lesson/api/lessonApi.ts   LESSONS = { 1: lesson01, 2: lesson02 } — регистрация уроков
 entities/verb/data/verbs.ts        словарь глаголов
 docs/curriculum.md                 план всех 16 уроков (глаголы, грамматика, темы)
 ```
+
+`knownVerbIds(lesson)` — глаголы этого и всех прошлых уроков: по ним разбираются тексты и сочинения
+(в текстах урока N встречаются глаголы прошлых уроков). Тренажёр и экзамен — только `lesson.verbIds`.
 
 `lessonApi.ts` — единственное место, которое знает, что контент в бандле. Если появится
 бэкенд/CMS, меняется только он; сигнатуры `getLesson` / `getLessonCatalog` остаются.

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { GrammarSectionView, PhraseList, type Lesson, type LessonStep, type TableScope } from '@/entities/lesson';
+import { GrammarSectionView, knownVerbIds, PhraseList, type Lesson, type LessonStep, type TableScope } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { AddWords, LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { CompositionEditor } from '@/features/composition-check';
@@ -21,7 +21,8 @@ interface Props {
 }
 
 export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
-  const allVerbs = getVerbs([...lesson.coreVerbIds, ...lesson.verbIds]);
+  // Тексты и сочинения опираются на всё пройденное: глаголы этого и прошлых уроков.
+  const allVerbs = getVerbs(knownVerbIds(lesson));
   const decks = lessonDecks(lesson);
   const wordDeck = lessonWordDeck(lesson);
   const exampleWord = wordIn(decks.examples, wordDeck);

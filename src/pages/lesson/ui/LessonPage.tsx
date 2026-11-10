@@ -1,6 +1,6 @@
 import { useCallback, type ReactNode } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { getLesson, GrammarSectionView, lessonBranches, lessonStages, PhraseList, type Lesson, type TableScope } from '@/entities/lesson';
+import { getLesson, GrammarSectionView, knownVerbIds, lessonBranches, lessonStages, PhraseList, type Lesson, type TableScope } from '@/entities/lesson';
 import { getVerbs, type Verb } from '@/entities/verb';
 import { LessonWords, lessonDecks, lessonWordDeck, TokenCard, wordIn } from '@/features/card-add';
 import { ConjugationDrill } from '@/features/conjugation-drill';
@@ -239,7 +239,7 @@ function Reference({ lesson, tab: rawTab, header, crumbs }: ReferenceProps) {
             <ReadingView
               key={reading.id}
               reading={reading}
-              verbs={[...coreVerbs, ...lessonVerbs]}
+              verbs={getVerbs(knownVerbIds(lesson))}
               renderAdd={(token) => <TokenCard token={token} deckFor={wordDeck} />}
             />
           ))}
