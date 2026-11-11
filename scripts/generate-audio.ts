@@ -26,6 +26,7 @@ import { DICTIONARY } from '@/entities/dictionary/data/words';
 import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
 import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
+import { gapVariants } from '@/entities/story/model/gaps';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
 import { PERSONS, SENTENCE_FORMS, TENSES } from '@/entities/verb/model/types';
@@ -101,7 +102,11 @@ function collectTexts(): Set<string> {
   }
   for (const c of STORY_CHAPTERS) {
     add(c.title);
-    c.sentences.forEach((p) => add(p.greek));
+    c.sentences.forEach((p, i) => {
+      add(p.greek);
+      // Пока пропуск не решён, предложение звучит с паузой вместо ответа.
+      gapVariants(c, i + 1).forEach(add);
+    });
     add(c.sentences.map((p) => p.greek).join(' '));
     for (const s of c.steps) if (s.task?.kind === 'choose' && s.task.audio) add(s.task.audio);
   }

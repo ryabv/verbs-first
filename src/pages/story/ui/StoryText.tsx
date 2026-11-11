@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { StoryChapter, StoryStep } from '@/entities/story';
+import { sentenceGaps, withGaps, type StoryChapter, type StoryStep } from '@/entities/story';
 import type { TextToken } from '@/entities/verb';
 import { Phrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
@@ -113,11 +113,12 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
         </p>
       );
     }
-    const hasOpenGap = chapter.steps.some((st) => st.task?.kind === 'gap' && !isOpen(st) && st.task.gaps.some((g) => g.sentence === n));
+    // Нерешённые пропуски озвучка пропускает (пауза вместо слова) — звук не выдаёт ответ.
+    const openGaps = sentenceGaps(chapter, n).filter((g) => !isOpen(g.step));
     const shown = translated.has(n);
     const after = (
       <>
-        {!hasOpenGap && <SpeakButton text={s.greek} />}
+        <SpeakButton text={withGaps(s.greek, openGaps.map((g) => g.word))} />
         <TranslateButton shown={shown} onToggle={() => toggleTranslation(n)} />
       </>
     );
