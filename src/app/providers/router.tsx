@@ -7,6 +7,7 @@ import { ChapterRoute, StoryPage } from '@/pages/story';
 import { TextPage, TextsPage } from '@/pages/texts';
 import { AppFooter } from '@/widgets/app-footer';
 import { AppHeader } from '@/widgets/app-header';
+import { AudioPlayer } from '@/widgets/audio-player';
 
 function Layout() {
   // Карта «Истории» занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
@@ -18,6 +19,8 @@ function Layout() {
         <Outlet />
       </main>
       {!fullScreen && <AppFooter />}
+      {/* На карте «Истории» озвучки нет, а левый нижний угол занят карточкой главы. */}
+      {!fullScreen && <AudioPlayer />}
       <ScrollRestoration />
     </>
   );

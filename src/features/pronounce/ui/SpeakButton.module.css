@@ -20,11 +20,13 @@
 .speak:active { transform: scale(0.94); }
 /* Звук грузится: кнопка «горит», дуга крутится — видно, что нажатие принято. */
 .speak[aria-busy='true'], .speak[aria-busy='true']:hover { color: var(--brand); background: var(--brand-soft); }
+/* Звучит: кнопка горит и показывает «стоп». */
+.speak[aria-pressed='true'], .speak[aria-pressed='true']:hover { color: var(--brand); background: var(--brand-soft); }
 .off, .off:hover { color: var(--text-subtle); background: none; opacity: 0.6; }
 
 /* Палец больше курсора: на сенсорном экране кнопка крупнее. */
 @media (pointer: coarse) {
   .speak { width: 2.4em; height: 2.4em; font-size: 1.05rem; }
   .speak:hover { color: var(--text-subtle); background: none; }
-  .speak:active, .speak[aria-busy='true'] { color: var(--brand); background: var(--brand-soft); }
+  .speak:active, .speak[aria-busy='true'], .speak[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
 }

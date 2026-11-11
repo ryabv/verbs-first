@@ -65,6 +65,57 @@ export function useSpeechPending(text: string | undefined): boolean {
   );
 }
 
+// ---------- что сейчас звучит: для плеера (пауза, стоп, прогресс) и подсветки кнопки ----------
+
+export interface SpeechState {
+  /** Текст в виде speechText — по нему кнопка узнаёт «это я играю». */
+  key: string;
+  paused: boolean;
+  /** Секунды; у голоса браузера длительность неизвестна — 0. */
+  time: number;
+  duration: number;
+}
+
+let state: SpeechState | null = null;
+
+function setState(next: SpeechState | null) {
+  state = next;
+  for (const listener of listeners) listener();
+}
+
+/** Что сейчас звучит (или стоит на паузе); null — тишина. */
+export function useSpeech(): SpeechState | null {
+  return useSyncExternalStore(
+    subscribe,
+    () => state,
+    () => null,
+  );
+}
+
+/** Остановить озвучку совсем (и ту, что ещё грузится). */
+export function stopSpeech() {
+  lastCall++;
+  player?.pause();
+  player = null;
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  stopPending();
+  setState(null);
+}
+
+/** Пауза / продолжить. */
+export function toggleSpeechPause() {
+  if (!state) return;
+  if (player) {
+    if (player.paused) void player.play().catch(() => undefined);
+    else player.pause();
+    return;
+  }
+  const synth = window.speechSynthesis;
+  if (state.paused) synth.resume();
+  else synth.pause();
+  setState({ ...state, paused: !state.paused });
+}
+
 /** Произнести текст. Возвращает false, если озвучить нечем. */
 export async function speak(text: string): Promise<boolean> {
   const key = speechText(text);
@@ -80,14 +131,34 @@ export async function speak(text: string): Promise<boolean> {
     const audio = new Audio(AUDIO_BASE + file);
     player = audio;
     // Ожидание снимаем, когда звук пошёл или стало ясно, что не пойдёт — и только для текущего плеера.
-    const done = () => player === audio && stopPending();
+    const mine = () => player === audio;
+    const done = () => mine() && stopPending();
+    const sync = () => {
+      if (!mine()) return;
+      setState({ key, paused: audio.paused, time: audio.currentTime, duration: Number.isFinite(audio.duration) ? audio.duration : 0 });
+    };
+    const finish = () => {
+      if (!mine()) return;
+      player = null;
+      setState(null);
+    };
     audio.addEventListener('playing', done, { once: true });
     audio.addEventListener('error', done, { once: true });
-    await audio.play().catch(done);
+    for (const event of ['playing', 'pause', 'timeupdate', 'durationchange']) audio.addEventListener(event, sync);
+    audio.addEventListener('ended', finish);
+    audio.addEventListener('error', finish);
+    setState(null);
+    await audio.play().catch(() => {
+      done();
+      finish();
+    });
     return true;
   }
 
-  const ok = await speakWithBrowserVoice(key);
+  player?.pause();
+  player = null;
+  setState(null);
+  const ok = await speakWithBrowserVoice(key, call);
   if (call === lastCall) stopPending();
   return ok;
 }
@@ -119,7 +190,7 @@ function loadGreekVoice(): Promise<SpeechSynthesisVoice | null> {
   return voicePromise;
 }
 
-async function speakWithBrowserVoice(text: string): Promise<boolean> {
+async function speakWithBrowserVoice(text: string, call: number): Promise<boolean> {
   const voice = await loadGreekVoice();
   if (!voice) return false;
   player?.pause();
@@ -127,6 +198,9 @@ async function speakWithBrowserVoice(text: string): Promise<boolean> {
   utterance.voice = voice;
   utterance.lang = voice.lang;
   utterance.rate = 0.85;
+  utterance.addEventListener('start', () => call === lastCall && setState({ key: text, paused: false, time: 0, duration: 0 }));
+  utterance.addEventListener('end', () => call === lastCall && setState(null));
+  utterance.addEventListener('error', () => call === lastCall && setState(null));
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(utterance);
   return true;

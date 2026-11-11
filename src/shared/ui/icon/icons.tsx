@@ -100,3 +100,30 @@ export function TranslateIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Воспроизвести. */
+export function PlayIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M7 4.5v15l12-7.5z" fill="currentColor" />
+    </Svg>
+  );
+}
+
+/** Пауза. */
+export function PauseIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 5v14M16 5v14" strokeWidth={3} />
+    </Svg>
+  );
+}
+
+/** Остановить: квадрат. */
+export function StopIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor" />
+    </Svg>
+  );
+}
