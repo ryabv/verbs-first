@@ -37,8 +37,8 @@ export function StoryPage() {
 
   const [selected, setSelected] = useState(current?.id ?? 1);
   // Что открыто поверх карты: карточка главы, находки или ничего (видна только карта).
-  // На широком экране карточка текущей главы открыта сразу, на телефоне — по нажатию на место.
-  const [sheet, setSheet] = useState<'chapter' | 'finds' | null>(() => (wide() ? 'chapter' : null));
+  // Карточка открывается только по нажатию на место — главу ученик выбирает сам.
+  const [sheet, setSheet] = useState<'chapter' | 'finds' | null>(null);
   // Картуш с описанием: на широком экране развёрнут; на телефоне — развёрнут при первом входе,
   // а после первого сворачивания — табличка «История ▾».
   const [introOpen, setIntroOpen] = useState(() => wide() || !introSeen());
@@ -119,7 +119,7 @@ export function StoryPage() {
     <IslandMap
       stateOf={stateOf}
       partOf={partOf}
-      // Выделено только место с открытой карточкой: на телефоне при входе ничего не выбрано — выбирает сам ученик.
+      // Выделено только место с открытой карточкой: при входе ничего не выбрано — выбирает сам ученик.
       selected={sheet === 'chapter' ? selected : undefined}
       start={current?.id ?? 1}
       onSelect={select}
@@ -168,7 +168,7 @@ function rememberIntroSeen() {
   }
 }
 
-/** Широкий экран: карточка помещается сбоку от карты и может быть открыта сразу. */
+/** Широкий экран: место хватает и описанию, и карточке сбоку от карты. */
 function wide() {
   return typeof window !== 'undefined' && window.matchMedia('(min-width: 761px)').matches;
 }
