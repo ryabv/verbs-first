@@ -25,6 +25,7 @@ import { STRESS_EXAMPLES } from '@/entities/alphabet/data/stress';
 import { DICTIONARY } from '@/entities/dictionary/data/words';
 import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
 import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
+import { GRAMMAR_TOPICS } from '@/entities/grammar/data/topics';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
 import { gapVariants } from '@/entities/story/model/gaps';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
@@ -100,6 +101,8 @@ function collectTexts(): Set<string> {
     t.sentences.forEach((p) => add(p.greek));
     add(t.sentences.map((p) => p.greek).join(' '));
   }
+  // Справочник: примеры к правилам.
+  for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
   for (const c of STORY_CHAPTERS) {
     add(c.title);
     c.sentences.forEach((p, i) => {

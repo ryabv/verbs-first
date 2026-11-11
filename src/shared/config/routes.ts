@@ -10,6 +10,8 @@ export const routes = {
   /** Тексты для чтения; id — один текст. */
   texts: () => '/texts',
   text: (id: string) => `/texts/${encodeURIComponent(id)}`,
+  /** Справочник: тема и (по желанию) правило — #якорь. */
+  grammar: (topic?: string, rule?: string) => (topic ? `/grammar/${topic}${rule ? `#${rule}` : ''}` : '/grammar'),
   /** История: главы; шаг — номер с 1 или end (вся глава и конспект). */
   story: () => '/story',
   storyChapter: (id: number) => `/story/${id}`,

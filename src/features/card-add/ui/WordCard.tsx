@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react';
 import type { DeckRef } from '@/entities/card';
+import type { FormNote } from '@/entities/dictionary';
 import type { TextToken } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
 import { glossHint, lookupToken } from '../lib/lexicon';
 import type { WordDeckFn } from '../lib/lessonWordGroups';
 import { AddToCards } from './AddToCards';
+import { WhyNote } from './WhyNote';
 import styles from './Word.module.css';
 
 interface Props {
@@ -19,13 +21,15 @@ interface Props {
   translationShown?: boolean;
   /** Ещё ссылка в нижнюю строку окна. */
   extra?: ReactNode;
+  /** «Почему так?» — почему слово на странице в этой форме. */
+  why?: FormNote;
 }
 
 /**
  * Содержимое окна слова: что именно попадёт в карточку (словарная форма) и наборы.
  * Нет словарной формы — ученик вписывает её и перевод сам; форму из текста не кладём молча.
  */
-export function WordCard({ greek, russian, deck, display, hint, translationShown, extra }: Props) {
+export function WordCard({ greek, russian, deck, display, hint, translationShown, extra, why }: Props) {
   if (!greek) return <OwnWord display={display ?? ''} hint={hint} deck={deck} extra={extra} />;
   const isBase = !display || stripAccents(display) === stripAccents(greek);
   return (
@@ -40,6 +44,7 @@ export function WordCard({ greek, russian, deck, display, hint, translationShown
           — {russian}
         </span>
       )}
+      {why && <WhyNote why={why} />}
       <AddToCards greek={greek} russian={russian} deck={deck} extra={extra} />
     </>
   );
@@ -100,6 +105,7 @@ export function TokenCard({
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
       translationShown={translationShown}
+      why={entry?.why}
     />
   );
 }

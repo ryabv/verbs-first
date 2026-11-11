@@ -3,6 +3,7 @@ import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
 import { HomePage } from '@/pages/home';
 import { LessonPage } from '@/pages/lesson';
+import { GrammarPage, GrammarTopicPage } from '@/pages/grammar';
 import { ChapterRoute, StoryPage } from '@/pages/story';
 import { TextPage, TextsPage } from '@/pages/texts';
 import { AppFooter } from '@/widgets/app-footer';
@@ -36,6 +37,8 @@ const router = createBrowserRouter([
       { path: '/alphabet', element: <AlphabetPage /> },
       { path: '/texts', element: <TextsPage /> },
       { path: '/texts/:textId', element: <TextPage /> },
+      { path: '/grammar', element: <GrammarPage /> },
+      { path: '/grammar/:topicId', element: <GrammarTopicPage /> },
       { path: '/story', element: <StoryPage /> },
       { path: '/story/:chapterId', element: <ChapterRoute /> },
       { path: '/story/:chapterId/:step', element: <ChapterRoute /> },

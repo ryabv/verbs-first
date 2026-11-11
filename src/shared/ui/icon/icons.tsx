@@ -127,3 +127,15 @@ export function StopIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Колонна с ионической капителью — раздел «Справочник» (правила, на которых всё держится). */
+export function ColumnIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 5.5h16" />
+      <path d="M6.5 5.5a2 2 0 1 0 2 2M17.5 5.5a2 2 0 1 1-2 2" />
+      <path d="M8.5 8.5v10M12 8.5v10M15.5 8.5v10" />
+      <path d="M6 18.5h12M5 21h14" />
+    </Svg>
+  );
+}

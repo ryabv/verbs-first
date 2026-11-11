@@ -1,7 +1,7 @@
 import { COMBINATIONS, LETTERS, STRESS_EXAMPLES } from '@/entities/alphabet';
-import { DICTIONARY } from '@/entities/dictionary';
+import { DICTIONARY, type FormNote } from '@/entities/dictionary';
 import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
-import { createAnalyzer, getVerbs, type TextToken } from '@/entities/verb';
+import { createAnalyzer, getVerbs, RUSSIAN_PRONOUNS, type TextToken, type VerbMatch } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
 
 /** Что кладём в карточку, когда нажали слово во фразе или тексте. */
@@ -10,6 +10,8 @@ export interface LexEntry {
   greek: string;
   russian: string;
   kind: 'verb' | 'word';
+  /** «Почему так?» — почему форма во фразе такая (со ссылкой на справочник). */
+  why?: FormNote;
 }
 
 const ARTICLES = new Set(['ο', 'η', 'το', 'οι', 'τα', 'τον', 'την', 'τη', 'τους', 'τις']);
@@ -52,8 +54,10 @@ function lexicon(): Lexicon {
   for (const l of lessons) l.vocabulary.forEach((g) => g.words.forEach((w) => putPhrase(w.greek, w.russian)));
   for (const e of DICTIONARY) {
     const entry: LexEntry = { greek: e.greek, russian: e.russian, kind: 'word' };
-    headKeys(e.greek).forEach((k) => put(k, entry));
-    e.forms?.forEach((f) => put(stripAccents(f), entry));
+    // Пояснение — у конкретной формы (оно же может быть и у словарной, если слово многозначно).
+    const withWhy = (form: string): LexEntry => (e.why?.[form] ? { ...entry, why: e.why[form] } : entry);
+    headKeys(e.greek).forEach((k) => put(k, e.why ? withWhy(e.greek.match(WORD_RE)?.at(-1) ?? e.greek) : entry));
+    e.forms?.forEach((f) => put(stripAccents(f), withWhy(f)));
   }
   for (const l of lessons) l.topic.phrases.forEach((p) => putPhrase(p.greek, p.russian));
   for (const letter of LETTERS) putPhrase(letter.example.greek, letter.example.russian);
@@ -80,8 +84,33 @@ export function analyzePhrase(text: string): TextToken[] {
  * формы в словаре; если её нет — undefined (в карточку форму из текста не кладём).
  */
 export function lookupToken(token: TextToken): LexEntry | undefined {
-  if (token.verb) return { greek: token.verb.verb.lemma, russian: token.verb.verb.translation, kind: 'verb' };
+  if (token.verb) {
+    const { verb } = token.verb;
+    const isBase = token.verb.tense === 'present' && stripAccents(token.text.toLowerCase()) === stripAccents(verb.lemma);
+    return { greek: verb.lemma, russian: verb.translation, kind: 'verb', why: isBase ? undefined : verbWhy(token.verb) };
+  }
   return lexicon().words.get(token.key);
+}
+
+/** Пояснение к форме глагола — из разбора: время и лицо, правило справочника. */
+function verbWhy({ verb, tense, persons }: VerbMatch): FormNote {
+  const who = persons.map((p) => RUSSIAN_PRONOUNS[p]).join(' или ');
+  const { lemma } = verb;
+  if (tense === 'future') {
+    const p = persons[0]!;
+    return verb.greek.perfective[p] === verb.greek.present[p]
+      ? { note: `Будущее время, ${who}: у ${lemma} будущее звучит как настоящее с θα.`, rule: 'verb#future' }
+      : { note: `Будущее время, ${who}: θα + основа прошедшего + окончание настоящего.`, rule: 'verb#future' };
+  }
+  const time = tense === 'present' ? 'Настоящее время' : 'Прошедшее время';
+  if (lemma === 'είμαι') return { note: `${time}, ${who}: формы είμαι нужно запомнить.`, rule: 'verb#eimai' };
+  if (lemma === 'έχω') {
+    const how = tense === 'present' ? 'спрягается, как γράφω' : 'прошедшее είχα нужно запомнить';
+    return { note: `${time}, ${who}: ${how}.`, rule: 'verb#echo' };
+  }
+  if (tense === 'present') return { note: `Настоящее время, ${who}: лицо видно по окончанию.`, rule: 'verb#present' };
+  if (verb.group === 'irregular') return { note: `Прошедшее время, ${who}: у ${lemma} эту форму нужно запомнить.`, rule: 'verb#past-irregular' };
+  return { note: `Прошедшее время, ${who}: к основе добавился согласный, ударение — на третьем слоге с конца.`, rule: 'verb#past' };
 }
 
 /** Значение формы из словарика текста — подсказка, когда словарной формы нет. */

@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { DeckRef } from '@/entities/card';
+import type { FormNote } from '@/entities/dictionary';
 import type { TextToken } from '@/entities/verb';
 import { SpeakButton } from '@/features/pronounce';
 import type { WordDeckFn } from '../lib/lessonWordGroups';
@@ -27,6 +28,8 @@ interface Props {
   phrase?: PhraseRef;
   /** Тише подчёркивание — для слов внутри фразы. */
   quiet?: boolean;
+  /** «Почему так?» — почему форма на странице такая. */
+  why?: FormNote;
   children?: ReactNode;
 }
 
@@ -44,7 +47,7 @@ function keepInViewport(pop: HTMLSpanElement | null) {
  * Греческое слово, которое можно добавить в карточки.
  * Выглядит как текст; по нажатию — маленькое окно: перевод, озвучка, наборы.
  */
-export function Word({ greek, russian, deck, display, hint, phrase, quiet, children }: Props) {
+export function Word({ greek, russian, deck, display, hint, phrase, quiet, why, children }: Props) {
   const [open, setOpen] = useState(false);
   const [wholePhrase, setWholePhrase] = useState(false);
   const wrapRef = useRef<HTMLSpanElement>(null);
@@ -114,6 +117,7 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, child
                 deck={deck}
                 display={shown}
                 hint={hint}
+                why={why}
                 extra={
                   phrase && (
                     <button type="button" className={styles.linkBtn} onClick={() => setWholePhrase(true)}>
@@ -159,6 +163,7 @@ function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase?: Ph
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
       phrase={phrase}
+      why={entry?.why}
       quiet
     >
       {token.text}

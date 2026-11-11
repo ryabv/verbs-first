@@ -252,10 +252,11 @@
   background: var(--parchment);
   box-shadow: inset 0 0 0 5px var(--parchment), inset 0 0 0 6px var(--parchment-edge), 0 6px 22px rgb(0 0 0 / 0.18);
   box-sizing: border-box;
-  overflow: hidden;
 }
+/* Без overflow: hidden у рукописи — иначе окно слова обрезается её краем; скругляем саму картинку. */
 .manuscriptImage {
   display: block;
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
   width: calc(100% + 56px);
   height: 150px;
   margin: 0 -28px;
