@@ -242,12 +242,57 @@
 .textPane {
   grid-column: 2;
   grid-row: 1;
-  padding: 20px 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface-muted);
-  box-sizing: border-box;
 }
+
+/* Рукопись: пергамент в двойной рамке, картинка места тает в бумагу, меандр, книжный шрифт. */
+.manuscript {
+  padding: 0 28px 24px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: var(--radius);
+  background: var(--parchment);
+  box-shadow: inset 0 0 0 5px var(--parchment), inset 0 0 0 6px var(--parchment-edge), 0 6px 22px rgb(0 0 0 / 0.18);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.manuscriptImage {
+  display: block;
+  width: calc(100% + 56px);
+  height: 150px;
+  margin: 0 -28px;
+  object-fit: cover;
+  object-position: center 60%;
+  /* Маске важна только прозрачность — цвет любой. */
+  -webkit-mask-image: linear-gradient(to bottom, var(--text) 55%, transparent);
+  mask-image: linear-gradient(to bottom, var(--text) 55%, transparent);
+}
+.manuscriptMeander { height: 10px; margin: 18px 0 18px; background: var(--brand); opacity: 0.45; }
+.manuscriptImage + .manuscriptMeander { margin-top: -6px; }
+.manuscript .text { font-family: var(--font-display); font-size: 1.28rem; line-height: 1.7; }
+.bookText { font-family: var(--font-display); font-size: 1.2rem; }
+.endText { margin-top: 8px; }
+
+/* Страница главы: картинка места и картуш с названием поверх её нижнего края. */
+.hero { margin: 16px 0 0; }
+.heroImage { display: block; width: 100%; height: auto; aspect-ratio: 16 / 7; object-fit: cover; border-radius: var(--radius); }
+.heroPlate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: min(560px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 12px 22px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: var(--radius);
+  background: var(--parchment);
+  box-shadow: inset 0 0 0 4px var(--parchment), inset 0 0 0 5px var(--parchment-edge), 0 8px 24px rgb(0 0 0 / 0.3);
+  text-align: center;
+}
+.heroImage + .heroPlate { margin-top: -56px; }
+.heroPlate .kicker, .heroPlate .title { margin: 0; }
+.heroPlate .cartoucheMeander { margin: 2px 0; }
+.heroPlate + .lead { margin-top: 20px; }
 
 .stepTitle { margin: 0 0 12px; font-size: 1.7rem; }
 .para { margin: 0 0 12px; line-height: 1.6; }
@@ -279,6 +324,34 @@
 }
 .gapLater { border-bottom-color: var(--border-strong); color: var(--text-subtle); font-weight: 400; }
 .filled { color: var(--success); font-weight: 600; }
+/* Название главы над текстом. На телефоне — только вместе со всем текстом (как и остальные куски). */
+.textHead { margin: 0 0 12px; }
+.textTitle { margin: 0; font-size: 1.5rem; line-height: 1.3; }
+.endTitle { margin: 16px 0 8px; }
+/* Перевод предложения — по кнопке рядом с озвучкой (вид как у неё). */
+.translateBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  padding: 0;
+  font-size: 1rem;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  margin-left: 2px;
+  color: var(--text-subtle);
+  cursor: pointer;
+  vertical-align: middle;
+}
+.translateBtn:hover, .translateBtn[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
+.translation { display: block; margin: 0 0 4px; font-family: var(--font); font-size: 0.9rem; line-height: 1.45; font-style: italic; color: var(--text-muted); }
+@media (pointer: coarse) {
+  .translateBtn { width: 2.4em; height: 2.4em; font-size: 1.05rem; }
+  .translateBtn:hover { color: var(--text-subtle); background: none; }
+  .translateBtn[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
+}
 /* Реплика задания на слух — вместо текста подпись до ответа. */
 .hiddenLine { font-size: 0.9rem; font-style: italic; color: var(--text-subtle); }
 
@@ -295,8 +368,8 @@
 }
 .tapWord:hover { background: var(--accent-soft); }
 .tapPicked { background: var(--accent-soft); color: var(--accent-strong); }
-.tapRight { background: var(--success-soft); color: var(--success); }
-.tapWrong { background: var(--danger-soft); color: var(--danger); }
+.tapRight { background: var(--success-soft); color: var(--success); border-radius: 4px; }
+.tapWrong { background: var(--danger-soft); color: var(--danger); border-radius: 4px; }
 
 /* Задание */
 .task { margin: 20px 0 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
@@ -363,9 +436,12 @@
   .stepHead { order: 0; margin: 0; min-width: 0; }
   .textPane { order: 1; }
   .lessonPane { order: 2; }
-  .textPane { padding: 14px 16px; }
-  .outside { display: none; }
-  .textExpanded .outside { display: block; }
+  .manuscript { padding: 0 16px 14px; }
+  .manuscriptImage { width: calc(100% + 32px); height: 96px; margin: 0 -16px; }
+  .manuscriptMeander { margin: 12px 0; }
+  .manuscript .text { font-size: 1.18rem; }
+  .outside, .text > .textHead { display: none; }
+  .textExpanded .outside, .textExpanded > .textHead { display: block; }
   .expand {
     display: block;
     align-self: flex-start;

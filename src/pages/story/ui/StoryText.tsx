@@ -5,6 +5,8 @@ import { Phrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { gapIndex, inFragment, tokenId } from '../lib/task';
 import { storyDeck, STORY_DECK } from '../lib/deck';
+import { ChapterTitle } from './ChapterTitle';
+import { TranslateButton } from './TranslateButton';
 import styles from './Story.module.css';
 
 interface Props {
@@ -28,6 +30,15 @@ const listensTo = (s: StoryStep, greek: string) => s.task?.kind === 'choose' && 
 export function StoryText({ chapter, step, done, solved, tap }: Props) {
   const currentRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
+  // Предложения, у которых открыт перевод.
+  const [translated, setTranslated] = useState<ReadonlySet<number>>(() => new Set());
+  const toggleTranslation = (n: number) =>
+    setTranslated((prev) => {
+      const next = new Set(prev);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
   const [from, to] = step.sentences;
 
   // Компонент пересоздаётся на каждом шаге (key у страницы) — прокручиваем к куску при появлении.
@@ -64,8 +75,9 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
         </span>
       );
     }
-    if (gap && current) return <span className={styles.filled}>{token.text}</span>;
-    if (!tap || !inFragment(step, n)) return undefined;
+    // Заполненный пропуск и слова после ответа — обычные слова с переводом (подсветка — в tokenClass).
+    if (gap && current) return undefined;
+    if (!tap || solved || !inFragment(step, n)) return undefined;
     const id = tokenId(n, i);
     const verdict = tap.verdict?.get(id);
     const cls = [styles.tapWord, tap.picked.has(id) && styles.tapPicked, verdict === true && styles.tapRight, verdict === false && styles.tapWrong]
@@ -76,6 +88,17 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
         {token.text}
       </button>
     );
+  };
+
+  /** Подсветка после ответа: заполненный пропуск, верно/лишнее в «нажмите слова». */
+  const tokenClass = (n: number) => (token: TextToken, i: number) => {
+    const gap = gapOf(n, token);
+    if (gap && gap.owner.id === step.id) return styles.filled;
+    if (!tap || !solved || !inFragment(step, n)) return undefined;
+    const verdict = tap.verdict?.get(tokenId(n, i));
+    if (verdict === true) return styles.tapRight;
+    if (verdict === false) return styles.tapWrong;
+    return undefined;
   };
 
   const render = (n: number) => {
@@ -91,10 +114,25 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
       );
     }
     const hasOpenGap = chapter.steps.some((st) => st.task?.kind === 'gap' && !isOpen(st) && st.task.gaps.some((g) => g.sentence === n));
+    const shown = translated.has(n);
+    const after = (
+      <>
+        {!hasOpenGap && <SpeakButton text={s.greek} />}
+        <TranslateButton shown={shown} onToggle={() => toggleTranslation(n)} />
+      </>
+    );
     return (
       <p key={n} className={styles.sentence}>
-        <Phrase greek={s.greek} russian={s.russian} deck={STORY_DECK} wordDeck={storyDeck} renderToken={renderToken(n)} />
-        {!hasOpenGap && <SpeakButton text={s.greek} />}
+        <Phrase
+          greek={s.greek}
+          russian={s.russian}
+          deck={STORY_DECK}
+          wordDeck={storyDeck}
+          renderToken={renderToken(n)}
+          tokenClass={tokenClass(n)}
+          after={after}
+        />
+        {shown && <span className={styles.translation}>{s.russian}</span>}
       </p>
     );
   };
@@ -109,6 +147,7 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
       <button type="button" className={styles.expand} onClick={() => setExpanded((v) => !v)}>
         {expanded ? 'Только текущий кусок' : 'Весь текст главы'}
       </button>
+      <ChapterTitle chapter={chapter} />
       {before.length > 0 && <div className={styles.outside}>{before.map(render)}</div>}
       <div className={styles.current} ref={currentRef}>
         {current.map(render)}

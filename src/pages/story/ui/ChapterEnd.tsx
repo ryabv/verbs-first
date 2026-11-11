@@ -10,6 +10,8 @@ import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Arrow } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
 import { chapterWords } from '../lib/words';
+import { ChapterTitle } from './ChapterTitle';
+import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import styles from './Story.module.css';
 
@@ -42,11 +44,15 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
         <p className={styles.lead}>Прочитайте главу целиком. Непонятное слово — нажмите на него.</p>
       </header>
 
-      <ReadingView
-        reading={reading}
-        verbs={verbs}
-        renderAdd={(token, glossShown) => <TokenCard token={token} deckFor={storyDeck} translationShown={glossShown} />}
-      />
+      <Manuscript chapter={chapter} className={styles.endText} label="Вся глава">
+        <ReadingView
+          reading={reading}
+          verbs={verbs}
+          textClassName={styles.bookText}
+          heading={<ChapterTitle chapter={chapter} className={styles.endTitle} />}
+          renderAdd={(token, glossShown) => <TokenCard token={token} deckFor={storyDeck} translationShown={glossShown} />}
+        />
+      </Manuscript>
 
       <section className={styles.summary}>
         <h2>Конспект</h2>

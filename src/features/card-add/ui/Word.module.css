@@ -134,3 +134,7 @@
 .ownFields { display: grid; gap: 0.35rem; }
 .chip:disabled { opacity: 0.45; cursor: default; }
 .chip:disabled:hover { border-color: var(--border); color: var(--text-muted); }
+
+/* Последнее слово фразы с кнопкой после него (озвучка) — переносятся только вместе. */
+.tail { white-space: nowrap; }
+.tail .popover { white-space: normal; }

@@ -142,6 +142,10 @@ interface PhraseProps {
    * undefined — обычное слово с переводом.
    */
   renderToken?: (token: TextToken, index: number) => ReactNode | undefined;
+  /** Класс для обычного слова (оно остаётся нажимаемым с переводом): подсветка после ответа на задание. */
+  tokenClass?: (token: TextToken, index: number) => string | undefined;
+  /** Что-то сразу после фразы (кнопка озвучки): переносится только вместе с последним словом. */
+  after?: ReactNode;
 }
 
 /** Слово из фразы: в карточку идёт словарная форма (глагол — начальная, сущ. — с артиклем). */
@@ -166,17 +170,49 @@ function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase?: Ph
  * Греческая фраза: каждое слово нажимается отдельно (словарной формой),
  * фразу целиком можно добавить из окна любого слова. Одно слово — обычный Word.
  */
-export function Phrase({ greek, russian, deck, wordDeck, renderToken }: PhraseProps) {
+export function Phrase({ greek, russian, deck, wordDeck, renderToken, tokenClass, after }: PhraseProps) {
   const tokens = analyzePhrase(greek);
-  if (!renderToken && tokens.filter((t) => t.isWord).length <= 1) return <Word greek={greek} russian={russian} deck={deck} />;
+  if (!renderToken && tokens.filter((t) => t.isWord).length <= 1) {
+    const word = <Word greek={greek} russian={russian} deck={deck} />;
+    return after === undefined ? (
+      word
+    ) : (
+      <span className={styles.tail}>
+        {word}
+        {after}
+      </span>
+    );
+  }
   const phrase: PhraseRef = { greek, russian, deck };
+  const renderAt = (t: TextToken, i: number) => {
+    if (!t.isWord) return <span key={i}>{t.text}</span>;
+    const custom = renderToken?.(t, i);
+    if (custom !== undefined) return <span key={i}>{custom}</span>;
+    const cls = tokenClass?.(t, i);
+    const word = <PhraseWord key={i} token={t} phrase={phrase} wordDeck={wordDeck} />;
+    return cls ? (
+      <span key={i} className={cls}>
+        {word}
+      </span>
+    ) : (
+      word
+    );
+  };
+  // Хвост — последнее слово, знаки после него и after — не разрываются переносом строки.
+  let tail = tokens.length;
+  if (after !== undefined) {
+    tail = tokens.findLastIndex((t) => t.isWord);
+    if (tail < 0) tail = tokens.length;
+  }
   return (
     <span lang="el">
-      {tokens.map((t, i) => {
-        if (!t.isWord) return <span key={i}>{t.text}</span>;
-        const custom = renderToken?.(t, i);
-        return custom === undefined ? <PhraseWord key={i} token={t} phrase={phrase} wordDeck={wordDeck} /> : <span key={i}>{custom}</span>;
-      })}
+      {tokens.slice(0, tail).map((t, i) => renderAt(t, i))}
+      {after !== undefined && (
+        <span className={styles.tail}>
+          {tokens.slice(tail).map((t, k) => renderAt(t, tail + k))}
+          {after}
+        </span>
+      )}
     </span>
   );
 }

@@ -18,12 +18,16 @@ interface Props {
   renderAdd?: (token: TextToken, glossShown: boolean) => ReactNode;
   /** Подсветить слово как незнакомое (раздел «Тексты»). */
   markUnknown?: (token: TextToken) => boolean;
+  /** Доп. класс для блока текста (например, книжный шрифт в «Истории»). */
+  textClassName?: string;
+  /** Свой заголовок вместо reading.title (например, с озвучкой и переводом). */
+  heading?: ReactNode;
 }
 
 type Mode = 'read' | 'find';
 type WordId = string; // "<номер предложения>:<номер токена>"
 
-export function ReadingView({ reading, verbs, renderAdd, markUnknown }: Props) {
+export function ReadingView({ reading, verbs, renderAdd, markUnknown, textClassName, heading }: Props) {
   const analyze = useMemo(() => createAnalyzer(verbs), [verbs]);
   const sentences = useMemo(() => reading.sentences.map((s) => analyze(s.greek)), [analyze, reading]);
 
@@ -100,32 +104,39 @@ export function ReadingView({ reading, verbs, renderAdd, markUnknown }: Props) {
         </label>
       </div>
 
-      <h2 className={styles.title}>{reading.title}</h2>
+      {heading ?? <h2 className={styles.title}>{reading.title}</h2>}
 
-      <div className={styles.text}>
-        {sentences.map((tokens, si) => (
-          <p key={si} className={styles.sentence}>
-            <span>
-              {tokens.map((token, ti) =>
-                token.isWord ? (
-                  <button
-                    key={ti}
-                    type="button"
-                    className={wordClass(`${si}:${ti}`, token)}
-                    data-reading-word
-                    onClick={() => onWord(`${si}:${ti}`, token)}
-                  >
-                    {token.text}
-                  </button>
-                ) : (
-                  <span key={ti}>{token.text}</span>
-                ),
-              )}
-              <SpeakButton text={reading.sentences[si]!.greek} />
-            </span>
-            {showTranslation && <span className={styles.translation}>{reading.sentences[si]!.russian}</span>}
-          </p>
-        ))}
+      <div className={textClassName ? `${styles.text} ${textClassName}` : styles.text}>
+        {sentences.map((tokens, si) => {
+          const renderToken = (token: TextToken, ti: number) =>
+            token.isWord ? (
+              <button
+                key={ti}
+                type="button"
+                className={wordClass(`${si}:${ti}`, token)}
+                data-reading-word
+                onClick={() => onWord(`${si}:${ti}`, token)}
+              >
+                {token.text}
+              </button>
+            ) : (
+              <span key={ti}>{token.text}</span>
+            );
+          // Последнее слово, знаки после него и озвучка переносятся только вместе.
+          const last = Math.max(0, tokens.findLastIndex((t) => t.isWord));
+          return (
+            <p key={si} className={styles.sentence}>
+              <span>
+                {tokens.slice(0, last).map(renderToken)}
+                <span className={styles.tail}>
+                  {tokens.slice(last).map((t, k) => renderToken(t, last + k))}
+                  <SpeakButton text={reading.sentences[si]!.greek} />
+                </span>
+              </span>
+              {showTranslation && <span className={styles.translation}>{reading.sentences[si]!.russian}</span>}
+            </p>
+          );
+        })}
       </div>
 
       {mode === 'read' && (

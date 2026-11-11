@@ -8,7 +8,6 @@ import {
   useStoryProgress,
   type StoryChapter,
   type StoryFind,
-  type StoryImage,
 } from '@/entities/story';
 import { routes } from '@/shared/config/routes';
 import { buttonClassName } from '@/shared/ui/button';
@@ -18,6 +17,7 @@ import { storyDeck } from '../lib/deck';
 import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
 import { IslandMap } from './IslandMap';
+import { PlaceImage } from './PlaceImage';
 import { StoryMap, type PlaceState } from './StoryMap';
 import styles from './Story.module.css';
 
@@ -202,24 +202,6 @@ function Finds({ finds, planned }: { finds: readonly StoryChapter[]; planned: nu
   );
 }
 
-/** Иллюстрация места: пока файла нет (или не загрузился) — карточка просто без картинки. */
-function PlaceImage({ image }: { image: StoryImage }) {
-  const [failed, setFailed] = useState(false);
-  if (failed) return null;
-  return (
-    <img
-      className={styles.placeImage}
-      src={`${process.env.BASE_URL}story/${image.file}`}
-      alt={image.alt}
-      width={1200}
-      height={675}
-      loading="lazy"
-      decoding="async"
-      onError={() => setFailed(true)}
-    />
-  );
-}
-
 function ChapterCard({ chapter, done }: { chapter: StoryChapter; done: readonly string[] }) {
   const steps = chapter.steps.filter((s) => done.includes(s.id)).length;
   const total = chapter.steps.length;
@@ -228,7 +210,7 @@ function ChapterCard({ chapter, done }: { chapter: StoryChapter; done: readonly 
   const to = steps === 0 ? routes.storyStep(chapter.id, 1) : firstOpen === -1 ? routes.storyStep(chapter.id, 'end') : routes.storyStep(chapter.id, firstOpen + 1);
   return (
     <div className={styles.cardBody}>
-      {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} />}
+      {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} className={styles.placeImage} />}
       <span className={styles.kicker}>
         Глава {chapter.id} · после урока {chapter.lesson}
       </span>

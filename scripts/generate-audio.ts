@@ -100,6 +100,7 @@ function collectTexts(): Set<string> {
     add(t.sentences.map((p) => p.greek).join(' '));
   }
   for (const c of STORY_CHAPTERS) {
+    add(c.title);
     c.sentences.forEach((p) => add(p.greek));
     add(c.sentences.map((p) => p.greek).join(' '));
     for (const s of c.steps) if (s.task?.kind === 'choose' && s.task.audio) add(s.task.audio);

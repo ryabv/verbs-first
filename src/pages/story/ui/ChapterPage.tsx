@@ -3,9 +3,10 @@ import { getChapter, STORY_END, useStoryDone, type StoryChapter } from '@/entiti
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
-import { Arrow, Check } from '@/shared/ui/ornament';
+import { Arrow, Check, Meander } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import { ChapterEnd } from './ChapterEnd';
+import { PlaceImage } from './PlaceImage';
 import { StepPage } from './StepPage';
 import styles from './Story.module.css';
 
@@ -46,13 +47,20 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
     <div className={styles.page}>
       <header className={styles.head}>
         <Breadcrumbs items={[{ label: 'История', to: routes.story() }, { label: `Глава ${chapter.id}` }]} />
-        <p className={styles.kicker}>
-          Глава {chapter.id} · после урока {chapter.lesson}
-        </p>
-        <h1 className={styles.title} lang="el">
-          {chapter.title}
-        </h1>
-        <p className={styles.subtitle}>{chapter.titleRu}</p>
+        <div className={styles.hero}>
+          {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} className={styles.heroImage} eager />}
+          <div className={styles.heroPlate}>
+            <Meander className={styles.cartoucheMeander} />
+            <p className={styles.kicker}>
+              Глава {chapter.id} · после урока {chapter.lesson}
+            </p>
+            <h1 className={styles.title} lang="el">
+              {chapter.title}
+            </h1>
+            <p className={styles.subtitle}>{chapter.titleRu}</p>
+            <Meander className={styles.cartoucheMeander} />
+          </div>
+        </div>
         <p className={styles.lead}>{chapter.intro}</p>
         <div className={styles.chapterProgress}>
           <ProgressBar value={doneSteps / total} />

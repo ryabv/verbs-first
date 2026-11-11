@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button';
 import { Arrow } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
 import { inFragment, tapCorrect, tokenId } from '../lib/task';
+import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import { StoryTask } from './StoryTask';
 import { StoryText } from './StoryText';
@@ -160,9 +161,9 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
           </section>
         </div>
 
-        <aside className={styles.textPane} aria-label="Текст главы">
+        <Manuscript chapter={chapter} className={styles.textPane} label="Текст главы">
           <StoryText chapter={chapter} step={step} done={done} solved={solved} tap={tap} />
-        </aside>
+        </Manuscript>
       </div>
     </div>
   );

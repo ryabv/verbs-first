@@ -10,7 +10,7 @@
 }
 /* Меандр вместо нижней границы шапки. */
 .meander { position: absolute; left: 0; right: 0; bottom: -8px; height: 8px; -webkit-mask-size: 13px 8px; mask-size: 13px 8px; }
-.logo { display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-display); font-size: 1.35rem; color: var(--text); }
+.logo { display: flex; align-items: center; gap: 0.6rem; font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--text); }
 .logo:hover { color: var(--text); }
 .logo b { color: var(--brand); }
 .mark {
