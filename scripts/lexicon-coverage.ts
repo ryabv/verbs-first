@@ -5,6 +5,7 @@
 import { COMBINATIONS, LETTERS, READING_COURSE, STRESS_EXAMPLES } from '@/entities/alphabet';
 import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
 import { LIBRARY_TEXTS } from '@/entities/library';
+import { STORY_CHAPTERS } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 
 const texts: string[] = [];
@@ -23,6 +24,14 @@ for (const l of lessons) {
 }
 // Раздел «Тексты».
 LIBRARY_TEXTS.forEach((t) => t.sentences.forEach((s) => texts.push(s.greek)));
+// История: текст глав и греческий в объяснениях, подсказках, конспекте (`фрагменты` — не слова).
+const GREEK_RUN = /[\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*/gu;
+const greekIn = (s: string) => s.replace(/`[^`]+`/g, ' ').match(GREEK_RUN) ?? [];
+for (const c of STORY_CHAPTERS) {
+  c.sentences.forEach((s) => texts.push(s.greek));
+  [c.title, c.teaser, ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));
+  for (const s of c.steps) if (s.task?.kind === 'gap') s.task.gaps.forEach((g) => texts.push(...greekIn(g.hint)));
+}
 LETTERS.forEach((l) => texts.push(l.example.greek));
 COMBINATIONS.forEach((c) => c.examples.forEach((e) => texts.push(e.greek)));
 Object.values(STRESS_EXAMPLES).forEach((e) => texts.push(e.greek));

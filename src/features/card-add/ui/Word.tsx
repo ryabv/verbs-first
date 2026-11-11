@@ -137,16 +137,21 @@ interface PhraseProps {
   deck?: DeckRef;
   /** Куда класть отдельные слова (по умолчанию — туда же). */
   wordDeck?: WordDeckFn;
+  /**
+   * Подменить отдельное слово (пропуск в тексте, выбор слов в задании). index — номер токена во фразе.
+   * undefined — обычное слово с переводом.
+   */
+  renderToken?: (token: TextToken, index: number) => ReactNode | undefined;
 }
 
 /** Слово из фразы: в карточку идёт словарная форма (глагол — начальная, сущ. — с артиклем). */
-function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase: PhraseRef; wordDeck: PhraseProps['wordDeck'] }) {
+function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase?: PhraseRef; wordDeck: PhraseProps['wordDeck'] }) {
   const entry = lookupToken(token);
   return (
     <Word
       greek={entry?.greek ?? ''}
       russian={entry?.russian ?? ''}
-      deck={(entry && wordDeck?.(entry)) ?? phrase.deck}
+      deck={(entry && wordDeck?.(entry)) ?? phrase?.deck}
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
       phrase={phrase}
@@ -161,16 +166,42 @@ function PhraseWord({ token, phrase, wordDeck }: { token: TextToken; phrase: Phr
  * Греческая фраза: каждое слово нажимается отдельно (словарной формой),
  * фразу целиком можно добавить из окна любого слова. Одно слово — обычный Word.
  */
-export function Phrase({ greek, russian, deck, wordDeck }: PhraseProps) {
+export function Phrase({ greek, russian, deck, wordDeck, renderToken }: PhraseProps) {
   const tokens = analyzePhrase(greek);
-  if (tokens.filter((t) => t.isWord).length <= 1) return <Word greek={greek} russian={russian} deck={deck} />;
+  if (!renderToken && tokens.filter((t) => t.isWord).length <= 1) return <Word greek={greek} russian={russian} deck={deck} />;
   const phrase: PhraseRef = { greek, russian, deck };
   return (
     <span lang="el">
-      {tokens.map((t, i) =>
-        t.isWord ? <PhraseWord key={i} token={t} phrase={phrase} wordDeck={wordDeck} /> : <span key={i}>{t.text}</span>,
-      )}
+      {tokens.map((t, i) => {
+        if (!t.isWord) return <span key={i}>{t.text}</span>;
+        const custom = renderToken?.(t, i);
+        return custom === undefined ? <PhraseWord key={i} token={t} phrase={phrase} wordDeck={wordDeck} /> : <span key={i}>{custom}</span>;
+      })}
     </span>
+  );
+}
+
+const GREEK_RUN = /([\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*)/u;
+
+/**
+ * Русский текст с вкраплениями греческого (объяснения, конспекты): каждое греческое слово —
+ * со словарной формой и переводом. Подряд идущие слова разбираются вместе (θα + глагол — будущее).
+ */
+export function GreekInline({ text, wordDeck }: { text: string; wordDeck?: WordDeckFn }) {
+  return (
+    <>
+      {text.split(GREEK_RUN).map((part, i) =>
+        i % 2 === 0 ? (
+          part
+        ) : (
+          <span key={i} lang="el">
+            {analyzePhrase(part).map((t, j) =>
+              t.isWord ? <PhraseWord key={j} token={t} wordDeck={wordDeck} /> : <span key={j}>{t.text}</span>,
+            )}
+          </span>
+        ),
+      )}
+    </>
   );
 }
 

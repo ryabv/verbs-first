@@ -1,5 +1,6 @@
 import type { DictEntry } from '../model/types';
 import { LIBRARY_WORDS } from './library-words';
+import { STORY_WORDS } from './story-words';
 
 /**
  * Общий словарь: слова из примеров и фраз, которых нет ни в словах уроков, ни в глаголах.
@@ -52,7 +53,7 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'εφτά', russian: 'семь' },
 
   // Местоимения
-  { greek: 'εσύ', russian: 'ты' },
+  { greek: 'εσύ', russian: 'ты', forms: ['εσένα', 'σένα'] },
   { greek: 'μου', russian: 'мой; мне, меня' },
   { greek: 'σου', russian: 'твой; тебе, тебя' },
   { greek: 'του', russian: 'его' },
@@ -137,4 +138,5 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'ο Γιώργος', russian: 'Йоргос', forms: ['Γιώργο'] },
   // Раздел «Тексты»
   ...LIBRARY_WORDS,
+  ...STORY_WORDS,
 ];
