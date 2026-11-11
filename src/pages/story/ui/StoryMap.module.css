@@ -1,0 +1,115 @@
+.scroller { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+.wrap { position: relative; }
+.map { display: block; width: 100%; height: auto; }
+
+/* ---------- остров ---------- */
+.sea { fill: var(--accent-soft); }
+.wave { fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: 0.18; stroke-linecap: round; }
+.shallows { fill: none; stroke: var(--accent); stroke-width: 22; opacity: 0.12; stroke-linejoin: round; }
+.land { fill: var(--olive-soft); stroke: var(--olive); stroke-width: 2.5; stroke-linejoin: round; }
+.highland { fill: var(--olive); opacity: 0.1; }
+.mountain { fill: var(--surface-hover); stroke: var(--text-subtle); stroke-width: 2; stroke-linejoin: round; }
+.snow { fill: var(--bg); }
+.trunk { stroke: var(--text-subtle); stroke-width: 2; }
+.olive { fill: var(--olive); opacity: 0.55; }
+.house { fill: var(--bg); stroke: var(--text-subtle); stroke-width: 1.2; }
+.dome { fill: var(--accent); opacity: 0.7; }
+.islandName {
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-style: italic;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+  fill: var(--olive);
+  opacity: 0.55;
+}
+.compass circle { fill: none; stroke: var(--text-subtle); stroke-width: 1.5; opacity: 0.6; }
+.compass path { fill: var(--text-subtle); opacity: 0.55; }
+.compass .compassNorth { fill: var(--brand); opacity: 0.9; }
+.compassLabel { font-size: 16px; font-weight: 700; text-anchor: middle; fill: var(--brand); }
+
+/* ---------- тропа и паром ---------- */
+.ferry { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; opacity: 0.6; }
+.routeAhead { fill: none; stroke: var(--text-subtle); stroke-width: 2.5; stroke-dasharray: 7 9; stroke-linecap: round; stroke-linejoin: round; opacity: 0.5; }
+.routeDone { fill: none; stroke: var(--brand); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Туман: мягкие облака цвета фона над закрытыми местами. */
+.fogCloud ellipse { fill: var(--surface-hover); opacity: 0.9; filter: blur(12px); }
+
+/* ---------- места: кнопки поверх карты ---------- */
+.places { list-style: none; margin: 0; padding: 0; }
+.placeItem { position: absolute; width: 0; height: 0; }
+.place {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  /* Зона нажатия больше точки — чтобы попасть пальцем. */
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 3px solid var(--bg);
+  font-size: 0.9rem;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  transition: transform 0.15s;
+}
+.place:hover .dot, .place:focus-visible .dot { transform: scale(1.15); }
+.place:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+.selected { background: var(--brand-soft); }
+
+.done .dot { background: var(--success); color: var(--on-accent); }
+.current .dot { background: var(--brand); color: var(--on-accent); }
+.open .dot { background: var(--bg); border-color: var(--brand); color: var(--brand); }
+.fog .dot { background: var(--surface-hover); border-color: var(--border-strong); color: var(--text-subtle); box-shadow: none; }
+
+.label, .here {
+  position: absolute;
+  left: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
+  text-shadow: 0 0 3px var(--bg), 0 0 3px var(--bg), 0 0 6px var(--bg);
+}
+.label { bottom: 18px; font-size: 0.85rem; font-weight: 600; color: var(--text); }
+.here { top: 18px; font-size: 0.8rem; font-style: italic; color: var(--brand); }
+
+.pulse {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--brand);
+  animation: pulse 2s ease-out infinite;
+}
+@keyframes pulse {
+  from { transform: scale(1); opacity: 0.45; }
+  to { transform: scale(2.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse { animation: none; opacity: 0.25; transform: scale(1.5); }
+}
+
+@media (max-width: 600px) {
+  /* Узкий экран: карта шире экрана и листается вбок — места и подписи не слипаются. */
+  .wrap { width: 680px; }
+  .dot { width: 24px; height: 24px; border-width: 2px; font-size: 0.75rem; }
+  .pulse { width: 24px; height: 24px; }
+  .label { bottom: 14px; font-size: 0.72rem; }
+  .here { top: 14px; font-size: 0.7rem; }
+}

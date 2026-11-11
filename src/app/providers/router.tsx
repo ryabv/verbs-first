@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration } from 'react-router';
+import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration, useMatch } from 'react-router';
 import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
 import { HomePage } from '@/pages/home';
@@ -9,13 +9,15 @@ import { AppFooter } from '@/widgets/app-footer';
 import { AppHeader } from '@/widgets/app-header';
 
 function Layout() {
+  // Карта «Истории» занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
+  const fullScreen = useMatch('/story');
   return (
     <>
       <AppHeader />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Outlet />
       </main>
-      <AppFooter />
+      {!fullScreen && <AppFooter />}
       <ScrollRestoration />
     </>
   );

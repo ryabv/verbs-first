@@ -41,6 +41,40 @@
 }
 
 
+:root {
+  /* 3D-карта «Истории»: цвета острова одни для обеих тем, как у фотографии. */
+  --map-deep: #0f2f4d;
+  --map-sea: #1a5f8a;
+  --map-shallow: #2a93a8;
+  --map-lagoon: #6fcfc4;
+  --map-foam: #f4f7f2;
+  --map-sand: #e6d6aa;
+  --map-dry: #b8aa72;
+  --map-grass: #7f9a4a;
+  --map-forest: #3f5f2c;
+  --map-tree: #4f7236;
+  --map-trunk: #6b4a2e;
+  --map-rock: #9a9184;
+  --map-peak: #dcd7cc;
+  --map-town: #d6cdbd;
+  --map-wheat: #d6bd68;
+  --map-field2: #98b25a;
+  --map-field3: #c6ae7a;
+  --map-plow: #9f7a52;
+  --map-hedge: #5a6834;
+  --map-roof: #f3efe6;
+  --map-roof-alt: #bf6e48;
+  --map-dome: #2f68b4;
+  --map-road: #efe4c8;
+  --map-light: #ffffff;
+  --map-ui: #ffffff;
+  --map-label: #3a2c1c;
+  --map-sea-label: #cfe2ea;
+  /* Картуш с заголовком поверх карты — как надпись на старинной карте. */
+  --parchment: #fbf6ea;
+  --parchment-edge: #d6c39f;
+}
+
 :root[data-theme='dark'] {
   --bg: #232529;
   --surface: #292c31;
@@ -68,6 +102,8 @@
   --warning-soft: #38230b;
   --danger: #e88b88;
   --danger-soft: #441b1b;
+  --parchment: #2c2a26;
+  --parchment-edge: #554b3b;
   color-scheme: dark;
 }
 

@@ -13,28 +13,186 @@
 }
 .lead { margin: 12px 0 0; color: var(--text-muted); line-height: 1.55; }
 
-.chapters { list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-.chapterTile {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.tileIntro { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text-muted); }
+.tileProgress { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-subtle); }
+.tileBar { display: flex; flex: 1; min-width: 6rem; max-width: 12rem; }
+.tileBar > * { flex: 1; }
+.finished { color: var(--success); }
+
+/* ---------- карта острова ---------- */
+.mapPage { max-width: 1040px; margin: 0 auto; padding: 0 40px 48px; width: 100%; box-sizing: border-box; }
+.mapHead { padding-bottom: 0; }
+.mapHead .head { margin-bottom: 0; }
+.placeCard {
+  margin: 16px 0 0;
   padding: 18px 20px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
-  color: var(--text);
-  text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
 }
-.chapterTile:hover { border-color: var(--border-strong); background: var(--surface-muted); color: var(--text); }
-.chapterTile .kicker { margin: 0; }
-.tileTitle { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
-.tileIntro { font-size: 0.95rem; line-height: 1.5; color: var(--text-muted); }
-.tileProgress { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-subtle); }
-.tileBar { display: flex; flex: 1; max-width: 16rem; }
-.tileBar > * { flex: 1; }
-.finished { color: var(--success); }
-.soon { padding: 14px 20px; border: 1px dashed var(--border-strong); border-radius: var(--radius); color: var(--text-subtle); font-size: 0.9rem; }
+.cardBody { display: flex; flex-direction: column; gap: 6px; }
+.cardBody .kicker { margin: 0; }
+/* Иллюстрация места — во всю ширину карточки, над текстом. */
+.placeImage {
+  display: block;
+  width: calc(100% + 40px);
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin: -18px -20px 8px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--surface-muted);
+}
+.cardTitle { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; line-height: 1.2; color: var(--text); text-decoration: none; }
+.cardTitle:hover { color: var(--brand); }
+.cardActions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+.allSteps { font-size: 0.9rem; }
+/* Карточка поверх 3D-карты: колонка (IslandMap) задаёт ей высоту, картинка ужимается
+   (обрезается по краям, но не ниже 72px), вступление — до трёх строк. Прокрутки нет. */
+.onMap { position: relative; display: flex; flex-direction: column; overflow: hidden; }
+.onMap .cardBody { min-height: 0; }
+.onMap .placeImage { flex: 0 1 auto; min-height: 72px; }
+.onMap .cardBody > :not(.placeImage) { flex: none; }
+.onMap .tileIntro { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+}
+.close:hover { color: var(--brand); }
+.close svg { display: block; }
+.onMap .kicker, .onMap .fogNote, .onMap .findsTitle { padding-right: 32px; }
+
+/* Картуш с заголовком — как надпись на старинной карте: пергамент, двойная рамка, меандр. */
+.cartouche {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 18px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: var(--radius);
+  background: var(--parchment);
+  box-shadow: inset 0 0 0 4px var(--parchment), inset 0 0 0 5px var(--parchment-edge), 0 8px 28px rgb(0 0 0 / 0.4);
+  text-align: center;
+}
+.cartoucheMeander { align-self: stretch; height: 10px; background: var(--brand); opacity: 0.6; }
+.cartoucheTitle { margin: 2px 0 0; font-size: 30px; line-height: 1.1; }
+.cartoucheLead { margin: 0; font-size: 0.88rem; line-height: 1.5; color: var(--text-muted); }
+.findsBtn {
+  margin: 2px 0 4px;
+  padding: 3px 12px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.findsBtn:hover, .findsBtn[aria-pressed='true'] { border-color: var(--brand); color: var(--brand); }
+.flatIntro { margin: 24px 0 16px; }
+.cartouche { position: relative; }
+/* Свернуть — справа в строке заголовка. */
+.collapse {
+  position: absolute;
+  top: 34px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--parchment-edge);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.collapse:hover { border-color: var(--brand); color: var(--brand); }
+.collapse svg, .miniTitle svg { display: block; }
+
+/* Свёрнутый картуш: табличка «История ▾» и кнопка находок. */
+.cartoucheMini {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 14px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: 999px;
+  background: var(--parchment);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.35);
+}
+.cartoucheMini .findsBtn { margin: 0; }
+.miniTitle { margin: 0; font-size: 1.2rem; line-height: 1; }
+.miniTitle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.miniTitle button:hover { color: var(--brand); }
+
+@media (max-width: 760px) {
+  .cartouche { gap: 4px; padding: 8px 12px; }
+  .collapse { top: 24px; right: 10px; }
+  .cartoucheTitle { font-size: 24px; }
+  .cartoucheLead { font-size: 0.8rem; line-height: 1.4; }
+  .findsBtn { margin: 0 0 2px; font-size: 0.8rem; }
+  .onMap { padding: 14px 16px; }
+  .onMap .placeImage { width: calc(100% + 32px); margin: -14px -16px 6px; }
+}
+
+.fogNote { margin: 0; color: var(--text-muted); line-height: 1.5; }
+
+/* Находки: в карточке поверх карты список листается сам — он растёт с каждой главой. */
+.findsBody { display: flex; flex-direction: column; min-height: 0; }
+.onMap .findList { min-height: 0; overflow-y: auto; }
+.findsTitle { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font-size: 1.3rem; }
+.findsCount { font-family: var(--font); font-size: 0.85rem; font-weight: 400; color: var(--text-subtle); }
+.findList { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.find {
+  display: flex;
+  gap: 12px;
+  flex: 1 1 18rem;
+  max-width: 30rem;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.findIcon { flex: none; width: 2.4rem; height: 2.4rem; color: var(--brand); }
+.findText { display: flex; flex-direction: column; gap: 2px; font-size: 0.95rem; }
+.findChapter { display: inline; font-size: 0.8rem; color: var(--text-subtle); }
+.findDesc { font-size: 0.9rem; line-height: 1.45; color: var(--text-muted); }
+.findEmpty {
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  font-size: 1.2rem;
+  color: var(--text-subtle);
+}
+.findsHint { margin: 10px 0 0; font-size: 0.9rem; color: var(--text-subtle); }
 
 .chapterProgress { display: flex; align-items: center; gap: 12px; margin: 18px 0 0; font-size: 0.9rem; color: var(--text-muted); }
 .chapterProgress > :first-child { flex: 1; max-width: 20rem; }
@@ -193,7 +351,7 @@
 .finishRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; width: 100%; }
 
 @media (max-width: 900px) {
-  .page { padding: 0 24px 40px; }
+  .page, .mapPage { padding: 0 24px 40px; }
   .head { margin-top: 20px; }
   .title { font-size: 28px; }
 
@@ -232,7 +390,7 @@
   }
 }
 @media (max-width: 600px) {
-  .page { padding: 0 16px 32px; }
+  .page, .mapPage { padding: 0 16px 32px; }
   .split { padding-top: 12px; }
   .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
   .chip { flex: none; }
