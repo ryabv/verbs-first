@@ -64,7 +64,7 @@ export function StepContent({ lesson, step, onGoal, renderVerbs }: Props) {
         <ReadingView
           reading={reading}
           verbs={allVerbs}
-          renderAdd={(token) => <TokenCard token={token} deckFor={wordDeck} />}
+          renderAdd={(token, glossShown) => <TokenCard token={token} deckFor={wordDeck} translationShown={glossShown} />}
         />
       ) : null;
     }

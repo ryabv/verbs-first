@@ -80,7 +80,16 @@ function OwnWord({ display, hint, deck, extra }: { display: string; hint?: strin
 }
 
 /** Для панели разбора слова в тексте: словарная форма слова-токена и наборы. */
-export function TokenCard({ token, deckFor }: { token: TextToken; deckFor?: WordDeckFn }) {
+export function TokenCard({
+  token,
+  deckFor,
+  translationShown = false,
+}: {
+  token: TextToken;
+  deckFor?: WordDeckFn;
+  /** Перевод уже есть в строке разбора — словарной форме его не повторяем. */
+  translationShown?: boolean;
+}) {
   const entry = lookupToken(token);
   return (
     <WordCard
@@ -90,7 +99,7 @@ export function TokenCard({ token, deckFor }: { token: TextToken; deckFor?: Word
       deck={entry && deckFor?.(entry)}
       display={token.text}
       hint={entry ? undefined : glossHint(token)}
-      translationShown
+      translationShown={translationShown}
     />
   );
 }

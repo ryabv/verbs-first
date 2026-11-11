@@ -240,7 +240,7 @@ function Reference({ lesson, tab: rawTab, header, crumbs }: ReferenceProps) {
               key={reading.id}
               reading={reading}
               verbs={getVerbs(knownVerbIds(lesson))}
-              renderAdd={(token) => <TokenCard token={token} deckFor={wordDeck} />}
+              renderAdd={(token, glossShown) => <TokenCard token={token} deckFor={wordDeck} translationShown={glossShown} />}
             />
           ))}
 

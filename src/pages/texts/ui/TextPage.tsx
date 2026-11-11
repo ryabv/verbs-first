@@ -65,7 +65,7 @@ export function TextPage() {
         key={text.id}
         reading={text}
         verbs={verbs}
-        renderAdd={(token) => <TokenCard token={token} deckFor={deckFor} />}
+        renderAdd={(token, glossShown) => <TokenCard token={token} deckFor={deckFor} translationShown={glossShown} />}
         markUnknown={
           highlight
             ? (token) => {

@@ -10,8 +10,12 @@ interface Props {
   reading: ReadingText;
   /** Глаголы, формы которых распознаются в тексте. */
   verbs: readonly Verb[];
-  /** Слот в панели разбора: добавить слово в карточки (словарной формой). */
-  renderAdd?: (token: TextToken) => ReactNode;
+  /**
+   * Слот в панели разбора: добавить слово в карточки (словарной формой).
+   * glossShown — строка разбора уже показала перевод (форма глагола или словарик текста),
+   * иначе перевод должен показать сам слот.
+   */
+  renderAdd?: (token: TextToken, glossShown: boolean) => ReactNode;
   /** Подсветить слово как незнакомое (раздел «Тексты»). */
   markUnknown?: (token: TextToken) => boolean;
 }
@@ -133,7 +137,11 @@ export function ReadingView({ reading, verbs, renderAdd, markUnknown }: Props) {
               </button>
               <b>{selected.token.text}</b>
               {glossLine(selected.token, reading.glossary, Boolean(renderAdd))}
-              {renderAdd && <div className={styles.glossAdd}>{renderAdd(selected.token)}</div>}
+              {renderAdd && (
+                <div className={styles.glossAdd}>
+                  {renderAdd(selected.token, hasGloss(selected.token, reading.glossary))}
+                </div>
+              )}
             </>
           ) : (
             <span className={styles.muted}>Нажмите на слово, чтобы увидеть перевод и разбор.</span>
@@ -214,6 +222,10 @@ export function ReadingView({ reading, verbs, renderAdd, markUnknown }: Props) {
       )}
     </div>
   );
+}
+
+function hasGloss(token: TextToken, glossary: Record<string, string>): boolean {
+  return Boolean(token.verb) || token.key in glossary;
 }
 
 /** Строка разбора: форма глагола или значение из словарика текста. Без них перевод покажет карточка слова (renderAdd). */
