@@ -19,7 +19,8 @@ MAX_CONSECUTIVE_FAILURES = 5  # похоже на блокировку — лу�
 
 async def synth(text: str, out: str) -> None:
     tmp = out + ".part"
-    await asyncio.wait_for(edge_tts.Communicate(text, VOICE, rate=RATE).save(tmp), timeout=30)
+    # Длинный текст (вся глава истории) синтезируется дольше: 30 с + 1 с на каждые 25 символов.
+    await asyncio.wait_for(edge_tts.Communicate(text, VOICE, rate=RATE).save(tmp), timeout=30 + len(text) / 25)
     if os.path.getsize(tmp) == 0:
         os.remove(tmp)
         raise RuntimeError("empty audio")
