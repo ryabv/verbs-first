@@ -35,20 +35,19 @@
 }
 
 
-/* Узкий телефон: всё в одну строку — плотнее отступы, иконки разделов чуть меньше. */
-@media (max-width: 480px) {
+/* Планшет и телефон: четыре раздела — иконка над короткой подписью, вместо надписи — только знак ρ в венке.
+   Название остаётся для экранных чтецов. */
+@media (max-width: 720px) {
   .header { gap: 0.75rem; }
-  .logo { gap: 0.4rem; font-size: 1.2rem; }
-  .mark { width: 2.3rem; height: 2.3rem; }
-  .nav { gap: 0.9rem; }
-  .nav a { gap: 0.3rem; }
-}
-
-/* Телефон (до 480px): вместо надписи — только знак ρ в венке, иначе три раздела и кнопка темы не помещаются.
-   Название остаётся для экранных чтецов. На самых узких (до 400px) — ещё и без иконок разделов. */
-@media (max-width: 480px) {
   .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nav { flex: 1; justify-content: space-around; gap: 0.25rem; }
+  .nav a { flex-direction: column; gap: 2px; font-size: 0.7rem; line-height: 1.1; padding: 4px 2px; }
+  .navIcon { width: 1.45rem; height: 1.45rem; }
+  .tools { margin-left: 0; }
 }
 @media (max-width: 400px) {
-  .navIcon { display: none; }
+  .header { padding: 0 10px; gap: 0.4rem; }
+  .logo { font-size: 1.2rem; }
+  .mark { width: 2.2rem; height: 2.2rem; }
+  .nav a { font-size: 0.66rem; }
 }

@@ -1,1 +1,1 @@
-export { BookIcon, CardsIcon, SpeakerIcon, SpeakerOffIcon } from './icons';
+export { BookIcon, CardsIcon, LighthouseIcon, SpeakerIcon, SpeakerOffIcon } from './icons';

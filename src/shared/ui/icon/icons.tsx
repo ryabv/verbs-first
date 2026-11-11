@@ -62,6 +62,20 @@ export function CardsIcon(props: IconProps) {
   );
 }
 
+/** Маяк — раздел «История» (сериал про остров). */
+export function LighthouseIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M9.5 9h5l1.5 12H8L9.5 9z" fill="currentColor" fillOpacity={0.12} />
+      <path d="M10 6h4v3h-4z" />
+      <path d="M12 3v3" />
+      <path d="M9 14.5h6.3M8.6 18h6.8" />
+      <path d="M17 5.5l3-1.5M17 8.5l3 1.5M7 5.5 4 4M7 8.5 4 10" />
+      <path d="M5 21h14" />
+    </Svg>
+  );
+}
+
 /** Раскрытая книга — раздел «Тексты». */
 export function BookIcon(props: IconProps) {
   return (
