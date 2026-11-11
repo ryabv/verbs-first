@@ -64,3 +64,8 @@ export function useStoryDone(chapterId: number): readonly string[] {
   const progress = useSyncExternalStore(subscribe, snapshot, snapshot);
   return progress[chapterId] ?? EMPTY;
 }
+
+/** Прогресс всех глав (реактивно): { [глава]: id шагов }. */
+export function useStoryProgress(): Readonly<Record<string, readonly string[]>> {
+  return useSyncExternalStore(subscribe, snapshot, snapshot);
+}

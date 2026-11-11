@@ -52,4 +52,33 @@ export interface StoryChapter {
   summary: string[];
   /** Крючок к следующей главе. */
   teaser: string;
+  /** Находка главы — в «рюкзак» на карте, когда глава дочитана. */
+  find?: StoryFind;
+  /** Иллюстрация места главы — в карточке на карте. Файл в public/story/, промпты — docs/story/illustrations.md. */
+  image?: StoryImage;
+}
+
+export interface StoryImage {
+  /** Имя файла в public/story/ (webp, 16:9). */
+  file: string;
+  /** Что на картинке — для экранного диктора. */
+  alt: string;
+}
+
+export interface StoryFind {
+  title: string;
+  /** Что это и почему важно — одна-две фразы. */
+  text: string;
+  icon: 'letter' | 'photo' | 'map' | 'tape' | 'key';
+}
+
+/** Место на карте острова: глава происходит здесь. Координаты — в системе 1000×640. */
+export interface StoryPlace {
+  chapter: number;
+  /** Подпись на карте (по-русски), видна, когда место открыто. */
+  name: string;
+  x: number;
+  y: number;
+  /** За краем карты (паром в Пирей): рисуется у края с линией парома. */
+  offMap?: boolean;
 }

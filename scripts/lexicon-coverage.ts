@@ -29,7 +29,7 @@ const GREEK_RUN = /[\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*/gu;
 const greekIn = (s: string) => s.replace(/`[^`]+`/g, ' ').match(GREEK_RUN) ?? [];
 for (const c of STORY_CHAPTERS) {
   c.sentences.forEach((s) => texts.push(s.greek));
-  [c.title, c.teaser, ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));
+  [c.title, c.teaser, c.find?.text ?? '', ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));
   for (const s of c.steps) if (s.task?.kind === 'gap') s.task.gaps.forEach((g) => texts.push(...greekIn(g.hint)));
 }
 LETTERS.forEach((l) => texts.push(l.example.greek));

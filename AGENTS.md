@@ -41,7 +41,7 @@ React 19 + TypeScript + rspack + pnpm, Feature-Sliced Design, без бэкен�
 - Новый урок: заполнить и `vocabulary` (слова для карточек, существительные — с артиклем).
 - Раздел «Тексты» (`entities/library/data/texts.ts`): у текста `level` — после какого урока он по силам;
   глаголы — только из пройденных к этому уроку, остальные слова — в словарь, факты — только проверенные.
-- Раздел «История» (`entities/story/data/chapter-NN.ts`, сюжет — `docs/story/README.md`): глава N — после урока N,
+- Раздел «История» (`entities/story/data/chapter-NN.ts`, сюжет — `docs/story/README.md`, картинки мест — `docs/story/illustrations.md`): глава N — после урока N,
   глаголы и грамматика только из уроков 1…N; ответ задачи не должен быть виден в объяснении или в тексте куска.
 - Урок 0 (курс чтения, `entities/alphabet/data/course.ts`): в словах этапа — только пройденные буквы
   и сочетания, проверка: `pnpm reading:check`.
