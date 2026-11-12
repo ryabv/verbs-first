@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import type { StoryStep } from '@/entities/story';
+import type { StoryGap, StoryLevel, StoryStep } from '@/entities/story';
 import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
 import { Button } from '@/shared/ui/button';
@@ -10,23 +10,37 @@ import styles from './Story.module.css';
 
 interface Props {
   step: StoryStep;
+  /** Уровень: тот же текст, разная форма задания (см. STORY_LEVELS). */
+  level: StoryLevel;
   solved: boolean;
   onSolved: () => void;
   /** Для «нажмите слова»: проверка выбранного (состояние выбора — у страницы, слова — в тексте). */
   tap?: { count: number; check: () => boolean };
 }
 
-/** Задача шага: пропуски, выбор слов в тексте, выбор варианта. */
-export function StoryTask({ step, solved, onSolved, tap }: Props) {
+/**
+ * Задача шага: пропуски, выбор слов в тексте, выбор варианта.
+ * Пропуск: лёгкий — выбрать из вариантов, средний — вписать с подсказкой, сложный — вписать без неё.
+ * Реплика на слух: на сложном — записать услышанное (диктант), на остальных — выбрать.
+ */
+export function StoryTask({ step, level, solved, onSolved, tap }: Props) {
   const task = step.task;
   if (!task) return null;
 
   return (
     <section className={styles.task}>
       <h3 className={styles.taskTitle}>Задание</h3>
-      {task.kind === 'gap' && <GapTask key={step.id} gaps={task.gaps} options={task.options} solved={solved} onSolved={onSolved} />}
+      {task.kind === 'gap' &&
+        (level === 'light' ? (
+          <GapChoice key={step.id} gaps={task.gaps} solved={solved} onSolved={onSolved} />
+        ) : (
+          <GapTask key={step.id} gaps={task.gaps} hints={level === 'medium'} solved={solved} onSolved={onSolved} />
+        ))}
       {task.kind === 'tap' && tap && <TapTask key={step.id} prompt={task.prompt} answer={task.answer} solved={solved} onSolved={onSolved} {...tap} />}
-      {task.kind === 'choose' && (
+      {task.kind === 'choose' && task.audio && level === 'hard' && (
+        <Dictation key={step.id} audio={task.audio} answer={task.options[task.answer]!} solved={solved} onSolved={onSolved} />
+      )}
+      {task.kind === 'choose' && !(task.audio && level === 'hard') && (
         <ChooseTask key={step.id} prompt={task.prompt} options={task.options} answer={task.answer} audio={task.audio} solved={solved} onSolved={onSolved} />
       )}
     </section>
@@ -41,52 +55,57 @@ function Solved() {
   );
 }
 
-function GapTask({
-  gaps,
-  options,
-  solved,
-  onSolved,
-}: {
-  gaps: { word: string; hint: string }[];
-  options?: string[];
-  solved: boolean;
-  onSolved: () => void;
-}) {
+/** Лёгкий уровень: каждый пропуск — выбор из вариантов. */
+function GapChoice({ gaps, solved, onSolved }: { gaps: StoryGap[]; solved: boolean; onSolved: () => void }) {
+  // Какие пропуски уже угаданы и какой вариант был неверным (по пропуску).
+  const [right, setRight] = useState<ReadonlySet<number>>(() => new Set());
+  const [wrong, setWrong] = useState<ReadonlyMap<number, string>>(() => new Map());
+  const pick = (i: number, option: string) => {
+    if (option !== gaps[i]!.word) {
+      setWrong((m) => new Map(m).set(i, option));
+      return;
+    }
+    const next = new Set(right).add(i);
+    setRight(next);
+    if (next.size === gaps.length) onSolved();
+  };
+  return (
+    <>
+      <p className={styles.taskPrompt}>{gaps.length > 1 ? 'Выберите слово для каждого пропуска:' : 'Выберите слово для пропуска:'}</p>
+      <div className={styles.gaps}>
+        {gaps.map((g, i) => {
+          const done = solved || right.has(i);
+          return (
+            <div key={i} className={styles.gapField}>
+              <span className={styles.gapHint}>
+                {gaps.length > 1 && <b>{i + 1}. </b>}
+                <Rich text={g.hint} wordDeck={storyDeck} />
+              </span>
+              <div className={styles.options} lang="el">
+                {g.options.map((o) => {
+                  const cls = [styles.option, done && o === g.word && styles.optionRight, !done && wrong.get(i) === o && styles.optionWrong]
+                    .filter(Boolean)
+                    .join(' ');
+                  return (
+                    <button key={o} type="button" className={cls} disabled={done} onClick={() => pick(i, o)}>
+                      {o}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {solved ? <Solved /> : wrong.size > 0 && <p className={styles.hintWrong}>Не то — посмотрите на объяснение выше.</p>}
+    </>
+  );
+}
+
+/** Средний уровень — вписать с подсказкой (начальная форма, лицо); сложный — без неё. */
+function GapTask({ gaps, hints, solved, onSolved }: { gaps: StoryGap[]; hints: boolean; solved: boolean; onSolved: () => void }) {
   const [values, setValues] = useState(() => gaps.map(() => ''));
   const [verdicts, setVerdicts] = useState<(AnswerVerdict | null)[]>(() => gaps.map(() => null));
-  const [wrongOption, setWrongOption] = useState<string | null>(null);
-
-  if (options && gaps.length === 1) {
-    const [gap] = gaps;
-    return (
-      <>
-        <p className={styles.taskPrompt}>
-          Выберите слово для пропуска (<Rich text={gap!.hint} wordDeck={storyDeck} />):
-        </p>
-        <div className={styles.options} lang="el">
-          {options.map((o) => {
-            const right = solved && o === gap!.word;
-            const cls = [styles.option, right && styles.optionRight, o === wrongOption && !solved && styles.optionWrong].filter(Boolean).join(' ');
-            return (
-              <button
-                key={o}
-                type="button"
-                className={cls}
-                disabled={solved}
-                onClick={() => {
-                  if (o === gap!.word) onSolved();
-                  else setWrongOption(o);
-                }}
-              >
-                {o}
-              </button>
-            );
-          })}
-        </div>
-        {solved ? <Solved /> : wrongOption && <p className={styles.hintWrong}>Не то — посмотрите на объяснение выше.</p>}
-      </>
-    );
-  }
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -103,7 +122,7 @@ function GapTask({
           <label key={i} className={styles.gapField}>
             <span className={styles.gapHint}>
               {gaps.length > 1 && <b>{i + 1}. </b>}
-              <Rich text={g.hint} wordDeck={storyDeck} />
+              {hints ? <Rich text={g.hint} wordDeck={storyDeck} /> : gaps.length > 1 ? 'пропуск' : 'Пропуск'}
             </span>
             <input
               className={[styles.input, verdicts[i] === 'wrong' && styles.inputWrong].filter(Boolean).join(' ')}
@@ -114,7 +133,7 @@ function GapTask({
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
-              aria-label={`Пропуск ${i + 1}: ${g.hint}`}
+              aria-label={hints ? `Пропуск ${i + 1}: ${g.hint}` : `Пропуск ${i + 1}`}
             />
           </label>
         ))}
@@ -218,5 +237,47 @@ function ChooseTask({
       </div>
       {solved ? <Solved /> : wrong !== null && <p className={styles.hintWrong}>Не то — попробуйте ещё раз.</p>}
     </>
+  );
+}
+
+/** Сложный уровень, реплика на слух: записать, что сказали (диктант). Ошибка только в ударении — засчитана. */
+function Dictation({ audio, answer, solved, onSolved }: { audio: string; answer: string; solved: boolean; onSolved: () => void }) {
+  const [value, setValue] = useState('');
+  const [verdict, setVerdict] = useState<AnswerVerdict | null>(null);
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const v = compareAnswer(value, [answer]);
+    setVerdict(v);
+    if (v !== 'wrong') onSolved();
+  };
+  return (
+    <form onSubmit={submit}>
+      <p className={styles.taskPrompt}>
+        Прослушайте и запишите по-гречески, что сказали.
+        <SpeakButton text={audio} />
+      </p>
+      <input
+        className={[styles.input, styles.inputWide, verdict === 'wrong' && styles.inputWrong].filter(Boolean).join(' ')}
+        value={solved ? answer : value}
+        readOnly={solved}
+        onChange={(e) => setValue(e.target.value)}
+        lang="el"
+        autoComplete="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        aria-label="Что сказали"
+      />
+      {solved ? (
+        <>
+          <Solved />
+          {verdict === 'accent' && <p className={styles.hintWrong}>Проверьте ударение: правильно — {answer}</p>}
+        </>
+      ) : (
+        <div className={styles.taskActions}>
+          <Button type="submit">Проверить</Button>
+          {verdict === 'wrong' && <span className={styles.hintWrong}>Не совсем — послушайте ещё раз.</span>}
+        </div>
+      )}
+    </form>
   );
 }

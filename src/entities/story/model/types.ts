@@ -8,17 +8,30 @@ export interface StorySentence {
   russian: string;
 }
 
+/**
+ * Уровни главы: текст один, задания разные (матрица «глава × уровень»).
+ * - light — узнавание: пропуск выбирают из вариантов (`options` у пропуска);
+ * - medium — с опорой: форму вписывают, рядом подсказка (начальная форма, лицо);
+ * - hard — без опоры: вписывают без подсказки, реплику на слух — записывают (диктант).
+ * Задания главы N на уровне L опираются только на объяснённое в главах 1…N на уровнях не выше L.
+ */
+export const STORY_LEVELS = ['light', 'medium', 'hard'] as const;
+export type StoryLevel = (typeof STORY_LEVELS)[number];
+export const STORY_LEVEL_LABELS: Record<StoryLevel, string> = { light: 'Лёгкий', medium: 'Средний', hard: 'Сложный' };
+
 /** Пропуск в тексте: слово `word` в предложении `sentence` (номер с 1) скрыто, пока ученик его не впишет. */
 export interface StoryGap {
   sentence: number;
   word: string;
-  /** Подсказка у поля: «αγοράζω, она, прошедшее». */
+  /** Подсказка у поля (средний уровень): «αγοράζω, она, прошедшее». */
   hint: string;
+  /** Варианты для лёгкого уровня, среди них — word. Формы пишутся явно. */
+  options: string[];
 }
 
 export type StoryTask =
-  /** Вписать форму в пропуск(и). options — вместо ввода выбор (только для одного пропуска). */
-  | { kind: 'gap'; gaps: StoryGap[]; options?: string[] }
+  /** Вписать форму в пропуск(и); на лёгком — выбрать из вариантов. */
+  | { kind: 'gap'; gaps: StoryGap[] }
   /** Нажать в текущем куске все слова по условию. */
   | { kind: 'tap'; prompt: string; answer: string[] }
   /** Выбрать вариант; audio — сначала прослушать (вопрос «что сказали»). */

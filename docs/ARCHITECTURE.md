@@ -375,7 +375,12 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   в табличку «История ▾» + «Находки» (на телефоне развёрнут при первом входе, потом свёрнут — `verbs-first:story-intro-seen`; сворачивается
   и при выборе места; на широком экране — развёрнут).
   Без WebGL — плоская SVG-карта (`StoryMap` + `IslandArt`, упрощённый берег).
-- Прогресс — `verbs-first:story` (`{ [глава]: id шагов }`, `end` — вся глава). Слова глав — `dictionary/data/story-words.ts`,
+- Уровни: `STORY_LEVELS` (`light`/`medium`/`hard`), выбранный — `verbs-first:story-level` (`useStoryLevel`, один на всю
+  историю, переключатель `LevelSwitch` — в карточке главы, на странице главы и в шаге). Задание по уровню — `StoryTask`:
+  пропуск — выбор из `gap.options` / ввод с подсказкой / ввод без неё; реплика на слух на сложном — диктант.
+- Прогресс — `verbs-first:story-levels` (`{ [глава]: { [id шага]: лучший уровень 1…3 } }`, `end` — вся глава;
+  старый `verbs-first:story` вливается как средний уровень). `doneAt(levels, level)` — пройденные на уровне или сложнее,
+  `chapterRank` — уровень главы (минимум по шагам), `chapterOpen` — глава N открыта, если N−1 пройдена хотя бы на лёгком. Слова глав — `dictionary/data/story-words.ts`,
   набор карточек «Из истории». Главы входят в `pnpm lexicon:check` (вместе с греческим из объяснений) и `pnpm audio`.
 
 ### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`

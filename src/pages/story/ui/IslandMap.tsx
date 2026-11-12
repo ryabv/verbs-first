@@ -9,6 +9,8 @@ interface Props {
   stateOf: (chapter: number) => PlaceState;
   /** Доля пройденных шагов главы — кольцо вокруг текущей. */
   partOf: (chapter: number) => number;
+  /** Уровень, на котором глава пройдена («лёгкий»…), — подпись на табличке места. */
+  levelOf?: (chapter: number) => string | undefined;
   /** Место, чья карточка открыта; нет — ничего не выделено. */
   selected: number | undefined;
   /** Где начать: глава, у которой сейчас Анна. */
@@ -39,7 +41,7 @@ function routeOf(states: readonly PlaceState[]) {
  * и приближать. Места глав — HTML-медальоны поверх холста: их положение пересчитывается
  * после каждого кадра, без перерисовки React.
  */
-export function IslandMap({ stateOf, partOf, selected, start, onSelect, intro, panel, fallback }: Props) {
+export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect, intro, panel, fallback }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<IslandScene | undefined>(undefined);
   const markers = useRef(new Map<number, HTMLLIElement>());
@@ -142,7 +144,10 @@ export function IslandMap({ stateOf, partOf, selected, start, onSelect, intro, p
                   </span>
                   {open && (
                     <span className={styles.plate}>
-                      <span className={styles.plateKicker}>{kicker(p)}</span>
+                      <span className={styles.plateKicker}>
+                        {kicker(p)}
+                        {levelOf?.(p.chapter) && ` · ${levelOf(p.chapter)}`}
+                      </span>
                       <span className={styles.plateTitle}>{p.name}</span>
                     </span>
                   )}

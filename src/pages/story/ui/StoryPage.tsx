@@ -1,12 +1,18 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import {
+  chapterOpen,
+  chapterRank,
+  doneAt,
   getChapter,
   PROLOGUE,
   STORY_CHAPTERS,
-  STORY_END,
+  STORY_LEVEL_LABELS,
+  STORY_LEVELS,
   STORY_PLACES,
+  useStoryLevel,
   useStoryProgress,
+  type LevelRank,
   type StoryChapter,
   type StoryFind,
 } from '@/entities/story';
@@ -20,6 +26,7 @@ import { storyDeck } from '../lib/deck';
 import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
 import { IslandMap } from './IslandMap';
+import { LevelSwitch } from './LevelSwitch';
 import { PlaceImage } from './PlaceImage';
 import { StoryMap, type PlaceState } from './StoryMap';
 import styles from './Story.module.css';
@@ -27,16 +34,23 @@ import styles from './Story.module.css';
 /** /story — карта острова: места глав, тропа, неоткрытые места под «?», находки. */
 export function StoryPage() {
   const progress = useStoryProgress();
-  const doneOf = (id: number) => progress[id] ?? [];
-  const finished = (id: number) => doneOf(id).includes(STORY_END);
+  const level = useStoryLevel();
+  // Шаги, пройденные на выбранном уровне или сложнее.
+  const doneOf = (id: number) => doneAt(progress[id] ?? {}, level);
+  // Уровень главы: 0 — не пройдена, 1…3 — пройдена на лёгком, среднем, сложном.
+  const rankOf = (id: number): LevelRank => {
+    const c = getChapter(id);
+    return c ? chapterRank(c, progress[id] ?? {}) : 0;
+  };
+  const finished = (id: number) => rankOf(id) >= 1;
 
-  // Текущая глава — первая написанная и не дочитанная; если все дочитаны — последняя.
+  // Текущая глава — первая написанная и не пройденная; если все пройдены — последняя.
   const current = STORY_CHAPTERS.find((c) => !finished(c.id)) ?? STORY_CHAPTERS.at(-1);
   // Пролог (алфавит) — свой прогресс курса чтения; не обязателен, глава 1 открыта и без него.
   const [prologuePart] = useState(readingPart);
   const stateOf = (chapter: number): PlaceState => {
     if (chapter === PROLOGUE) return prologuePart >= 1 ? 'done' : 'open';
-    if (!getChapter(chapter)) return 'fog';
+    if (!getChapter(chapter) || !chapterOpen(chapter, rankOf)) return 'fog';
     if (finished(chapter)) return 'done';
     return chapter === current?.id ? 'current' : 'open';
   };
@@ -80,10 +94,16 @@ export function StoryPage() {
   const chapterCard = selected === PROLOGUE ? (
     <PrologueCard part={prologuePart} />
   ) : chapter ? (
-    <ChapterCard chapter={chapter} done={doneOf(chapter.id)} />
+    chapterOpen(chapter.id, rankOf) ? (
+      <ChapterCard chapter={chapter} done={doneOf(chapter.id)} rank={rankOf(chapter.id)} />
+    ) : (
+      <p className={styles.fogNote}>
+        <b>Глава {chapter.id}</b> откроется, когда вы пройдёте главу {chapter.id - 1} — хотя бы на лёгком уровне.
+      </p>
+    )
   ) : (
     <p className={styles.fogNote}>
-      <b>Глава {selected}</b> — после урока {selected}. Что здесь случится — пока секрет: место откроется, когда появится глава.
+      <b>Глава {selected}</b>. Что здесь случится — пока секрет: место откроется, когда появится глава.
     </p>
   );
   const findsList = <Finds finds={finds} planned={findsPlanned} />;
@@ -129,6 +149,7 @@ export function StoryPage() {
     <IslandMap
       stateOf={stateOf}
       partOf={partOf}
+      levelOf={(id) => (id === PROLOGUE || !rankOf(id) ? undefined : STORY_LEVEL_LABELS[STORY_LEVELS[rankOf(id) - 1]!].toLowerCase())}
       // Выделено только место с открытой карточкой: при входе ничего не выбрано — выбирает сам ученик.
       selected={sheet === 'chapter' ? selected : undefined}
       start={current?.id ?? 1}
@@ -252,23 +273,25 @@ function Finds({ finds, planned }: { finds: readonly StoryChapter[]; planned: nu
   );
 }
 
-function ChapterCard({ chapter, done }: { chapter: StoryChapter; done: readonly string[] }) {
+function ChapterCard({ chapter, done, rank }: { chapter: StoryChapter; done: readonly string[]; rank: LevelRank }) {
   const steps = chapter.steps.filter((s) => done.includes(s.id)).length;
   const total = chapter.steps.length;
-  const finished = done.includes(STORY_END);
+  // Пройдена на выбранном уровне (или сложнее).
+  const finished = steps === total;
   const firstOpen = chapter.steps.findIndex((s) => !done.includes(s.id));
   const to = steps === 0 ? routes.storyStep(chapter.id, 1) : firstOpen === -1 ? routes.storyStep(chapter.id, 'end') : routes.storyStep(chapter.id, firstOpen + 1);
   return (
     <div className={styles.cardBody}>
       {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} className={styles.placeImage} />}
       <span className={styles.kicker}>
-        Глава {chapter.id} · после урока {chapter.lesson}
+        Глава {chapter.id}
       </span>
       <Link to={routes.storyChapter(chapter.id)} className={styles.cardTitle} lang="el">
         {chapter.title}
       </Link>
       <span className={styles.subtitle}>{chapter.titleRu}</span>
       <p className={styles.tileIntro}>{chapter.intro}</p>
+      <LevelSwitch passed={rank} />
       <div className={styles.cardActions}>
         <Link to={to} className={buttonClassName('primary')}>
           {finished ? 'Перечитать' : steps > 0 ? 'Продолжить' : 'Начать'} <Arrow />
@@ -279,7 +302,7 @@ function ChapterCard({ chapter, done }: { chapter: StoryChapter; done: readonly 
           </span>
           {finished ? (
             <span className={styles.finished}>
-              прочитана <Check />
+              пройдена <Check />
             </span>
           ) : (
             <span>

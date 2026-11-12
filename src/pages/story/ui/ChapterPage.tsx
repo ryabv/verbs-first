@@ -1,11 +1,22 @@
 import { Link, useParams } from 'react-router';
-import { getChapter, STORY_END, useStoryDone, type StoryChapter } from '@/entities/story';
+import {
+  chapterOpen,
+  chapterRank,
+  doneAt,
+  getChapter,
+  STORY_END,
+  useStoryLevel,
+  useStoryLevels,
+  useStoryProgress,
+  type StoryChapter,
+} from '@/entities/story';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check, Meander } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import { ChapterEnd } from './ChapterEnd';
+import { LevelSwitch } from './LevelSwitch';
 import { PlaceImage } from './PlaceImage';
 import { StepPage } from './StepPage';
 import styles from './Story.module.css';
@@ -14,7 +25,14 @@ import styles from './Story.module.css';
 export function ChapterRoute() {
   const { chapterId = '', step } = useParams();
   const chapter = getChapter(Number(chapterId));
+  const progress = useStoryProgress();
   if (!chapter) return <NotFound />;
+  // Следующая глава — когда предыдущая пройдена хотя бы на лёгком.
+  const rankOf = (id: number) => {
+    const c = getChapter(id);
+    return c ? chapterRank(c, progress[id] ?? {}) : 0;
+  };
+  if (!chapterOpen(chapter.id, rankOf)) return <Locked chapter={chapter} />;
   if (step === 'end') return <ChapterEnd chapter={chapter} />;
   if (step !== undefined) {
     const index = Number(step) - 1;
@@ -22,6 +40,19 @@ export function ChapterRoute() {
     return <StepPage chapter={chapter} index={index} />;
   }
   return <ChapterPage chapter={chapter} />;
+}
+
+function Locked({ chapter }: { chapter: StoryChapter }) {
+  return (
+    <div className={styles.page}>
+      <p className={styles.lead}>
+        Глава {chapter.id} откроется, когда вы пройдёте главу {chapter.id - 1} — хотя бы на лёгком уровне.
+      </p>
+      <Link to={routes.storyChapter(chapter.id - 1)}>
+        <Arrow direction="left" /> К главе {chapter.id - 1}
+      </Link>
+    </div>
+  );
 }
 
 function NotFound() {
@@ -36,7 +67,9 @@ function NotFound() {
 }
 
 function ChapterPage({ chapter }: { chapter: StoryChapter }) {
-  const done = useStoryDone(chapter.id);
+  const level = useStoryLevel();
+  const levels = useStoryLevels(chapter.id);
+  const done = doneAt(levels, level);
   const doneSteps = chapter.steps.filter((s) => done.includes(s.id)).length;
   const total = chapter.steps.length;
   const firstOpen = chapter.steps.findIndex((s) => !done.includes(s.id));
@@ -52,7 +85,7 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
           <div className={styles.heroPlate}>
             <Meander className={styles.cartoucheMeander} />
             <p className={styles.kicker}>
-              Глава {chapter.id} · после урока {chapter.lesson}
+              Глава {chapter.id}
             </p>
             <h1 className={styles.title} lang="el">
               {chapter.title}
@@ -68,6 +101,7 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
             Шаги: {doneSteps}/{total}
           </span>
         </div>
+        <LevelSwitch passed={chapterRank(chapter, levels)} className={styles.chapterLevels} />
         <Link to={continueTo} className={buttonClassName('primary', styles.start)}>
           {started ? 'Продолжить' : 'Начать'} <Arrow />
         </Link>
@@ -93,11 +127,6 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
           </Link>
         </li>
       </ol>
-
-      <p className={styles.practice}>
-        Глагольные таблицы и тренажёры — в{' '}
-        <Link to={routes.lesson(chapter.lesson)}>уроке {chapter.lesson}</Link>.
-      </p>
     </div>
   );
 }

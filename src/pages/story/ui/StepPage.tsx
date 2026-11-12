@@ -1,6 +1,15 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { markStoryStep, useStoryDone, type StoryChapter, type StoryStep } from '@/entities/story';
+import {
+  chapterRank,
+  doneAt,
+  levelRank,
+  markStoryStep,
+  useStoryLevel,
+  useStoryLevels,
+  type StoryChapter,
+  type StoryStep,
+} from '@/entities/story';
 import { analyzePhrase } from '@/features/card-add';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
@@ -8,6 +17,7 @@ import { Button } from '@/shared/ui/button';
 import { Arrow } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
 import { inFragment, tapCorrect, tokenId } from '../lib/task';
+import { LevelSwitch } from './LevelSwitch';
 import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import { StoryTask } from './StoryTask';
@@ -17,8 +27,9 @@ import styles from './Story.module.css';
 /** Шаг главы: слева объяснение и задача, справа текст. */
 export function StepPage({ chapter, index }: { chapter: StoryChapter; index: number }) {
   const step = chapter.steps[index]!;
-  // key — по шагу: при переходе состояние задачи начинается заново.
-  return <Step key={step.id} chapter={chapter} step={step} index={index} />;
+  const level = useStoryLevel();
+  // key — по шагу и уровню: при переходе или смене уровня задача начинается заново.
+  return <Step key={`${step.id}-${level}`} chapter={chapter} step={step} index={index} />;
 }
 
 /** Слова текущего куска, которые надо нажать: id токенов. */
@@ -35,16 +46,19 @@ function tapTargets(chapter: StoryChapter, step: StoryStep): Map<string, string>
 
 function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep; index: number }) {
   const navigate = useNavigate();
-  const done = useStoryDone(chapter.id);
-  const wasDone = done.includes(step.id);
+  const level = useStoryLevel();
+  const levels = useStoryLevels(chapter.id);
+  // Пройдено на этом уровне или сложнее — засчитано.
+  const done = doneAt(levels, level);
+  const wasDone = (levels[step.id] ?? 0) >= levelRank(level);
   const [solved, setSolved] = useState(wasDone || !step.task);
   const [picked, setPicked] = useState<Map<string, string>>(() => (wasDone ? tapTargets(chapter, step) : new Map()));
   const [tapVerdict, setTapVerdict] = useState<Map<string, boolean> | undefined>();
   const total = chapter.steps.length;
   const solve = useCallback(() => {
     setSolved(true);
-    markStoryStep(chapter.id, step.id);
-  }, [chapter.id, step.id]);
+    markStoryStep(chapter.id, step.id, level);
+  }, [chapter.id, step.id, level]);
 
   const targets = useMemo(() => tapTargets(chapter, step), [chapter, step]);
   const isTap = step.task?.kind === 'tap';
@@ -99,6 +113,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 { label: step.title },
               ]}
             />
+            <LevelSwitch passed={chapterRank(chapter, levels)} />
           </div>
           <section className={styles.lessonPane}>
             <h1 className={styles.stepTitle}>{step.title}</h1>
@@ -107,7 +122,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 <Rich text={p} wordDeck={storyDeck} />
               </p>
             ))}
-            <StoryTask step={step} solved={solved} onSolved={solve} tap={isTap ? { count: picked.size, check: checkTap } : undefined} />
+            <StoryTask step={step} level={level} solved={solved} onSolved={solve} tap={isTap ? { count: picked.size, check: checkTap } : undefined} />
 
             <nav className={styles.stepNav}>
               {index > 0 ? (
