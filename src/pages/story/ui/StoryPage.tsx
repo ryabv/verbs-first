@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import {
   getChapter,
+  PROLOGUE,
   STORY_CHAPTERS,
   STORY_END,
   STORY_PLACES,
@@ -9,6 +10,8 @@ import {
   type StoryChapter,
   type StoryFind,
 } from '@/entities/story';
+import { READING_COURSE } from '@/entities/alphabet';
+import { progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
 import { buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check, Meander } from '@/shared/ui/ornament';
@@ -29,7 +32,10 @@ export function StoryPage() {
 
   // Текущая глава — первая написанная и не дочитанная; если все дочитаны — последняя.
   const current = STORY_CHAPTERS.find((c) => !finished(c.id)) ?? STORY_CHAPTERS.at(-1);
+  // Пролог (алфавит) — свой прогресс курса чтения; не обязателен, глава 1 открыта и без него.
+  const [prologuePart] = useState(readingPart);
   const stateOf = (chapter: number): PlaceState => {
+    if (chapter === PROLOGUE) return prologuePart >= 1 ? 'done' : 'open';
     if (!getChapter(chapter)) return 'fog';
     if (finished(chapter)) return 'done';
     return chapter === current?.id ? 'current' : 'open';
@@ -48,7 +54,7 @@ export function StoryPage() {
   };
   const chapter = getChapter(selected);
   const finds = STORY_CHAPTERS.filter((c) => c.find && finished(c.id));
-  const findsPlanned = STORY_PLACES.length;
+  const findsPlanned = STORY_PLACES.filter((p) => p.chapter !== PROLOGUE).length;
 
   useEffect(() => {
     if (!sheet) return;
@@ -60,6 +66,7 @@ export function StoryPage() {
   }, [sheet]);
 
   const partOf = (id: number) => {
+    if (id === PROLOGUE) return prologuePart;
     const c = getChapter(id);
     return c ? c.steps.filter((s) => doneOf(id).includes(s.id)).length / c.steps.length : 0;
   };
@@ -70,7 +77,9 @@ export function StoryPage() {
     if (!wide()) collapseIntro();
   };
 
-  const chapterCard = chapter ? (
+  const chapterCard = selected === PROLOGUE ? (
+    <PrologueCard part={prologuePart} />
+  ) : chapter ? (
     <ChapterCard chapter={chapter} done={doneOf(chapter.id)} />
   ) : (
     <p className={styles.fogNote}>
@@ -97,8 +106,9 @@ export function StoryPage() {
       <Meander className={styles.cartoucheMeander} />
       <h1 className={styles.cartoucheTitle}>История</h1>
       <p className={styles.cartoucheLead}>
-        Одна большая история по-гречески — по главе на урок. Анна приезжает на остров Анемуса, где тётя спрятала тайну.
-        Каждая глава — новое место на карте; неоткрытые места отмечены «?» и открываются вместе с главой.
+        Учим греческий по одной большой истории: Анна приезжает на остров Анемуса, где тётя спрятала тайну.
+        Каждая глава — новое место на карте; неоткрытые места отмечены «?». Ещё не читаете по-гречески — начните
+        с пролога на пароме.
       </p>
       {findsBtn}
       <Meander className={styles.cartoucheMeander} />
@@ -148,6 +158,46 @@ export function StoryPage() {
         </div>
       }
     />
+  );
+}
+
+/** Доля пройденных шагов курса чтения (пролога). */
+function readingPart(): number {
+  const done = new Set(readProgress(progressKey.reading).completed);
+  const steps = READING_COURSE.steps;
+  return steps.length ? steps.filter((s) => done.has(s.id)).length / steps.length : 0;
+}
+
+/** Карточка пролога: курс чтения. Необязателен — у каждого слова в главах есть перевод и озвучка. */
+function PrologueCard({ part }: { part: number }) {
+  const finished = part >= 1;
+  return (
+    <div className={styles.cardBody}>
+      <span className={styles.kicker}>Пролог · по желанию</span>
+      <Link to={routes.alphabet()} className={styles.cardTitle}>
+        Греческий алфавит
+      </Link>
+      <p className={styles.tileIntro}>
+        Пока паром идёт к острову, Анна учится читать по-гречески. Уже читаете — начинайте сразу с главы 1.
+      </p>
+      <div className={styles.cardActions}>
+        <Link to={routes.alphabet()} className={buttonClassName(finished ? 'secondary' : 'primary')}>
+          {finished ? 'Повторить' : part > 0 ? 'Продолжить' : 'Начать'} <Arrow />
+        </Link>
+        <span className={styles.tileProgress}>
+          <span className={styles.tileBar}>
+            <ProgressBar value={part} thin />
+          </span>
+          {finished ? (
+            <span className={styles.finished}>
+              пройден <Check />
+            </span>
+          ) : (
+            <span>{Math.round(part * 100)}%</span>
+          )}
+        </span>
+      </div>
+    </div>
   );
 }
 

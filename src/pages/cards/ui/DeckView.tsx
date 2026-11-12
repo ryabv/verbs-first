@@ -57,7 +57,7 @@ export function DeckView({ deck }: { deck: Deck }) {
       <header className={styles.head}>
         <Breadcrumbs
           items={[
-            { label: 'Уроки', to: routes.home() },
+            { label: 'История', to: routes.home() },
             { label: 'Карточки', to: routes.cards() },
             { label: deck.title },
           ]}

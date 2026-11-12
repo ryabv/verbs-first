@@ -72,6 +72,9 @@ export interface StoryFind {
   icon: 'letter' | 'photo' | 'map' | 'tape' | 'key';
 }
 
+/** «Глава» 0 на карте — пролог: курс чтения (алфавит), не глава истории. */
+export const PROLOGUE = 0;
+
 /** Место на карте острова: глава происходит здесь. Координаты — в системе 1000×640. */
 export interface StoryPlace {
   chapter: number;

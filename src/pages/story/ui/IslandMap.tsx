@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { STORY_PLACES as places, type StoryPlace } from '@/entities/story';
+import { PROLOGUE, STORY_PLACES as places, type StoryPlace } from '@/entities/story';
 import { Medallion } from '@/shared/ui/ornament';
 import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
@@ -22,6 +22,7 @@ interface Props {
   fallback: ReactNode;
 }
 
+const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
 const xy = (p: StoryPlace): [number, number] => [p.x, p.y];
 
 /** Тропа по сюжету: пройденные места и один отрезок вперёд — тропа ко всем местам выдала бы сюжет. */
@@ -126,13 +127,13 @@ export function IslandMap({ stateOf, partOf, selected, start, onSelect, intro, p
                   type="button"
                   className={styles.markerBtn}
                   aria-pressed={isSelected}
-                  aria-label={open ? `Глава ${p.chapter}: ${p.name}` : `Глава ${p.chapter}: место ещё скрыто`}
+                  aria-label={open ? `${kicker(p)}: ${p.name}` : `${kicker(p)}: место ещё скрыто`}
                   onClick={() => select(p)}
                 >
                   {state === 'current' && <span className={styles.here}>Анна здесь</span>}
                   <span className={styles.ring}>
                     {open ? (
-                      <Medallion n={p.chapter} earned={state === 'done'} size="2.7rem" />
+                      <Medallion n={p.chapter} letter={p.chapter === PROLOGUE ? 'αβ' : undefined} earned={state === 'done'} size="2.7rem" />
                     ) : (
                       <span className={styles.fogMark} aria-hidden="true">
                         ?
@@ -141,7 +142,7 @@ export function IslandMap({ stateOf, partOf, selected, start, onSelect, intro, p
                   </span>
                   {open && (
                     <span className={styles.plate}>
-                      <span className={styles.plateKicker}>Глава {p.chapter}</span>
+                      <span className={styles.plateKicker}>{kicker(p)}</span>
                       <span className={styles.plateTitle}>{p.name}</span>
                     </span>
                   )}

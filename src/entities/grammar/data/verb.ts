@@ -50,7 +50,7 @@ export const verb: GrammarTopic = {
       ],
       examples: [
         { greek: 'Δουλεύεις;', russian: 'Ты работаешь?' },
-        { greek: 'Δεν ταξιδεύει πολύ.', russian: 'Не путешествует много.' },
+        { greek: 'Δεν ταξιδεύει πολύ.', russian: 'Путешествует не много.' },
       ],
     },
     {

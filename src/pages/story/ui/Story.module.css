@@ -214,24 +214,6 @@
 
 .stepHead > ol { margin: 0; }
 /* Шаги главы: можно открыть любой. Пройденные — зелёные, текущий — залит. */
-.chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.chip {
-  display: inline-grid;
-  place-items: center;
-  min-width: 1.85rem;
-  height: 1.85rem;
-  padding: 0 4px;
-  box-sizing: border-box;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-muted);
-  text-decoration: none;
-}
-.chip:hover { border-color: var(--accent); color: var(--accent); }
-.chipDone { border-color: var(--success); background: var(--success-soft); color: var(--success); }
-.chipCurrent, .chipCurrent:hover { border-color: var(--brand); background: var(--brand); color: var(--on-accent); font-weight: 600; }
 
 /* Слева — объяснение, справа — текст (как редактор и мини-браузер в тренажёрах кода).
    Текст листается вместе со страницей (без своей прокрутки — иначе обрезаются окна слов),
@@ -306,13 +288,43 @@
 .outside { color: var(--text-subtle); }
 .current {
   /* Мягко: текст обычного цвета и тонкая черта на полях — без плашки, текст не сдвигается. */
-  margin: 4px 0 10px -14px;
-  padding-left: 12px;
   border-left: 2px solid var(--brand);
   color: var(--text);
   scroll-margin: 24px;
 }
 .expand { display: none; }
+/* Куски текста по шагам: номер шага висит на полях (как номер стиха), нажатие на чужой кусок открывает его шаг. */
+.fragment, .current { position: relative; margin: 4px 0 10px -14px; padding-left: calc(14px + 1.9em); }
+.fragment { border-left: 2px solid transparent; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+.fragment:hover { border-left-color: var(--parchment-edge); color: var(--text-muted); }
+.stepMark {
+  position: absolute;
+  left: 8px;
+  /* Знак по центру первой строки: строка — 1.7em родителя ≈ 2.1em своего шрифта (0.8em). */
+  margin-top: -0.05em;
+  display: block;
+  width: 2.2em;
+  height: 2.2em;
+  font-family: var(--font-display);
+  font-size: 0.8em;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: lining-nums tabular-nums;
+  color: var(--text-subtle);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+/* Венок и цифра — два слоя на весь знак; цифра по центру и по горизонтали, и по вертикали. */
+.stepLaurel { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--olive); opacity: 0.75; }
+.markNum { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
+.stepMarkDone, a.stepMarkDone:hover, .fragment:hover .stepMarkDone { color: var(--olive); }
+.stepMarkCurrent, .stepMarkCurrent.stepMarkDone { color: var(--brand); }
+.markNum { font-size: 1.15em; }
+.stepMarkDone .markNum { font-size: 1em; }
+.toEnd { align-self: flex-start; margin-top: 12px; font-family: var(--font); font-size: 0.9rem; color: var(--text-subtle); text-decoration: none; }
+.toEnd:hover { color: var(--brand); }
+.toEndDone { color: var(--success); }
 .gap {
   display: inline-block;
   min-width: 3.2em;
@@ -365,7 +377,11 @@
   background: none;
   color: inherit;
   cursor: pointer;
-  border-bottom: 1px dotted var(--text-subtle);
+  /* Подчёркивание, а не рамка: кнопка не выше строки — кусок не меняет высоту, текст не скачет между шагами. */
+  line-height: inherit;
+  vertical-align: baseline;
+  text-decoration: underline dotted var(--text-subtle);
+  text-underline-offset: 0.2em;
 }
 .tapWord:hover { background: var(--accent-soft); }
 .tapPicked { background: var(--accent-soft); color: var(--accent-strong); }
@@ -441,8 +457,8 @@
   .manuscriptImage { width: calc(100% + 32px); height: 96px; margin: 0 -16px; }
   .manuscriptMeander { margin: 12px 0; }
   .manuscript .text { font-size: 1.18rem; }
-  .outside, .text > .textHead { display: none; }
-  .textExpanded .outside, .textExpanded > .textHead { display: block; }
+  .outside, .text > .textHead, .toEnd { display: none; }
+  .textExpanded .outside, .textExpanded > .textHead, .textExpanded > .toEnd { display: block; }
   .expand {
     display: block;
     align-self: flex-start;
@@ -455,7 +471,8 @@
     color: var(--accent);
     cursor: pointer;
   }
-  .current { margin-left: -10px; padding-left: 8px; }
+  .current, .fragment { margin-left: -10px; padding-left: calc(8px + 1.85em); }
+  .stepMark { left: 4px; }
   .stepTitle { font-size: 1.4rem; }
   .stepNav {
     position: sticky;
@@ -469,6 +486,4 @@
 @media (max-width: 600px) {
   .page, .mapPage { padding: 0 16px 32px; }
   .split { padding-top: 12px; }
-  .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
-  .chip { flex: none; }
 }

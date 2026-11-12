@@ -22,7 +22,7 @@ export function TextsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'Уроки', to: routes.home() }, { label: 'Тексты' }]} />
+        <Breadcrumbs items={[{ label: 'История', to: routes.home() }, { label: 'Тексты' }]} />
         <h1 className={styles.title}>Тексты</h1>
         <p className={styles.lead}>
           Истории, мифы, традиции и жизнь в Греции — короткие тексты, чтобы просто читать. Нажмите на слово — перевод,

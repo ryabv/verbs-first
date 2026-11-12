@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { markStoryStep, STORY_END, useStoryDone, type StoryChapter, type StoryStep } from '@/entities/story';
+import { markStoryStep, useStoryDone, type StoryChapter, type StoryStep } from '@/entities/story';
 import { analyzePhrase } from '@/features/card-add';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
@@ -41,15 +41,6 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
   const [picked, setPicked] = useState<Map<string, string>>(() => (wasDone ? tapTargets(chapter, step) : new Map()));
   const [tapVerdict, setTapVerdict] = useState<Map<string, boolean> | undefined>();
   const total = chapter.steps.length;
-  const chipsRef = useRef<HTMLElement>(null);
-
-  // На телефоне ряд шагов прокручивается вбок — показываем текущий по центру (без прокрутки страницы).
-  useEffect(() => {
-    const nav = chipsRef.current;
-    const current = nav?.querySelector<HTMLElement>('[aria-current]');
-    if (nav && current) nav.scrollLeft = current.offsetLeft - nav.offsetLeft - (nav.clientWidth - current.offsetWidth) / 2;
-  }, []);
-
   const solve = useCallback(() => {
     setSolved(true);
     markStoryStep(chapter.id, step.id);
@@ -66,7 +57,9 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
 
   const goNext = () => {
     if (!step.task) markStoryStep(chapter.id, step.id);
-    navigate(index + 1 < total ? routes.storyStep(chapter.id, index + 2) : routes.storyStep(chapter.id, 'end'));
+    // Следующий шаг — без прокрутки наверх: кусок рядом, текст сам подвинется, если его не видно.
+    if (index + 1 < total) navigate(routes.storyStep(chapter.id, index + 2), { preventScrollReset: true });
+    else navigate(routes.storyStep(chapter.id, 'end'));
   };
 
   const tap = isTap
@@ -96,7 +89,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
   return (
     <div className={styles.stepPage}>
       <div className={styles.split}>
-        {/* Левая колонка закреплена целиком: крошки, шаги, объяснение, задача. Справа листается текст. */}
+        {/* Левая колонка закреплена целиком: крошки, объяснение, задача. Справа листается текст; шаги — куски текста. */}
         <div className={styles.leftCol}>
           <div className={styles.stepHead}>
             <Breadcrumbs
@@ -106,29 +99,6 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 { label: step.title },
               ]}
             />
-            <nav className={styles.chips} aria-label="Шаги главы" ref={chipsRef}>
-              {chapter.steps.map((s, i) => {
-                const cls = [styles.chip, done.includes(s.id) && styles.chipDone, i === index && styles.chipCurrent].filter(Boolean).join(' ');
-                return (
-                  <Link
-                    key={s.id}
-                    to={routes.storyStep(chapter.id, i + 1)}
-                    className={cls}
-                    title={`${i + 1}. ${s.title}${done.includes(s.id) ? ' — пройден' : ''}`}
-                    aria-current={i === index ? 'step' : undefined}
-                  >
-                    {i + 1}
-                  </Link>
-                );
-              })}
-              <Link
-                to={routes.storyStep(chapter.id, 'end')}
-                className={done.includes(STORY_END) ? `${styles.chip} ${styles.chipDone}` : styles.chip}
-                title="Вся глава и конспект"
-              >
-                ✦
-              </Link>
-            </nav>
           </div>
           <section className={styles.lessonPane}>
             <h1 className={styles.stepTitle}>{step.title}</h1>
@@ -141,7 +111,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
 
             <nav className={styles.stepNav}>
               {index > 0 ? (
-                <Link to={routes.storyStep(chapter.id, index)} className={styles.prev}>
+                <Link to={routes.storyStep(chapter.id, index)} className={styles.prev} preventScrollReset>
                   <Arrow direction="left" /> Назад
                 </Link>
               ) : (

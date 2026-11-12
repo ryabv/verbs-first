@@ -90,7 +90,12 @@ export const DICTIONARY: DictEntry[] = [
 
   // Существительные и прилагательные: словарная форма + формы из текстов
   { greek: 'το βιβλίο', russian: 'книга', forms: ['βιβλία'], why: { βιβλία: { note: 'Множественное число: -ο → -α.', rule: 'noun#plural' } } },
-  { greek: 'ο φίλος', russian: 'друг', forms: ['φίλο', 'φίλοι', 'φίλους'], why: { φίλο: ACC_M, φίλοι: { note: 'Множественное число: -ος → -οι.', rule: 'noun#plural' } } },
+  {
+    greek: 'ο φίλος',
+    russian: 'друг',
+    forms: ['φίλο', 'φίλοι', 'φίλους', 'φίλε'],
+    why: { φίλο: ACC_M, φίλοι: { note: 'Множественное число: -ος → -οι.', rule: 'noun#plural' }, φίλε: { note: 'Обращение: -ος → -ε, артикля нет.', rule: 'noun#vocative' } },
+  },
   { greek: 'ο άντρας', russian: 'мужчина; муж', forms: ['άντρες'], why: { άντρες: { note: 'Множественное число: -ας → -ες.', rule: 'noun#plural' } } },
   { greek: 'αυτός', russian: 'он; этот', forms: ['αυτές', 'αυτά'], why: { αυτές: { note: 'αυτός во множественном числе, женский род: «они».', rule: 'pronoun#personal' }, αυτά: { note: 'αυτός во множественном числе, средний род: «они; это».', rule: 'pronoun#personal' } } },
   { greek: 'η εργασία', russian: 'задание, работа', forms: ['εργασίες'], why: { εργασίες: PL_A } },
@@ -156,7 +161,7 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'ο Νίκος', russian: 'Никос', forms: ['Νίκο'] },
   { greek: 'ο Κώστας', russian: 'Костас', forms: ['Κώστα'] },
   { greek: 'η Μαρία', russian: 'Мария' },
-  { greek: 'η Ελένη', russian: 'Элени' },
+  { greek: 'η Ελένη', russian: 'Элени', forms: ['Ελένης'], why: { Ελένης: GEN_F } },
   { greek: 'η Σοφία', russian: 'София' },
   { greek: 'η Σαντορίνη', russian: 'Санторини' },
   { greek: 'η Ακρόπολη', russian: 'Акрополь' },

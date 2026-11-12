@@ -70,7 +70,7 @@ export function LessonPage() {
     return (
       <div className={styles.empty}>
         <p>Этот урок ещё не готов.</p>
-        <Link to={routes.home()}>
+        <Link to={routes.lessons()}>
           <Arrow direction="left" /> Ко всем урокам
         </Link>
       </div>
@@ -79,7 +79,7 @@ export function LessonPage() {
 
   const mode = parseMode(params.get('mode'));
   const crumbs: Crumb[] = [
-    { label: 'Уроки', to: routes.home() },
+    { label: 'Уроки', to: routes.lessons() },
     { label: `Урок ${lesson.id}`, to: routes.lesson(lesson.id) },
   ];
   const header = <LessonSidebarHeader lesson={lesson} mode={mode} />;
@@ -126,7 +126,7 @@ export function LessonPage() {
                   Следующий урок
                 </Link>
               ) : (
-                <Link to={routes.home()} className={buttonClassName('primary')}>
+                <Link to={routes.lessons()} className={buttonClassName('primary')}>
                   Ко всем урокам
                 </Link>
               )}

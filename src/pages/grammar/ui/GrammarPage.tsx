@@ -9,7 +9,7 @@ export function GrammarPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'Уроки', to: routes.home() }, { label: 'Справочник' }]} />
+        <Breadcrumbs items={[{ label: 'История', to: routes.home() }, { label: 'Справочник' }]} />
         <h1 className={styles.title}>Справочник</h1>
         <p className={styles.lead}>
           Правила греческого, которые встречаются в уроках и текстах, — коротко, с таблицами и примерами. Каждое греческое

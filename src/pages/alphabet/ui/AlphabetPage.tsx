@@ -23,7 +23,7 @@ const COURSE = READING_COURSE;
 const STAGES = lessonStages(COURSE);
 const BRANCHES = lessonBranches(COURSE);
 const CRUMBS: Crumb[] = [
-  { label: 'Уроки', to: routes.home() },
+  { label: 'История', to: routes.home() },
   { label: 'Урок 0', to: routes.alphabet() },
 ];
 

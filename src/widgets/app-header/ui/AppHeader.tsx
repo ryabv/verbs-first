@@ -1,11 +1,13 @@
-import { Link, NavLink } from 'react-router';
+import { Link, NavLink, useMatch } from 'react-router';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
-import { BookIcon, CardsIcon, ColumnIcon, LighthouseIcon } from '@/shared/ui/icon';
-import { Laurel, Meander, Scroll } from '@/shared/ui/ornament';
+import { CardsIcon, ColumnIcon, LighthouseIcon } from '@/shared/ui/icon';
+import { Laurel, Meander } from '@/shared/ui/ornament';
 import styles from './AppHeader.module.css';
 
 export function AppHeader() {
+  // «История» — и карта на главной, и главы (/story/…).
+  const inStory = useMatch('/story/*');
   return (
     <header className={styles.header}>
       <Link to={routes.home()} className={styles.logo}>
@@ -18,21 +20,13 @@ export function AppHeader() {
         </span>
       </Link>
       <nav className={styles.nav}>
-        <NavLink to={routes.home()} end className={({ isActive }) => (isActive ? styles.active : undefined)}>
-          <Scroll className={styles.navIcon} />
-          Уроки
+        <NavLink to={routes.home()} end className={({ isActive }) => (isActive || inStory ? styles.active : undefined)}>
+          <LighthouseIcon className={styles.navIcon} />
+          История
         </NavLink>
         <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <CardsIcon className={styles.navIcon} />
           Карточки
-        </NavLink>
-        <NavLink to={routes.texts()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
-          <BookIcon className={styles.navIcon} />
-          Тексты
-        </NavLink>
-        <NavLink to={routes.story()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
-          <LighthouseIcon className={styles.navIcon} />
-          История
         </NavLink>
         <NavLink to={routes.grammar()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <ColumnIcon className={styles.navIcon} />

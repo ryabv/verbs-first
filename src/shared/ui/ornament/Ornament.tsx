@@ -173,11 +173,14 @@ export const stageLetter = (n: number) => STAGE_LETTERS[(n - 1) % STAGE_LETTERS.
  */
 export function Medallion({
   n,
+  letter,
   earned,
   size = '3.5rem',
   className,
 }: {
   n: number;
+  /** Своя надпись вместо буквы этапа (пролог — «αβ»). */
+  letter?: string;
   earned: boolean;
   size?: string;
   className?: string;
@@ -187,7 +190,7 @@ export function Medallion({
     <span className={cls} style={{ width: size, height: size, fontSize: `calc(${size} * 0.4)` }} aria-hidden="true">
       <Laurel className={styles.medalLaurel} size="100%" />
       <span className={styles.medalLetter} lang="el">
-        {stageLetter(n)}
+        {letter ?? stageLetter(n)}
       </span>
     </span>
   );

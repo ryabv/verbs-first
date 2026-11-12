@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { StoryPlace } from '@/entities/story';
+import { PROLOGUE, type StoryPlace } from '@/entities/story';
 import { MAP_H as H, MAP_W as W } from '../lib/island';
 import { IslandArt } from './IslandArt';
 import styles from './StoryMap.module.css';
@@ -75,13 +75,13 @@ export function StoryMap({ places, stateOf, selected, onSelect }: Props) {
                   type="button"
                   className={[styles.place, styles[state], selected === p.chapter && styles.selected].filter(Boolean).join(' ')}
                   aria-pressed={selected === p.chapter}
-                  aria-label={open ? `Глава ${p.chapter}: ${p.name}` : `Глава ${p.chapter}: место ещё скрыто`}
-                  title={open ? `Глава ${p.chapter}: ${p.name}` : `Глава ${p.chapter} — откроется позже`}
+                  aria-label={open ? `${kicker(p.chapter)}: ${p.name}` : `${kicker(p.chapter)}: место ещё скрыто`}
+                  title={open ? `${kicker(p.chapter)}: ${p.name}` : `${kicker(p.chapter)} — откроется позже`}
                   onClick={() => onSelect(p.chapter)}
                 >
                   {state === 'current' && <span className={styles.pulse} aria-hidden="true" />}
                   <span className={styles.dot} aria-hidden="true">
-                    {open ? p.chapter : '?'}
+                    {open ? (p.chapter === PROLOGUE ? 'αβ' : p.chapter) : '?'}
                   </span>
                 </button>
                 {open && <span className={styles.label}>{p.name}</span>}
@@ -95,3 +95,4 @@ export function StoryMap({ places, stateOf, selected, onSelect }: Props) {
   );
 }
 
+const kicker = (chapter: number) => (chapter === PROLOGUE ? 'Пролог' : `Глава ${chapter}`);

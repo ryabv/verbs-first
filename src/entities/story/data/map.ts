@@ -1,10 +1,12 @@
-import type { StoryPlace } from '../model/types';
+import { PROLOGUE, type StoryPlace } from '../model/types';
 
 /**
  * Места глав на карте острова Ανεμούσα (вымышленный). Порядок — по сюжету (docs/story/README.md);
  * места будущих глав — план, могут сдвигаться, пока главы пишутся.
  */
 export const STORY_PLACES: readonly StoryPlace[] = [
+  // Пролог — курс чтения (алфавит): паром к острову. Необязателен: глава 1 открыта и без него.
+  { chapter: PROLOGUE, name: 'Паром: алфавит', x: 430, y: 612 },
   { chapter: 1, name: 'Порт и дом тёти', x: 455, y: 538 },
   { chapter: 2, name: 'Деревня', x: 345, y: 420 },
   { chapter: 3, name: 'Город и библиотека', x: 618, y: 452 },

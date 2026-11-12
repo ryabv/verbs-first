@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration, useMatch } from 'react-router';
+import { createBrowserRouter, Navigate, Outlet, RouterProvider, ScrollRestoration, useMatch } from 'react-router';
 import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
 import { HomePage } from '@/pages/home';
@@ -11,8 +11,8 @@ import { AppHeader } from '@/widgets/app-header';
 import { AudioPlayer } from '@/widgets/audio-player';
 
 function Layout() {
-  // Карта «Истории» занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
-  const fullScreen = useMatch('/story');
+  // Карта «Истории» (главная) занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
+  const fullScreen = useMatch('/');
   return (
     <>
       <AppHeader />
@@ -31,7 +31,9 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      { path: '/', element: <HomePage /> },
+      // Главная — карта «Истории». Уроки и тексты из шапки убраны, но открываются по прямым ссылкам.
+      { path: '/', element: <StoryPage /> },
+      { path: '/lessons', element: <HomePage /> },
       { path: '/lesson/:lessonId', element: <LessonPage /> },
       { path: '/cards', element: <CardsPage /> },
       { path: '/alphabet', element: <AlphabetPage /> },
@@ -39,7 +41,7 @@ const router = createBrowserRouter([
       { path: '/texts/:textId', element: <TextPage /> },
       { path: '/grammar', element: <GrammarPage /> },
       { path: '/grammar/:topicId', element: <GrammarTopicPage /> },
-      { path: '/story', element: <StoryPage /> },
+      { path: '/story', element: <Navigate to="/" replace /> },
       { path: '/story/:chapterId', element: <ChapterRoute /> },
       { path: '/story/:chapterId/:step', element: <ChapterRoute /> },
     ],

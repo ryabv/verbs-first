@@ -82,7 +82,7 @@ export function Word({ greek, russian, deck, display, hint, phrase, quiet, why, 
         {children ?? shown}
       </button>
       {open && (
-        <span className={styles.popover} ref={keepInViewport} id={popId} key={wholePhrase ? 'phrase' : 'word'}>
+        <span className={styles.popover} ref={keepInViewport} id={popId} key={wholePhrase ? 'phrase' : 'word'} data-popover>
           {wholePhrase && phrase ? (
             <>
               <span className={styles.popHead}>
