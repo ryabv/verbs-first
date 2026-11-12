@@ -12,6 +12,8 @@ interface Props {
   step: StoryStep;
   /** Уровень: тот же текст, разная форма задания (см. STORY_LEVELS). */
   level: StoryLevel;
+  /** Значение слова пропуска по-русски — подсказка сложного уровня. */
+  meaningOf: (gap: StoryGap) => string | undefined;
   solved: boolean;
   onSolved: () => void;
   /** Для «нажмите слова»: проверка выбранного (состояние выбора — у страницы, слова — в тексте). */
@@ -23,7 +25,7 @@ interface Props {
  * Пропуск: лёгкий — выбрать из вариантов, средний — вписать с подсказкой, сложный — вписать без неё.
  * Реплика на слух: на сложном — записать услышанное (диктант), на остальных — выбрать.
  */
-export function StoryTask({ step, level, solved, onSolved, tap }: Props) {
+export function StoryTask({ step, level, meaningOf, solved, onSolved, tap }: Props) {
   const task = step.task;
   if (!task) return null;
 
@@ -34,7 +36,13 @@ export function StoryTask({ step, level, solved, onSolved, tap }: Props) {
         (level === 'light' ? (
           <GapChoice key={step.id} gaps={task.gaps} solved={solved} onSolved={onSolved} />
         ) : (
-          <GapTask key={step.id} gaps={task.gaps} hints={level === 'medium'} solved={solved} onSolved={onSolved} />
+          <GapTask
+            key={step.id}
+            gaps={task.gaps}
+            hintOf={level === 'medium' ? (g) => g.hint : (g) => meaningOf(g) && `«${meaningOf(g)}»`}
+            solved={solved}
+            onSolved={onSolved}
+          />
         ))}
       {task.kind === 'tap' && tap && <TapTask key={step.id} prompt={task.prompt} answer={task.answer} solved={solved} onSolved={onSolved} {...tap} />}
       {task.kind === 'choose' && task.audio && level === 'hard' && (
@@ -102,8 +110,18 @@ function GapChoice({ gaps, solved, onSolved }: { gaps: StoryGap[]; solved: boole
   );
 }
 
-/** Средний уровень — вписать с подсказкой (начальная форма, лицо); сложный — без неё. */
-function GapTask({ gaps, hints, solved, onSolved }: { gaps: StoryGap[]; hints: boolean; solved: boolean; onSolved: () => void }) {
+/** Средний уровень — подсказка «начальная форма, лицо»; сложный — только значение по-русски, форму ученик выводит сам. */
+function GapTask({
+  gaps,
+  hintOf,
+  solved,
+  onSolved,
+}: {
+  gaps: StoryGap[];
+  hintOf: (gap: StoryGap) => string | undefined;
+  solved: boolean;
+  onSolved: () => void;
+}) {
   const [values, setValues] = useState(() => gaps.map(() => ''));
   const [verdicts, setVerdicts] = useState<(AnswerVerdict | null)[]>(() => gaps.map(() => null));
 
@@ -122,7 +140,7 @@ function GapTask({ gaps, hints, solved, onSolved }: { gaps: StoryGap[]; hints: b
           <label key={i} className={styles.gapField}>
             <span className={styles.gapHint}>
               {gaps.length > 1 && <b>{i + 1}. </b>}
-              {hints ? <Rich text={g.hint} wordDeck={storyDeck} /> : gaps.length > 1 ? 'пропуск' : 'Пропуск'}
+              <Rich text={hintOf(g) ?? 'пропуск'} wordDeck={storyDeck} />
             </span>
             <input
               className={[styles.input, verdicts[i] === 'wrong' && styles.inputWrong].filter(Boolean).join(' ')}
@@ -133,7 +151,7 @@ function GapTask({ gaps, hints, solved, onSolved }: { gaps: StoryGap[]; hints: b
               autoComplete="off"
               autoCapitalize="off"
               spellCheck={false}
-              aria-label={hints ? `Пропуск ${i + 1}: ${g.hint}` : `Пропуск ${i + 1}`}
+              aria-label={`Пропуск ${i + 1}: ${hintOf(g) ?? ''}`}
             />
           </label>
         ))}

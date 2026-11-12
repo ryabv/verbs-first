@@ -8,6 +8,7 @@ import {
   useStoryLevel,
   useStoryLevels,
   type StoryChapter,
+  type StoryGap,
   type StoryStep,
 } from '@/entities/story';
 import { analyzePhrase } from '@/features/card-add';
@@ -42,6 +43,12 @@ function tapTargets(chapter: StoryChapter, step: StoryStep): Map<string, string>
     analyzePhrase(s.greek).forEach((t, ti) => t.isWord && answer.has(t.text) && out.set(tokenId(si + 1, ti), t.text));
   });
   return out;
+}
+
+/** Значение глагола в пропуске — из разбора всего предложения (θα подсказывает будущее): «работать». */
+function verbMeaning(chapter: StoryChapter, gap: StoryGap): string | undefined {
+  const sentence = chapter.sentences[gap.sentence - 1]?.greek ?? '';
+  return analyzePhrase(sentence).find((t) => t.text === gap.word)?.verb?.verb.translation;
 }
 
 function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep; index: number }) {
@@ -122,7 +129,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 <Rich text={p} wordDeck={storyDeck} />
               </p>
             ))}
-            <StoryTask step={step} level={level} solved={solved} onSolved={solve} tap={isTap ? { count: picked.size, check: checkTap } : undefined} />
+            <StoryTask step={step} level={level} meaningOf={(g) => g.meaning ?? verbMeaning(chapter, g)} solved={solved} onSolved={solve} tap={isTap ? { count: picked.size, check: checkTap } : undefined} />
 
             <nav className={styles.stepNav}>
               {index > 0 ? (
