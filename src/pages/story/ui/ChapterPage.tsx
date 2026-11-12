@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router';
 import {
+  branchRead,
   chapterOpen,
   chapterRank,
   doneAt,
@@ -15,6 +16,8 @@ import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check, Meander } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
+import { BranchPage } from './BranchPage';
+import { CatIcon } from './CatIcon';
 import { ChapterEnd } from './ChapterEnd';
 import { LevelSwitch } from './LevelSwitch';
 import { PlaceImage } from './PlaceImage';
@@ -23,7 +26,7 @@ import styles from './Story.module.css';
 
 /** /story/:chapterId — страница главы; /story/:chapterId/:step — шаг (номер с 1) или end. */
 export function ChapterRoute() {
-  const { chapterId = '', step } = useParams();
+  const { chapterId = '', step, branch } = useParams();
   const chapter = getChapter(Number(chapterId));
   const progress = useStoryProgress();
   if (!chapter) return <NotFound />;
@@ -33,6 +36,10 @@ export function ChapterRoute() {
     return c ? chapterRank(c, progress[id] ?? {}) : 0;
   };
   if (!chapterOpen(chapter.id, rankOf)) return <Locked chapter={chapter} />;
+  if (branch !== undefined) {
+    const b = chapter.branches?.find((x) => x.id === branch);
+    return b ? <BranchPage chapter={chapter} branch={b} /> : <NotFound />;
+  }
   if (step === 'end') return <ChapterEnd chapter={chapter} />;
   if (step !== undefined) {
     const index = Number(step) - 1;
@@ -127,6 +134,31 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
           </Link>
         </li>
       </ol>
+
+      {chapter.branches && chapter.branches.length > 0 && (
+        <section className={styles.catSection}>
+          <h2 className={styles.catSectionTitle}>
+            <CatIcon /> Рассказы кота Ερμής
+          </h2>
+          <p className={styles.tileIntro}>По желанию: откуда слова, мифы, обычаи. Читайте в любой момент.</p>
+          <ul className={styles.steps}>
+            {chapter.branches.map((b) => {
+              return (
+                <li key={b.id}>
+                  <Link to={routes.storyBranch(chapter.id, b.id)} className={styles.stepLink}>
+                    <span className={styles.stepNum}>
+                      <CatIcon />
+                    </span>
+                    <span className={styles.stepName}>{b.title}</span>
+                    <span className={styles.stepKind}>рассказ</span>
+                    {branchRead(b, levels) && <Check className={styles.stepDone} />}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

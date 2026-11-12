@@ -19,4 +19,6 @@ export const routes = {
   story: () => '/',
   storyChapter: (id: number) => `/story/${id}`,
   storyStep: (id: number, step: number | 'end') => `/story/${id}/${step}`,
+  /** Рассказ кота Ερμής — ответвление главы. */
+  storyBranch: (id: number, branch: string) => `/story/${id}/cat/${branch}`,
 } as const;

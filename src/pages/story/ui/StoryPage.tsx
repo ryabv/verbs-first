@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import {
+  branchRead,
   chapterOpen,
   chapterRank,
   doneAt,
@@ -13,6 +14,7 @@ import {
   useStoryLevel,
   useStoryProgress,
   type LevelRank,
+  type StoryBranch,
   type StoryChapter,
   type StoryFind,
 } from '@/entities/story';
@@ -25,7 +27,8 @@ import { ProgressBar } from '@/shared/ui/progress-bar';
 import { storyDeck } from '../lib/deck';
 import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
-import { IslandMap } from './IslandMap';
+import { CatIcon } from './CatIcon';
+import { IslandMap, type MapBranch } from './IslandMap';
 import { PlaceImage } from './PlaceImage';
 import { StoryMap, type PlaceState } from './StoryMap';
 import styles from './Story.module.css';
@@ -57,7 +60,9 @@ export function StoryPage() {
   const [selected, setSelected] = useState(current?.id ?? 1);
   // Что открыто поверх карты: карточка главы, находки или ничего (видна только карта).
   // Карточка открывается только по нажатию на место — главу ученик выбирает сам.
-  const [sheet, setSheet] = useState<'chapter' | 'finds' | null>(null);
+  const [sheet, setSheet] = useState<'chapter' | 'finds' | 'branch' | null>(null);
+  // Выбранный рассказ кота: «глава:id».
+  const [branchKey, setBranchKey] = useState<string>();
   // Картуш с описанием: на широком экране развёрнут; на телефоне — развёрнут при первом входе,
   // а после первого сворачивания — табличка «История ▾».
   const [introOpen, setIntroOpen] = useState(() => wide() || !introSeen());
@@ -83,6 +88,24 @@ export function StoryPage() {
     const c = getChapter(id);
     return c ? c.steps.filter((s) => doneOf(id).includes(s.id)).length / c.steps.length : 0;
   };
+  // Рассказы кота — у мест открытых глав, доступны сразу.
+  const catBranches = STORY_CHAPTERS.filter((c) => chapterOpen(c.id, rankOf)).flatMap((c) =>
+    (c.branches ?? []).map((b) => ({ chapter: c, branch: b, levels: progress[c.id] ?? {} })),
+  );
+  const mapBranches: MapBranch[] = catBranches.map(({ chapter: c, branch: b, levels }) => ({
+    key: `${c.id}:${b.id}`,
+    title: b.title,
+    x: b.x,
+    y: b.y,
+    read: branchRead(b, levels),
+  }));
+  const pickedBranch = catBranches.find(({ chapter: c, branch: b }) => `${c.id}:${b.id}` === branchKey);
+  const selectBranch = (key: string) => {
+    setBranchKey(key);
+    setSheet('branch');
+    if (!wide()) collapseIntro();
+  };
+
   const select = (id: number) => {
     setSelected(id);
     setSheet('chapter');
@@ -153,6 +176,9 @@ export function StoryPage() {
       selected={sheet === 'chapter' ? selected : undefined}
       start={current?.id ?? 1}
       onSelect={select}
+      branches={mapBranches}
+      selectedBranch={sheet === 'branch' ? branchKey : undefined}
+      onSelectBranch={selectBranch}
       intro={intro}
       panel={
         sheet && (
@@ -163,7 +189,13 @@ export function StoryPage() {
                 <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </button>
-            {sheet === 'finds' ? findsList : chapterCard}
+            {sheet === 'finds' ? (
+              findsList
+            ) : sheet === 'branch' && pickedBranch ? (
+              <BranchCard chapter={pickedBranch.chapter} branch={pickedBranch.branch} />
+            ) : (
+              chapterCard
+            )}
           </section>
         )
       }
@@ -294,6 +326,26 @@ function ChapterCard({ chapter, rank }: { chapter: StoryChapter; rank: LevelRank
       <div className={styles.cardActions}>
         <Link to={routes.storyChapter(chapter.id)} className={buttonClassName('primary')}>
           К главе <Arrow />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+/** Карточка рассказа кота на карте: о чём он и вход. */
+function BranchCard({ chapter, branch }: { chapter: StoryChapter; branch: StoryBranch }) {
+  return (
+    <div className={styles.cardBody}>
+      <span className={styles.kicker}>
+        <CatIcon /> <span lang="el">Ερμής</span> рассказывает · глава {chapter.id}
+      </span>
+      <Link to={routes.storyBranch(chapter.id, branch.id)} className={styles.cardTitle}>
+        {branch.title}
+      </Link>
+      <p className={styles.tileIntro}>{branch.teaser}</p>
+      <div className={styles.cardActions}>
+        <Link to={routes.storyBranch(chapter.id, branch.id)} className={buttonClassName('primary')}>
+          Послушать кота <Arrow />
         </Link>
       </div>
     </div>

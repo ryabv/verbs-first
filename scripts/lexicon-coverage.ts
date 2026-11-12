@@ -33,6 +33,11 @@ for (const c of STORY_CHAPTERS) {
   c.sentences.forEach((s) => texts.push(s.greek));
   [c.title, c.teaser, c.find?.text ?? '', ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));
   for (const s of c.steps) if (s.task?.kind === 'gap') s.task.gaps.forEach((g) => texts.push(...greekIn(g.hint)));
+  // Рассказы кота: текст и примеры.
+  for (const b of c.branches ?? []) {
+    [b.title, b.teaser, ...b.body].forEach((s) => texts.push(...greekIn(s)));
+    b.examples?.forEach((e) => texts.push(e.greek));
+  }
 }
 // Справочник: объяснения, таблицы (`фрагменты` — не слова) и примеры.
 for (const t of GRAMMAR_TOPICS) {

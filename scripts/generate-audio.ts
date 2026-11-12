@@ -112,6 +112,7 @@ function collectTexts(): Set<string> {
     });
     add(c.sentences.map((p) => p.greek).join(' '));
     for (const s of c.steps) if (s.task?.kind === 'choose' && s.task.audio) add(s.task.audio);
+    c.branches?.forEach((b) => b.examples?.forEach((e) => add(e.greek)));
   }
   // Отдельные слова: каждое слово фраз нажимается и озвучивается в окне слова.
   // Однобуквенные (ο, η) синтезатор читает как название буквы — их не озвучиваем.

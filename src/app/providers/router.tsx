@@ -44,6 +44,7 @@ const router = createBrowserRouter([
       { path: '/story', element: <Navigate to="/" replace /> },
       { path: '/story/:chapterId', element: <ChapterRoute /> },
       { path: '/story/:chapterId/:step', element: <ChapterRoute /> },
+      { path: '/story/:chapterId/cat/:branch', element: <ChapterRoute /> },
     ],
   },
 ], { basename: process.env.BASE_URL.replace(/\/$/, '') || '/' });

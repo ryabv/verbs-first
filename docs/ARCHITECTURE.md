@@ -50,7 +50,7 @@ src/
     cards/                карточки: наборы, тренировка, добавление своих слов
     alphabet/             «Урок 0»: карта курса чтения, шаги (?step=), справочник (?mode=reference)
     texts/                «Тексты»: список по уровням (/texts) и чтение (/texts/:id), «знакомо N% слов»
-    story/                «История»: главы (/story), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end)
+    story/                «История»: главы (/story), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end), рассказ кота (/story/:id/cat/:branch)
   widgets/
     app-header, app-footer
     audio-player/         плеер слева снизу: пауза/продолжить, прогресс — кольцо вокруг кнопки
@@ -382,6 +382,10 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   старый `verbs-first:story` вливается как средний уровень). `doneAt(levels, level)` — пройденные на уровне или сложнее,
   `chapterRank` — уровень главы (минимум по шагам), `chapterOpen` — глава N открыта, если N−1 пройдена хотя бы на лёгком. Слова глав — `dictionary/data/story-words.ts`,
   набор карточек «Из истории». Главы входят в `pnpm lexicon:check` (вместе с греческим из объяснений) и `pnpm audio`.
+- Рассказы кота Ερμής — `branches` у главы (`StoryBranch`: `after` — к какому шагу (ссылка под его куском), `x`/`y` — метка
+  на карте, `body`, `examples`). Страница — `/story/:id/cat/:branch` (`BranchPage`), прочитан — `cat:<id>` в прогрессе
+  главы (`branchKey`, `branchRead`). Доступны сразу, как открыта глава: метки-коты у мест открытых глав (`IslandMap`, `branches`),
+  ссылка под куском шага `after` и список на странице главы. На уровень и открытие глав не влияют.
 
 ### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`
 

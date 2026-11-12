@@ -29,6 +29,8 @@ export const STORY_WORDS: DictEntry[] = [
     forms: ['Ερμή'],
     why: { Ερμή: { note: 'Обращение: у мужских имён на -ής, -ας отпадает -ς, артикля нет.', rule: 'noun#vocative' } },
   },
+  { greek: 'η ερμηνεία', russian: 'толкование; исполнение' },
+  { greek: 'ο διερμηνέας', russian: 'устный переводчик' },
   { greek: 'μαύρος', russian: 'чёрный', forms: ['μαύρη', 'μαύρο'], why: { μαύρη: ADJ_F, μαύρο: ADJ_N } },
   { greek: 'άσπρος', russian: 'белый', forms: ['άσπρη', 'άσπρο'], why: { άσπρη: ADJ_F, άσπρο: ADJ_N } },
   { greek: 'κρυμμένος', russian: 'спрятанный', forms: ['κρυμμένη', 'κρυμμένο'], why: { κρυμμένη: ADJ_F, κρυμμένο: ADJ_N } },

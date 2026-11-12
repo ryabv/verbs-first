@@ -165,3 +165,51 @@
   .side { left: 10px; right: 10px; top: 10px; bottom: 10px; width: auto; }
   .panel { max-height: 68%; }
 }
+
+/* ---------- рассказы кота Ερμής: маленькие монетки с котом у места главы ---------- */
+.catBtn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--accent-strong);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.15s;
+}
+.catBtn:hover { transform: translate(-50%, -50%) scale(1.12); }
+.catBtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[data-cat='open'] .catBtn { animation: catCall 2.4s ease-in-out infinite; }
+[data-cat='read'] .catBtn { border-color: var(--success); color: var(--text-muted); }
+/* Прочитан — зелёная галочка в углу монетки. */
+.catRead {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--success);
+  color: var(--bg);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+.marker[data-selected] .catBtn { box-shadow: 0 0 0 3px var(--brand), 0 2px 8px rgb(0 0 0 / 0.45); }
+
+@keyframes catCall {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), 0 2px 8px rgb(0 0 0 / 0.4); }
+  50% { box-shadow: 0 0 0 6px var(--accent-soft), 0 2px 8px rgb(0 0 0 / 0.4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-cat='open'] .catBtn { animation: none; }
+}

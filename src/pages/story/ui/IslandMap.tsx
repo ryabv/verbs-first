@@ -1,9 +1,20 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { PROLOGUE, STORY_PLACES as places, type StoryPlace } from '@/entities/story';
 import { Medallion } from '@/shared/ui/ornament';
+import { CatIcon } from './CatIcon';
 import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
 import type { PlaceState } from './StoryMap';
+
+/** Рассказ кота на карте: метка рядом с местом главы. */
+export interface MapBranch {
+  /** Уникален на всей карте: «глава:id». */
+  key: string;
+  title: string;
+  x: number;
+  y: number;
+  read: boolean;
+}
 
 interface Props {
   stateOf: (chapter: number) => PlaceState;
@@ -16,6 +27,10 @@ interface Props {
   /** Где начать: глава, у которой сейчас Анна. */
   start: number;
   onSelect: (chapter: number) => void;
+  /** Рассказы кота Ερμής — маленькие метки у мест открытых глав. */
+  branches?: readonly MapBranch[];
+  selectedBranch?: string;
+  onSelectBranch?: (key: string) => void;
   /** Заголовок страницы — картуш поверх карты, слева сверху. */
   intro: ReactNode;
   /** Карточка поверх карты (слева снизу; на телефоне — снизу во всю ширину); пусто — видна только карта. */
@@ -24,6 +39,7 @@ interface Props {
   fallback: ReactNode;
 }
 
+const NO_BRANCHES: readonly MapBranch[] = [];
 const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
 const xy = (p: StoryPlace): [number, number] => [p.x, p.y];
 
@@ -41,10 +57,12 @@ function routeOf(states: readonly PlaceState[]) {
  * и приближать. Места глав — HTML-медальоны поверх холста: их положение пересчитывается
  * после каждого кадра, без перерисовки React.
  */
-export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect, intro, panel, fallback }: Props) {
+export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect, branches = NO_BRANCHES, selectedBranch, onSelectBranch, intro, panel, fallback }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<IslandScene | undefined>(undefined);
   const markers = useRef(new Map<number, HTMLLIElement>());
+  // Метки рассказов кота: координаты — в data-x/data-y, чтобы цикл кадра не зависел от React.
+  const catMarkers = useRef(new Map<string, HTMLLIElement>());
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   // Старт — приближенно у места, где сейчас Анна (чуть севернее: впереди видно остров).
   const startRef = useRef(start);
@@ -64,6 +82,11 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
             const el = markers.current.get(p.chapter);
             if (!el) continue;
             const q = project(p.x, p.y);
+            el.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
+            el.style.visibility = q.visible ? 'visible' : 'hidden';
+          }
+          for (const el of catMarkers.current.values()) {
+            const q = project(Number(el.dataset.x), Number(el.dataset.y));
             el.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
             el.style.visibility = q.visible ? 'visible' : 'hidden';
           }
@@ -91,15 +114,23 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
     scene.update(routeOf(stateKey.split(',') as PlaceState[]));
   }, [status, stateKey]);
 
-  const select = (p: StoryPlace) => {
-    onSelect(p.chapter);
+  /** Точка — в свободной от карточки части экрана. */
+  const focus = (x: number, y: number) => {
     const host = hostRef.current;
-    if (p.offMap || !host) return;
+    if (!host) return;
     // Место — в свободной от карточки части: на телефоне карточка снизу, на широком экране — слева.
     const w = host.clientWidth;
     const h = host.clientHeight;
     const at = w <= 760 ? { x: w / 2, y: h * 0.18 } : { x: 432 + (w - 432) / 2, y: h / 2 };
-    sceneRef.current?.focus(p.x, p.y, at);
+    sceneRef.current?.focus(x, y, at);
+  };
+  const select = (p: StoryPlace) => {
+    onSelect(p.chapter);
+    if (!p.offMap) focus(p.x, p.y);
+  };
+  const selectBranch = (b: MapBranch) => {
+    onSelectBranch?.(b.key);
+    focus(b.x, b.y);
   };
 
   if (status === 'failed') return <>{fallback}</>;
@@ -155,6 +186,38 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
               </li>
             );
           })}
+          {branches.map((b) => (
+            <li
+              key={b.key}
+              ref={(el) => {
+                if (el) catMarkers.current.set(b.key, el);
+                else catMarkers.current.delete(b.key);
+              }}
+              className={styles.marker}
+              data-x={b.x}
+              data-y={b.y}
+              data-cat={b.read ? 'read' : 'open'}
+              data-selected={selectedBranch === b.key || undefined}
+            >
+              <button
+                type="button"
+                className={styles.catBtn}
+                aria-pressed={selectedBranch === b.key}
+                aria-label={`Рассказ кота Ερμής: ${b.title}${b.read ? ' — прочитан' : ''}`}
+                title={b.title}
+                onClick={() => selectBranch(b)}
+              >
+                <CatIcon size="1.15rem" />
+                {b.read && (
+                  <span className={styles.catRead} aria-hidden="true">
+                    <svg viewBox="0 0 12 12" width="9" height="9">
+                      <path d="M2.5 6.2l2.3 2.3 4.7-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
         </ul>
 
         <p className={styles.hint}>Тащите карту, колесо или щипок — масштаб</p>

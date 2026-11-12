@@ -8,6 +8,7 @@ import { routes } from '@/shared/config/routes';
 import { Laurel } from '@/shared/ui/ornament';
 import { gapIndex, inFragment, tokenId } from '../lib/task';
 import { storyDeck, STORY_DECK } from '../lib/deck';
+import { CatIcon } from './CatIcon';
 import { ChapterTitle } from './ChapterTitle';
 import { TranslateButton } from './TranslateButton';
 import styles from './Story.module.css';
@@ -166,6 +167,16 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
   }
   const currentIndex = chapter.steps.findIndex((s) => s.id === step.id);
 
+  /** Рассказы кота к этому шагу: ссылки под куском. */
+  const catLinks = (owner: StoryStep) =>
+    (chapter.branches ?? [])
+      .filter((b) => b.after === owner.id)
+      .map((b) => (
+        <Link key={b.id} to={routes.storyBranch(chapter.id, b.id)} className={styles.catInText}>
+          <CatIcon /> <span lang="el">Ερμής</span> рассказывает: {b.title}
+        </Link>
+      ));
+
   const renderGroup = ({ index, sentences }: { index: number; sentences: number[] }) => {
     const owner = chapter.steps[index];
     if (!owner) return <div key={`free-${sentences[0]}`} className={styles.outside}>{sentences.map((n) => render(n))}</div>;
@@ -194,6 +205,7 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
       return (
         <div key={owner.id} className={styles.current} ref={currentRef}>
           {sentences.map((n, k) => render(n, k === 0 && marker))}
+          {catLinks(owner)}
         </div>
       );
     }
@@ -202,6 +214,7 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
       // Клик по куску — удобство для мыши и пальца; ссылка для клавиатуры и чтения с экрана — номер на полях.
       <div key={owner.id} role="presentation" className={`${styles.outside} ${styles.fragment}`} onClick={go} title={title}>
         {sentences.map((n, k) => render(n, k === 0 && marker))}
+        {catLinks(owner)}
       </div>
     );
   };

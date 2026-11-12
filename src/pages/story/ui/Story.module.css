@@ -517,3 +517,44 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 }
 .inputWide { max-width: 100%; width: 100%; box-sizing: border-box; }
 .chapterLevels { margin: 18px 0 0; }
+
+/* ---------- рассказы кота Ερμής ---------- */
+.catHead { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+.catHead .kicker { margin: 0; }
+.catBadge {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.catTitle { margin: 4px 0 0; font-family: var(--font-display); font-size: 1.8rem; line-height: 1.2; }
+.catTale { max-width: 42rem; font-size: 1.05rem; line-height: 1.65; }
+.catTale p { margin: 0 0 14px; }
+.catExamples { max-width: 42rem; margin: 8px 0 24px; padding: 16px 20px; border-radius: var(--radius); background: var(--surface-muted); }
+.catExamples h2 { margin: 0 0 8px; font-size: 1rem; }
+.catExamples .sentence { margin: 0 0 10px; }
+.catExamples .translation { display: block; }
+.catLink { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; }
+.catLink:hover { color: var(--brand); }
+.catSection { margin-top: 32px; }
+.catSectionTitle { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1.2rem; color: var(--accent-strong); }
+.catSection .stepNum { color: var(--accent-strong); }
+/* В тексте главы: кот рассказывает — ссылка под куском. */
+.catInText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--font);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.catInText:hover { color: var(--brand); }

@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { STORY_LEVELS, type StoryChapter, type StoryLevel } from './types';
+import { STORY_LEVELS, type StoryBranch, type StoryChapter, type StoryLevel } from './types';
 
 /**
  * Прогресс истории по уровням: { [номер главы]: { [id шага]: лучший уровень 1…3 } }.
@@ -11,6 +11,8 @@ const KEY = 'verbs-first:story-levels';
 const LEGACY_KEY = 'verbs-first:story';
 const LEVEL_KEY = 'verbs-first:story-level';
 export const STORY_END = 'end';
+/** Ответвление (рассказ кота) прочитано — хранится в прогрессе главы под этим id. */
+export const branchKey = (branchId: string) => `cat:${branchId}`;
 
 /** 0 — не пройден, 1 — лёгкий, 2 — средний, 3 — сложный. */
 export type LevelRank = 0 | 1 | 2 | 3;
@@ -114,6 +116,11 @@ export function doneAt(levels: ChapterLevels, level: StoryLevel): string[] {
 /** Уровень главы — самый низкий из уровней её шагов: 0, пока хоть один шаг не пройден. */
 export function chapterRank(chapter: StoryChapter, levels: ChapterLevels): LevelRank {
   return chapter.steps.reduce<LevelRank>((min, s) => Math.min(min, levels[s.id] ?? 0) as LevelRank, 3);
+}
+
+/** Рассказ кота прочитан. */
+export function branchRead(branch: StoryBranch, levels: ChapterLevels): boolean {
+  return (levels[branchKey(branch.id)] ?? 0) >= 1;
 }
 
 /** Глава открыта: первая — всегда, следующая — когда предыдущая пройдена хотя бы на лёгком. */
