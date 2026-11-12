@@ -26,7 +26,6 @@ import { storyDeck } from '../lib/deck';
 import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
 import { IslandMap } from './IslandMap';
-import { LevelSwitch } from './LevelSwitch';
 import { PlaceImage } from './PlaceImage';
 import { StoryMap, type PlaceState } from './StoryMap';
 import styles from './Story.module.css';
@@ -95,7 +94,7 @@ export function StoryPage() {
     <PrologueCard part={prologuePart} />
   ) : chapter ? (
     chapterOpen(chapter.id, rankOf) ? (
-      <ChapterCard chapter={chapter} done={doneOf(chapter.id)} rank={rankOf(chapter.id)} />
+      <ChapterCard chapter={chapter} rank={rankOf(chapter.id)} />
     ) : (
       <p className={styles.fogNote}>
         <b>Глава {chapter.id}</b> откроется, когда вы пройдёте главу {chapter.id - 1} — хотя бы на лёгком уровне.
@@ -273,45 +272,28 @@ function Finds({ finds, planned }: { finds: readonly StoryChapter[]; planned: nu
   );
 }
 
-function ChapterCard({ chapter, done, rank }: { chapter: StoryChapter; done: readonly string[]; rank: LevelRank }) {
-  const steps = chapter.steps.filter((s) => done.includes(s.id)).length;
-  const total = chapter.steps.length;
-  // Пройдена на выбранном уровне (или сложнее).
-  const finished = steps === total;
-  const firstOpen = chapter.steps.findIndex((s) => !done.includes(s.id));
-  const to = steps === 0 ? routes.storyStep(chapter.id, 1) : firstOpen === -1 ? routes.storyStep(chapter.id, 'end') : routes.storyStep(chapter.id, firstOpen + 1);
+/** Карточка места на карте — коротко: что за глава и вход в неё. Уровень, шаги и прогресс — на странице главы. */
+function ChapterCard({ chapter, rank }: { chapter: StoryChapter; rank: LevelRank }) {
+  const passed = rank > 0 ? STORY_LEVEL_LABELS[STORY_LEVELS[rank - 1]!].toLowerCase() : undefined;
   return (
     <div className={styles.cardBody}>
       {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} className={styles.placeImage} />}
       <span className={styles.kicker}>
         Глава {chapter.id}
-      </span>
-      <Link to={routes.storyChapter(chapter.id)} className={styles.cardTitle} lang="el">
-        {chapter.title}
-      </Link>
-      <span className={styles.subtitle}>{chapter.titleRu}</span>
-      <p className={styles.tileIntro}>{chapter.intro}</p>
-      <LevelSwitch passed={rank} />
-      <div className={styles.cardActions}>
-        <Link to={to} className={buttonClassName('primary')}>
-          {finished ? 'Перечитать' : steps > 0 ? 'Продолжить' : 'Начать'} <Arrow />
-        </Link>
-        <span className={styles.tileProgress}>
-          <span className={styles.tileBar}>
-            <ProgressBar value={steps / total} thin />
+        {passed && (
+          <span className={styles.finished}>
+            {' '}
+            · пройдена: {passed} <Check />
           </span>
-          {finished ? (
-            <span className={styles.finished}>
-              пройдена <Check />
-            </span>
-          ) : (
-            <span>
-              {steps}/{total}
-            </span>
-          )}
-        </span>
-        <Link to={routes.storyChapter(chapter.id)} className={styles.allSteps}>
-          Все шаги
+        )}
+      </span>
+      <span className={styles.cardTitle} lang="el">
+        {chapter.title}
+      </span>
+      <span className={styles.subtitle}>{chapter.titleRu}</span>
+      <div className={styles.cardActions}>
+        <Link to={routes.storyChapter(chapter.id)} className={buttonClassName('primary')}>
+          К главе <Arrow />
         </Link>
       </div>
     </div>

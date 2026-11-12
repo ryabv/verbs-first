@@ -157,7 +157,8 @@
   .cartoucheLead { font-size: 0.8rem; line-height: 1.4; }
   .findsBtn { margin: 0 0 2px; font-size: 0.8rem; }
   .onMap { padding: 14px 16px; }
-  .onMap .placeImage { width: calc(100% + 32px); margin: -14px -16px 6px; }
+  /* На телефоне картинка — полоса: карта над карточкой остаётся видна. */
+  .onMap .placeImage { width: calc(100% + 32px); margin: -14px -16px 6px; aspect-ratio: 16 / 6; }
 }
 
 .fogNote { margin: 0; color: var(--text-muted); line-height: 1.5; }
