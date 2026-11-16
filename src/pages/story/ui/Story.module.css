@@ -359,10 +359,16 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   cursor: pointer;
   vertical-align: middle;
 }
+/* Озвучка и перевод после предложения. Иконки меньше своих кнопок, у каждой поля по бокам:
+   без поправки между иконками вдвое больше места, чем между текстом и первой иконкой.
+   Сдвигаем вторую кнопку на её поле — промежутки выходят одинаковые. */
+.lineTools { margin-left: 0.15em; }
+.lineTools .translateBtn { margin-left: -0.25em; }
 .translateBtn:hover, .translateBtn[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
 .translation { display: block; margin: 0 0 4px; font-family: var(--font); font-size: 0.9rem; line-height: 1.45; font-style: italic; color: var(--text-muted); }
 @media (pointer: coarse) {
   .translateBtn { width: 2.4em; height: 2.4em; font-size: 1.05rem; }
+  .lineTools .translateBtn { margin-left: -0.55em; }
   .translateBtn:hover { color: var(--text-subtle); background: none; }
   .translateBtn[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
 }

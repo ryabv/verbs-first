@@ -133,10 +133,10 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
     const openGaps = sentenceGaps(chapter, n).filter((g) => !isOpen(g.step));
     const shown = translated.has(n);
     const after = (
-      <>
+      <span className={styles.lineTools}>
         <SpeakButton text={withGaps(s.greek, openGaps.map((g) => g.word))} />
         <TranslateButton shown={shown} onToggle={() => toggleTranslation(n)} />
-      </>
+      </span>
     );
     return (
       <p key={n} className={styles.sentence}>
