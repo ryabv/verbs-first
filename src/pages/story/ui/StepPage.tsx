@@ -61,6 +61,8 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
   const [solved, setSolved] = useState(wasDone || !step.task);
   const [picked, setPicked] = useState<Map<string, string>>(() => (wasDone ? tapTargets(chapter, step) : new Map()));
   const [tapVerdict, setTapVerdict] = useState<Map<string, boolean> | undefined>();
+  // «Нажмите слова»: пока задание не начато, текст ведёт себя как обычно (слова открывают перевод).
+  const [tapStarted, setTapStarted] = useState(false);
   const total = chapter.steps.length;
   const solve = useCallback(() => {
     setSolved(true);
@@ -83,7 +85,8 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
     else navigate(routes.storyStep(chapter.id, 'end'));
   };
 
-  const tap = isTap
+  const tap =
+    isTap && (tapStarted || solved)
     ? {
         picked: new Set(picked.keys()),
         verdict: tapVerdict,
@@ -99,6 +102,14 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
         },
       }
     : undefined;
+
+  const startTap = () => {
+    setTapStarted(true);
+    // На телефоне текст — над заданием: показываем кусок, где нажимать слова.
+    const el = document.querySelector('[aria-current="step"]');
+    const r = el?.getBoundingClientRect();
+    if (el && r && (r.top < 0 || r.bottom > window.innerHeight)) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
 
   const checkTap = () => {
     const answer = step.task?.kind === 'tap' ? step.task.answer : [];
@@ -129,7 +140,20 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 <Rich text={p} wordDeck={storyDeck} />
               </p>
             ))}
-            <StoryTask step={step} level={level} meaningOf={(g) => g.meaning ?? verbMeaning(chapter, g)} solved={solved} onSolved={solve} tap={isTap ? { count: picked.size, check: checkTap } : undefined} />
+            <StoryTask step={step} level={level} meaningOf={(g) => g.meaning ?? verbMeaning(chapter, g)} solved={solved} onSolved={solve} onReveal={showAnswer} tap={
+                isTap
+                  ? {
+                      count: picked.size,
+                      check: checkTap,
+                      started: tapStarted,
+                      start: startTap,
+                      reset: () => {
+                        setPicked(new Map());
+                        setTapVerdict(undefined);
+                      },
+                    }
+                  : undefined
+              } />
 
             <nav className={styles.stepNav}>
               {index > 0 ? (
@@ -140,11 +164,6 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 <Link to={routes.storyChapter(chapter.id)} className={styles.prev}>
                   <Arrow direction="left" /> К главе
                 </Link>
-              )}
-              {!solved && (
-                <button type="button" className={styles.linkBtn} onClick={showAnswer}>
-                  Показать ответ
-                </button>
               )}
               <Button onClick={goNext} disabled={!solved}>
                 {index + 1 < total ? 'Дальше' : 'Вся глава'} <Arrow />

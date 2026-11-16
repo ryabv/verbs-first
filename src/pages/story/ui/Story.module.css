@@ -384,14 +384,20 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   text-decoration: underline dotted var(--text-subtle);
   text-underline-offset: 0.2em;
 }
-.tapWord:hover { background: var(--accent-soft); }
-.tapPicked { background: var(--accent-soft); color: var(--accent-strong); }
+/* Наведение — только с мышью: на телефоне «залипший» hover выглядел как невыбранное-но-выбранное слово. */
+@media (hover: hover) {
+  .tapWord:hover { background: var(--surface-muted); }
+}
+/* Выбранное слово — заметно: заливка и сплошное подчёркивание. */
+.tapPicked, .tapPicked:hover { background: var(--accent-soft); color: var(--accent-strong); text-decoration: underline solid var(--accent); }
 .tapRight { background: var(--success-soft); color: var(--success); border-radius: 4px; }
 .tapWrong { background: var(--danger-soft); color: var(--danger); border-radius: 4px; }
 
 /* Задание */
 .task { margin: 20px 0 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
-.taskTitle { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
+.taskHead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.taskHead .linkBtn { font-size: 0.85rem; }
+.taskTitle { margin: 0; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
 .taskPrompt { margin: 0 0 12px; line-height: 1.5; }
 .taskActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 .gaps { display: flex; flex-direction: column; gap: 10px; }
@@ -483,10 +489,23 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
     background: var(--bg);
     border-top: 1px solid var(--border);
   }
+  /* Крупный шрифт телефона: подписи навигации не переносим, сжимаем промежутки. */
+  .stepNav { gap: 12px; }
+  .stepNav > * { white-space: nowrap; }
+  .stepNav > :last-child { padding-inline: 16px; }
 }
 @media (max-width: 600px) {
   .page, .mapPage { padding: 0 16px 32px; }
   .split { padding-top: 12px; }
+  /* Телефон: рукопись во всю ширину экрана — без боковых рамок, больше текста в строке. */
+  .manuscript {
+    margin-inline: -16px;
+    padding: 0 12px 14px;
+    border-inline: none;
+    border-radius: 0;
+    box-shadow: inset 0 -1px 0 var(--parchment-edge), 0 6px 22px rgb(0 0 0 / 0.14);
+  }
+  .manuscriptImage { width: calc(100% + 24px); margin: 0 -12px; border-radius: 0; }
 }
 
 /* Уровень истории: три сегмента; пройденный — с венком. */

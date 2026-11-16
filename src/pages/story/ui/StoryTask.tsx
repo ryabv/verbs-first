@@ -16,8 +16,10 @@ interface Props {
   meaningOf: (gap: StoryGap) => string | undefined;
   solved: boolean;
   onSolved: () => void;
+  /** «Показать ответ» — в шапке задания, пока оно не решено. */
+  onReveal: () => void;
   /** Для «нажмите слова»: проверка выбранного (состояние выбора — у страницы, слова — в тексте). */
-  tap?: { count: number; check: () => boolean };
+  tap?: { count: number; check: () => boolean; started: boolean; start: () => void; reset: () => void };
 }
 
 /**
@@ -25,13 +27,20 @@ interface Props {
  * Пропуск: лёгкий — выбрать из вариантов, средний — вписать с подсказкой, сложный — вписать без неё.
  * Реплика на слух: на сложном — записать услышанное (диктант), на остальных — выбрать.
  */
-export function StoryTask({ step, level, meaningOf, solved, onSolved, tap }: Props) {
+export function StoryTask({ step, level, meaningOf, solved, onSolved, onReveal, tap }: Props) {
   const task = step.task;
   if (!task) return null;
 
   return (
     <section className={styles.task}>
-      <h3 className={styles.taskTitle}>Задание</h3>
+      <div className={styles.taskHead}>
+        <h3 className={styles.taskTitle}>Задание</h3>
+        {!solved && (
+          <button type="button" className={styles.linkBtn} onClick={onReveal}>
+            Показать ответ
+          </button>
+        )}
+      </div>
       {task.kind === 'gap' &&
         (level === 'light' ? (
           <GapChoice key={step.id} gaps={task.gaps} solved={solved} onSolved={onSolved} />
@@ -177,6 +186,9 @@ function TapTask({
   onSolved,
   count,
   check,
+  started,
+  start,
+  reset,
 }: {
   prompt: string;
   answer: string[];
@@ -184,16 +196,27 @@ function TapTask({
   onSolved: () => void;
   count: number;
   check: () => boolean;
+  started: boolean;
+  start: () => void;
+  reset: () => void;
 }) {
   const [wrong, setWrong] = useState(false);
   return (
     <>
       <p className={styles.taskPrompt}>
-        <Rich text={prompt} wordDeck={storyDeck} /> Слова нажимаются прямо в тексте.
+        <Rich text={prompt} wordDeck={storyDeck} />
       </p>
       {solved ? (
         <Solved />
+      ) : !started ? (
+        // До старта текст работает как обычно: слова открывают перевод. После — нажатие выбирает слово.
+        <div className={styles.taskActions}>
+          <Button onClick={start}>Начать</Button>
+          <span className={styles.gapHint}>Слова в тексте станут кнопками — нажимайте нужные.</span>
+        </div>
       ) : (
+        <>
+        <p className={styles.gapHint}>Нажимайте слова в тексте. Нажали не то — нажмите ещё раз, выбор снимется.</p>
         <div className={styles.taskActions}>
           <Button
             disabled={count === 0}
@@ -204,8 +227,21 @@ function TapTask({
           >
             Проверить
           </Button>
+          {count > 0 && (
+            <button
+              type="button"
+              className={styles.linkBtn}
+              onClick={() => {
+                reset();
+                setWrong(false);
+              }}
+            >
+              Снять выбор
+            </button>
+          )}
           {wrong && <span className={styles.hintWrong}>Не совсем: лишнее отмечено красным — или найдено не всё.</span>}
         </div>
+        </>
       )}
     </>
   );

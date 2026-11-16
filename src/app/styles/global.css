@@ -125,6 +125,13 @@ body {
   text-size-adjust: none;
 }
 
+/* Телефон: крупнее весь текст — читать с маленького экрана тяжело. rem считается от html,
+   поэтому вырастают и размеры в rem (текст истории, подсказки, кнопки). */
+@media (max-width: 760px) {
+  html { font-size: 112.5%; }
+  body { font-size: 17px; }
+}
+
 a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--brand); }
 
