@@ -251,7 +251,7 @@
 }
 .manuscriptMeander { height: 10px; margin: 18px 0 18px; background: var(--brand); opacity: 0.45; }
 .manuscriptImage + .manuscriptMeander { margin-top: -6px; }
-.manuscript .text { font-family: var(--font-display); font-size: 1.28rem; line-height: 1.7; }
+.manuscript .text { font-family: var(--font-display); font-size: 1.28rem; line-height: 1.5; }
 .bookText { font-family: var(--font-display); font-size: 1.2rem; }
 .endText { margin-top: 8px; }
 
@@ -369,6 +369,9 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 @media (pointer: coarse) {
   .translateBtn { width: 2.4em; height: 2.4em; font-size: 1.05rem; }
   .lineTools .translateBtn { margin-left: -0.55em; }
+  /* Кнопки под палец (2.4em) выше строки и раздвигали строки с ними — отрицательные поля по вертикали:
+     зона нажатия та же, а высота строки — как у текста. */
+  .lineTools > button { margin-block: -0.6em; }
   .translateBtn:hover { color: var(--text-subtle); background: none; }
   .translateBtn[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
 }
