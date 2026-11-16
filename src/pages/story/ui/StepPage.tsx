@@ -18,6 +18,7 @@ import { Button } from '@/shared/ui/button';
 import { Arrow } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
 import { inFragment, tapCorrect, tokenId } from '../lib/task';
+import { CatIcon } from './CatIcon';
 import { LevelSwitch } from './LevelSwitch';
 import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
@@ -155,6 +156,8 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                   : undefined
               } />
 
+            <CatTales chapter={chapter} step={step} />
+
             <nav className={styles.stepNav}>
               {index > 0 ? (
                 <Link to={routes.storyStep(chapter.id, index)} className={styles.prev} preventScrollReset>
@@ -177,5 +180,30 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
         </Manuscript>
       </div>
     </div>
+  );
+}
+
+/** Рассказы кота к этому шагу — отдельной плашкой под заданием, не в тексте главы. */
+function CatTales({ chapter, step }: { chapter: StoryChapter; step: StoryStep }) {
+  const tales = (chapter.branches ?? []).filter((b) => b.after === step.id);
+  if (tales.length === 0) return null;
+  return (
+    <aside className={styles.catTales} aria-label="Рассказы кота">
+      <span className={styles.catBadgeSmall}>
+        <CatIcon size="1.3rem" />
+      </span>
+      <div>
+        <p className={styles.catTalesLead}>
+          <span lang="el">Ερμής</span> хочет кое-что рассказать — по желанию:
+        </p>
+        <ul className={styles.catTalesList}>
+          {tales.map((b) => (
+            <li key={b.id}>
+              <Link to={routes.storyBranch(chapter.id, b.id)}>{b.title}</Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </aside>
   );
 }
