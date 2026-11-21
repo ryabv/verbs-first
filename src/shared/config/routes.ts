@@ -15,10 +15,12 @@ export const routes = {
   text: (id: string) => `/texts/${encodeURIComponent(id)}`,
   /** Справочник: тема и (по желанию) правило — #якорь. */
   grammar: (topic?: string, rule?: string) => (topic ? `/grammar/${topic}${rule ? `#${rule}` : ''}` : '/grammar'),
-  /** История: главы; шаг — номер с 1 или end (вся глава и конспект). */
+  /** История: главы; шаг — номер с 1 или end (конец главы: конспект и «Закрепить»). */
   story: () => '/',
   storyChapter: (id: number) => `/story/${id}`,
   storyStep: (id: number, step: number | 'end') => `/story/${id}/${step}`,
+  /** Закрепление главы: задания по уровням. */
+  storyPractice: (id: number) => `/story/${id}/practice`,
   /** Рассказ кота Ερμής — ответвление главы. */
   storyBranch: (id: number, branch: string) => `/story/${id}/cat/${branch}`,
 } as const;

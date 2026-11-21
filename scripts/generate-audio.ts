@@ -27,7 +27,7 @@ import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
 import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
 import { GRAMMAR_TOPICS } from '@/entities/grammar/data/topics';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
-import { gapVariants } from '@/entities/story/model/gaps';
+import { STORY_PRAISE } from '@/entities/story/model/types';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
 import { PERSONS, SENTENCE_FORMS, TENSES } from '@/entities/verb/model/types';
@@ -103,15 +103,14 @@ function collectTexts(): Set<string> {
   }
   // Справочник: примеры к правилам.
   for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
+  add(STORY_PRAISE.greek);
   for (const c of STORY_CHAPTERS) {
     add(c.title);
-    c.sentences.forEach((p, i) => {
-      add(p.greek);
-      // Пока пропуск не решён, предложение звучит с паузой вместо ответа.
-      gapVariants(c, i + 1).forEach(add);
-    });
+    c.sentences.forEach((p) => add(p.greek));
     add(c.sentences.map((p) => p.greek).join(' '));
-    for (const s of c.steps) if (s.task?.kind === 'choose' && s.task.audio) add(s.task.audio);
+    for (const s of c.steps) if (s.check?.audio) add(s.check.audio);
+    // Закрепление: на слух — реплика; на лёгком варианты на слух не озвучиваются (выбор написанного).
+    for (const t of c.practice) if (t.kind === 'listen') add(t.audio);
     c.branches?.forEach((b) => b.examples?.forEach((e) => add(e.greek)));
   }
   // Отдельные слова: каждое слово фраз нажимается и озвучивается в окне слова.

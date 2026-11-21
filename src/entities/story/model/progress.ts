@@ -1,10 +1,13 @@
 import { useSyncExternalStore } from 'react';
-import { STORY_LEVELS, type StoryBranch, type StoryChapter, type StoryLevel } from './types';
+import { STORY_LEVELS, type PracticeTask, type StoryBranch, type StoryChapter, type StoryLevel } from './types';
 
 /**
- * Прогресс истории по уровням: { [номер главы]: { [id шага]: лучший уровень 1…3 } }.
- * Пройденное на более сложном уровне засчитывается и на всех лёгких: храним только лучший.
- * Отдельный id END — дочитана вся глава. localStorage, синхронизация между вкладками — событие storage.
+ * Прогресс истории: { [номер главы]: { [ключ]: лучший уровень 1…3 } }. Ключи:
+ * - id шага — шаг прочитан (уровень не важен, пишется 3);
+ * - END — глава дочитана до конца;
+ * - `p:<id>` — задание закрепления сделано на этом уровне (сложное засчитывается и на лёгких: храним лучший);
+ * - `cat:<id>` — рассказ кота прочитан.
+ * localStorage, синхронизация между вкладками — событие storage. Переезд в IndexedDB — план фазы 1 (ARCHITECTURE.md).
  */
 const KEY = 'verbs-first:story-levels';
 /** Старый прогресс без уровней: { [глава]: id шагов } — там пропуски вписывали руками, это средний уровень. */
@@ -13,6 +16,8 @@ const LEVEL_KEY = 'verbs-first:story-level';
 export const STORY_END = 'end';
 /** Ответвление (рассказ кота) прочитано — хранится в прогрессе главы под этим id. */
 export const branchKey = (branchId: string) => `cat:${branchId}`;
+/** Задание закрепления сделано — хранится в прогрессе главы под этим id. */
+export const practiceKey = (task: PracticeTask) => `p:${task.id}`;
 
 /** 0 — не пройден, 1 — лёгкий, 2 — средний, 3 — сложный. */
 export type LevelRank = 0 | 1 | 2 | 3;
@@ -113,9 +118,14 @@ export function doneAt(levels: ChapterLevels, level: StoryLevel): string[] {
     .map(([id]) => id);
 }
 
-/** Уровень главы — самый низкий из уровней её шагов: 0, пока хоть один шаг не пройден. */
+/** Глава дочитана до конца. */
+export function chapterRead(levels: ChapterLevels): boolean {
+  return (levels[STORY_END] ?? 0) >= 1;
+}
+
+/** Уровень закрепления главы — самый низкий из уровней её заданий: 0, пока хоть одно не сделано. */
 export function chapterRank(chapter: StoryChapter, levels: ChapterLevels): LevelRank {
-  return chapter.steps.reduce<LevelRank>((min, s) => Math.min(min, levels[s.id] ?? 0) as LevelRank, 3);
+  return chapter.practice.reduce<LevelRank>((min, t) => Math.min(min, levels[practiceKey(t)] ?? 0) as LevelRank, 3);
 }
 
 /** Рассказ кота прочитан. */
@@ -123,9 +133,26 @@ export function branchRead(branch: StoryBranch, levels: ChapterLevels): boolean 
   return (levels[branchKey(branch.id)] ?? 0) >= 1;
 }
 
-/** Глава открыта: первая — всегда, следующая — когда предыдущая пройдена хотя бы на лёгком. */
-export function chapterOpen(id: number, rankOf: (id: number) => LevelRank): boolean {
-  return id <= 1 || rankOf(id - 1) >= 1;
+/**
+ * Глава открыта: первая — всегда; внутри эпохи — когда прошлая глава прочитана; первая глава новой эпохи —
+ * когда все главы прошлой эпохи закреплены хотя бы на лёгком (порог эпохи).
+ */
+export function chapterOpen(chapter: StoryChapter, chapters: readonly StoryChapter[], progress: Progress): boolean {
+  const i = chapters.findIndex((c) => c.id === chapter.id);
+  if (i <= 0) return true;
+  const prev = chapters[i - 1]!;
+  if (!chapterRead(progress[prev.id] ?? EMPTY)) return false;
+  return prev.epoch === chapter.epoch || epochClosed(prev.epoch, chapters, progress);
+}
+
+/** Эпоха закрыта: все её главы закреплены хотя бы на лёгком. */
+export function epochClosed(epoch: number, chapters: readonly StoryChapter[], progress: Progress): boolean {
+  return chapters.filter((c) => c.epoch === epoch).every((c) => chapterRank(c, progress[c.id] ?? EMPTY) >= 1);
+}
+
+/** Главы эпохи, которые ещё не закреплены хотя бы на лёгком. */
+export function unpracticed(epoch: number, chapters: readonly StoryChapter[], progress: Progress): StoryChapter[] {
+  return chapters.filter((c) => c.epoch === epoch && chapterRank(c, progress[c.id] ?? EMPTY) < 1);
 }
 
 /* Выбранный уровень — один на всю историю, запоминается. Новичку — лёгкий. */

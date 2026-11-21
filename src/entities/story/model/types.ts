@@ -1,6 +1,7 @@
 /**
- * История — сериал по главам: глава закрепляет урок. Шаг ведёт по куску текста:
- * объяснение одной темы + задача прямо в тексте. Сюжет и формат — docs/story/README.md.
+ * История — сериал по главам (Кипр, эпохи по 4 главы; глава — половина урока). Главу читают без замков:
+ * шаг — кусок текста + объяснение одной темы + иногда вопрос на понимание. После главы — закрепление
+ * (задания по уровням), между эпохами — порог. Сюжет и формат — docs/story/README.md, типы заданий — docs/product/tasks.md.
  */
 
 export interface StorySentence {
@@ -9,38 +10,46 @@ export interface StorySentence {
 }
 
 /**
- * Уровни главы: текст один, задания разные (матрица «глава × уровень»).
- * - light — узнавание: пропуск выбирают из вариантов (`options` у пропуска);
- * - medium — с опорой: форму вписывают, рядом подсказка (начальная форма, лицо);
- * - hard — без опоры: вписывают, видя только значение по-русски («работать»), реплику на слух — записывают (диктант).
+ * Уровни закрепления: текст один, задания разные (матрица «глава × уровень»).
+ * - light — узнать: выбрать из вариантов, собрать из плиток;
+ * - medium — с опорой: вписать, рядом подсказка (начальная форма, лицо);
+ * - hard — без опоры: вписать, видя только значение по-русски; на слух — записать (диктант).
  * Задания главы N на уровне L опираются только на объяснённое в главах 1…N на уровнях не выше L.
  */
 export const STORY_LEVELS = ['light', 'medium', 'hard'] as const;
 export type StoryLevel = (typeof STORY_LEVELS)[number];
 export const STORY_LEVEL_LABELS: Record<StoryLevel, string> = { light: 'Лёгкий', medium: 'Средний', hard: 'Сложный' };
 
-/** Пропуск в тексте: слово `word` в предложении `sentence` (номер с 1) скрыто, пока ученик его не впишет. */
-export interface StoryGap {
-  sentence: number;
-  word: string;
-  /** Подсказка у поля (средний уровень): «αγοράζω, она, прошедшее». */
-  hint: string;
-  /** Варианты для лёгкого уровня, среди них — word. Формы пишутся явно. */
+/** Вопрос на понимание — внутри чтения: одно нажатие, всегда лёгкий, провалить нельзя (ошибка — подсказка и ответ). */
+export interface StoryCheck {
+  prompt: string;
   options: string[];
-  /**
-   * Подсказка сложного уровня — значение по-русски, без формы («работать»): какое слово, а форму ученик
-   * выводит из фразы сам. У глагола берётся из разбора сама; задавать — для остальных слов.
-   */
-  meaning?: string;
+  answer: number;
+  /** Сначала прослушать: вопрос «что сказали». Текст — как в главе, для озвучки. */
+  audio?: string;
 }
 
-export type StoryTask =
-  /** Вписать форму в пропуск(и); на лёгком — выбрать из вариантов. */
-  | { kind: 'gap'; gaps: StoryGap[] }
-  /** Нажать в текущем куске все слова по условию. */
-  | { kind: 'tap'; prompt: string; answer: string[] }
-  /** Выбрать вариант; audio — сначала прослушать (вопрос «что сказали»). */
-  | { kind: 'choose'; prompt: string; options: string[]; answer: number; audio?: string };
+/** Задание закрепления главы. id — постоянный: по нему хранится прогресс. */
+export type PracticeTask =
+  /**
+   * Пропуск в предложении главы (копия предложения, текст главы не меняется).
+   * Лёгкий — выбрать из `options`; средний — вписать, рядом `hint`; сложный — вписать, рядом `meaning`.
+   */
+  | { id: string; kind: 'gap'; sentence: number; word: string; hint: string; options: string[]; meaning: string }
+  /** Нажать в куске главы все слова по условию. Лёгкий — с числом нужных слов. */
+  | { id: string; kind: 'tap'; sentences: [number, number]; prompt: string; answer: string[] }
+  /** Выбрать вариант; sentences — кусок главы перед глазами, без перевода на любом уровне. */
+  | { id: string; kind: 'choose'; prompt: string; options: string[]; answer: number; sentences?: [number, number] }
+  /**
+   * На слух. Лёгкий — выбрать написанное (`options`, греческий); средний — выбрать смысл (`meanings`);
+   * сложный — записать (диктант). answer — номер верного в обоих списках; audio — то, что звучит (= options[answer]).
+   */
+  | { id: string; kind: 'listen'; audio: string; options: string[]; meanings: string[]; answer: number }
+  /**
+   * Перевести фразу. Лёгкий — собрать из плиток (слова `greek[0]` + `decoys`); средний — вписать, рядом `hint`;
+   * сложный — вписать. greek — все верные варианты, первый — эталон.
+   */
+  | { id: string; kind: 'translate'; russian: string; greek: string[]; decoys: string[]; hint: string };
 
 export interface StoryStep {
   id: string;
@@ -52,12 +61,15 @@ export interface StoryStep {
    * остальной греческий сам становится словами с переводом.
    */
   body: string[];
-  task?: StoryTask;
+  /** Вопрос на понимание — в 1–2 шагах из трёх. Ответ не должен быть просто написан в объяснении. */
+  check?: StoryCheck;
 }
 
 export interface StoryChapter {
   id: number;
-  /** После какого урока глава по силам. */
+  /** Эпоха (по 4 главы): новая эпоха открывается, когда все главы прошлой закреплены хотя бы на лёгком. */
+  epoch: number;
+  /** Урок, половину которого закрепляет глава (главы 2k−1 и 2k — урок k). */
   lesson: number;
   /** Название по-гречески и перевод. */
   title: string;
@@ -66,6 +78,8 @@ export interface StoryChapter {
   intro: string;
   sentences: StorySentence[];
   steps: StoryStep[];
+  /** Закрепление главы: 8–12 заданий по трём навыкам (чтение, слушание, письмо). */
+  practice: PracticeTask[];
   /** Конспект: строки с той же разметкой, что body. */
   summary: string[];
   /** Крючок к следующей главе. */
@@ -110,11 +124,14 @@ export interface StoryFind {
   title: string;
   /** Что это и почему важно — одна-две фразы. */
   text: string;
-  icon: 'letter' | 'photo' | 'map' | 'tape' | 'key';
+  icon: 'letter' | 'photo' | 'map' | 'tape' | 'key' | 'figurine';
 }
 
 /** «Глава» 0 на карте — пролог: курс чтения (алфавит), не глава истории. */
 export const PROLOGUE = 0;
+
+/** Похвала на салюте закрепления: звучит греческим голосом, перевод — рядом. */
+export const STORY_PRAISE = { greek: 'Μπράβο!', russian: 'Молодец!' } as const;
 
 /** Место на карте острова: глава происходит здесь. Координаты — в системе 1000×640. */
 export interface StoryPlace {

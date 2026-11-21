@@ -1,0 +1,166 @@
+/* Праздник закрепления главы. Ступени по уровню: .light — скромно, .medium — празднично, .hard — помпезно, в золоте. */
+
+.overlay {
+  --gold: var(--map-wheat);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  /* Сброс стилей <dialog>: на весь экран, без рамки. */
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  color: inherit;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--map-deep) 82%, transparent);
+  backdrop-filter: blur(3px);
+  animation: dim 0.5s ease-out both;
+  overflow: hidden;
+}
+.light { background: color-mix(in srgb, var(--map-deep) 62%, transparent); }
+.hard { background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--map-deep) 70%, var(--gold)) 0%, color-mix(in srgb, var(--map-deep) 92%, transparent) 65%); }
+
+.canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+
+.card {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 28px 24px 22px;
+  border-radius: 18px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: center;
+  box-shadow: 0 24px 80px color-mix(in srgb, black 45%, transparent);
+  animation: pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s both;
+  isolation: isolate;
+}
+.hard .card {
+  border: 2px solid var(--gold);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--gold) 25%, transparent),
+    0 0 60px color-mix(in srgb, var(--gold) 55%, transparent),
+    0 24px 80px color-mix(in srgb, black 45%, transparent);
+}
+
+/* Лучи за венком: медленно вращаются. На сложном — золотые и быстрее. */
+.rays {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  width: 360px;
+  height: 360px;
+  margin: -180px 0 0 -180px;
+  z-index: -1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--brand) 22%, transparent) 0deg 9deg, transparent 9deg 22.5deg);
+  mask: radial-gradient(circle, black 20%, transparent 68%);
+  animation: rays-in 0.8s ease-out 0.4s both, spin 24s linear 0.4s infinite;
+}
+.hard .rays {
+  width: 460px;
+  height: 460px;
+  margin: -230px 0 0 -230px;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--gold) 55%, transparent) 0deg 7deg, transparent 7deg 15deg);
+  animation: rays-in 0.8s ease-out 0.4s both, spin 12s linear 0.4s infinite;
+}
+
+/* Венок: вырастает с поворотом, внутри — медальон с номером главы. */
+.wreath {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 6px;
+  color: var(--olive);
+  container-type: inline-size;
+  animation: grow 0.9s cubic-bezier(0.2, 1.5, 0.4, 1) 0.45s both;
+}
+.light .wreath { width: 96px; height: 96px; }
+.hard .wreath { width: 148px; height: 148px; color: var(--gold); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 70%, transparent)); }
+.laurel { position: absolute; inset: 0; }
+.medal {
+  position: absolute;
+  inset: 24%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--olive-soft);
+  color: var(--olive);
+  animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.9s both;
+}
+.hard .medal {
+  background: linear-gradient(135deg, var(--gold), var(--warning) 55%, var(--gold));
+  background-size: 200% 200%;
+  color: var(--map-label);
+  animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.9s both, shine 2.4s ease-in-out 1.4s infinite;
+}
+.medalNum { font-family: var(--font-display); font-size: 30cqi; font-weight: 700; line-height: 1; }
+
+.praise {
+  margin: 4px 0 0;
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--brand);
+  animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.05s both;
+}
+.light .praise { font-size: 2rem; }
+.hard .praise {
+  font-size: 3.2rem;
+  background: linear-gradient(90deg, var(--warning), var(--gold), var(--brand-hover), var(--gold), var(--warning));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.05s both, shimmer 2.5s linear 1.6s infinite;
+}
+.praiseRu { margin: 0 0 10px; font-size: 0.9rem; font-style: italic; color: var(--text-muted); animation: rise 0.5s ease-out 1.2s both; }
+.title { margin: 0; font-family: var(--font-display); font-size: 1.5rem; animation: rise 0.5s ease-out 1.25s both; }
+.summit { margin: 6px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--warning); animation: rise 0.5s ease-out 1.35s both; }
+.level { margin: 6px 0 0; color: var(--text-muted); animation: rise 0.5s ease-out 1.35s both; }
+
+.epochOpen { margin: 14px 0 0; font-weight: 600; color: var(--success); animation: rise 0.5s ease-out 1.45s both; }
+
+.harder { margin: 16px 0 0; font-size: 0.9rem; line-height: 1.45; color: var(--text-muted); animation: rise 0.5s ease-out 1.5s both; }
+
+.actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; margin: 20px 0 0; animation: rise 0.5s ease-out 1.6s both; }
+
+@keyframes dim { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.4); } }
+@keyframes grow { from { opacity: 0; transform: scale(0.2) rotate(-120deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes rays-in { from { opacity: 0; transform: scale(0.3); } }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes shimmer { to { background-position: 200% center; } }
+@keyframes shine { 50% { background-position: 100% 100%; } }
+
+/* Телефон: карточка по центру (праздник — главный момент, не шторка), кнопки во всю ширину столбиком,
+   венок и надписи меньше; на низком экране карточка прокручивается, а не обрезается. */
+@media (max-width: 480px) {
+  .overlay { overflow-y: auto; align-items: safe center; }
+  .card { padding: 22px 18px 18px; }
+  .wreath { width: 104px; height: 104px; }
+  .light .wreath { width: 88px; height: 88px; }
+  .hard .wreath { width: 124px; height: 124px; }
+  .praise { font-size: 2.2rem; }
+  .hard .praise { font-size: 2.6rem; }
+  .title { font-size: 1.3rem; }
+  .actions { flex-direction: column; align-items: stretch; }
+  .actions > * { text-align: center; }
+}
+@media (max-height: 560px) {
+  .overlay { overflow-y: auto; align-items: safe center; }
+  .wreath, .light .wreath, .hard .wreath { width: 80px; height: 80px; }
+}
+
+/* «Уменьшить движение»: без салюта и полётов — просто карточка. */
+@media (prefers-reduced-motion: reduce) {
+  .canvas { display: none; }
+  .overlay *, .overlay { animation: none !important; }
+}

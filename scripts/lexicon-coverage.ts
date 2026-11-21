@@ -7,7 +7,7 @@ import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
 import { LIBRARY_TEXTS } from '@/entities/library';
 import { DICTIONARY } from '@/entities/dictionary';
 import { GRAMMAR_TOPICS } from '@/entities/grammar';
-import { STORY_CHAPTERS } from '@/entities/story';
+import { STORY_CHAPTERS, STORY_PRAISE } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 
 const texts: string[] = [];
@@ -29,10 +29,24 @@ LIBRARY_TEXTS.forEach((t) => t.sentences.forEach((s) => texts.push(s.greek)));
 // История: текст глав и греческий в объяснениях, подсказках, конспекте (`фрагменты` — не слова).
 const GREEK_RUN = /[\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*/gu;
 const greekIn = (s: string) => s.replace(/`[^`]+`/g, ' ').match(GREEK_RUN) ?? [];
+texts.push(STORY_PRAISE.greek);
 for (const c of STORY_CHAPTERS) {
   c.sentences.forEach((s) => texts.push(s.greek));
   [c.title, c.teaser, c.find?.text ?? '', ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));
-  for (const s of c.steps) if (s.task?.kind === 'gap') s.task.gaps.forEach((g) => texts.push(...greekIn(g.hint)));
+  // Закрепление: всё греческое заданий, включая неверные варианты.
+  for (const t of c.practice) {
+    // Варианты пропуска — в предложении на месте слова: формы будущего узнаются только после θα.
+    if (t.kind === 'gap') {
+      const sentence = c.sentences[t.sentence - 1]!.greek;
+      t.options.forEach((o) => texts.push(sentence.replace(t.word, o)));
+      texts.push(...greekIn(t.hint));
+    }
+    if (t.kind === 'listen') texts.push(t.audio, ...t.options);
+    if (t.kind === 'translate') texts.push(...t.greek, ...t.decoys, ...greekIn(t.hint));
+    if (t.kind === 'choose') t.options.forEach((o) => texts.push(...greekIn(o)));
+    if (t.kind === 'choose') texts.push(...greekIn(t.prompt));
+  }
+  for (const s of c.steps) if (s.check) [s.check.prompt, ...s.check.options].forEach((o) => texts.push(...greekIn(o)));
   // Рассказы кота: текст и примеры.
   for (const b of c.branches ?? []) {
     [b.title, b.teaser, ...b.body].forEach((s) => texts.push(...greekIn(s)));

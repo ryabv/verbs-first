@@ -34,6 +34,16 @@ export function FindIcon({ icon, className }: { icon: StoryFind['icon']; classNa
           <path d="M11 18h10M9 24l2-3h10l2 3" />
         </>
       )}
+      {icon === 'figurine' && (
+        <>
+          <circle cx="16" cy="6.5" r="3" fill="currentColor" fillOpacity={0.1} />
+          <path
+            d="M14 10h4l1 3h7.5a1.5 1.5 0 0 1 0 3H19l1.5 11h-9L13 16H5.5a1.5 1.5 0 0 1 0-3H13z"
+            fill="currentColor"
+            fillOpacity={0.1}
+          />
+        </>
+      )}
       {icon === 'key' && (
         <>
           <circle cx="10" cy="16" r="5" fill="currentColor" fillOpacity={0.1} />

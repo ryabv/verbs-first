@@ -1,12 +1,13 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { getLesson, knownVerbIds, type ReadingText } from '@/entities/lesson';
-import { markStoryStep, STORY_END, type StoryChapter } from '@/entities/story';
+import { getChapter, markStoryStep, STORY_END, type StoryChapter } from '@/entities/story';
 import { getVerbs } from '@/entities/verb';
 import { AddWords, TokenCard } from '@/features/card-add';
 import { ReadingView } from '@/features/text-reading';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
+import { buttonClassName } from '@/shared/ui/button';
 import { Arrow } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
 import { chapterWords } from '../lib/words';
@@ -15,7 +16,7 @@ import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import styles from './Story.module.css';
 
-/** Конец главы: вся глава без пропусков, конспект, слова в карточки, крючок. */
+/** Конец главы: вся глава, конспект, слова в карточки, крючок и «Закрепить главу» (по умолчанию; можно пропустить). */
 export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
   useEffect(() => markStoryStep(chapter.id, STORY_END), [chapter.id]);
 
@@ -29,6 +30,7 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
   }, [chapter.lesson]);
   const words = useMemo(() => chapterWords(chapter), [chapter]);
   const total = chapter.steps.length;
+  const next = getChapter(chapter.id + 1);
 
   return (
     <div className={styles.page}>
@@ -37,11 +39,11 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
           items={[
             { label: 'История', to: routes.story() },
             { label: `Глава ${chapter.id}`, to: routes.storyChapter(chapter.id) },
-            { label: 'Вся глава' },
+            { label: 'Конец главы' },
           ]}
         />
-        <p className={styles.kicker}>Вся глава — без подсказок</p>
-        <p className={styles.lead}>Прочитайте главу целиком. Непонятное слово — нажмите на него.</p>
+        <p className={styles.kicker}>Глава {chapter.id} прочитана</p>
+        <p className={styles.lead}>Вот она целиком. Непонятное слово — нажмите на него.</p>
       </header>
 
       <Manuscript chapter={chapter} className={styles.endText} label="Вся глава">
@@ -71,13 +73,20 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
           <Rich text={chapter.teaser} wordDeck={storyDeck} />
         </p>
         <div className={styles.finishRow}>
-          <Link to={routes.storyStep(chapter.id, total)}>
-            <Arrow direction="left" /> К последнему шагу
+          <Link to={routes.storyPractice(chapter.id)} className={buttonClassName('primary')}>
+            Закрепить главу <Arrow />
           </Link>
-          <Link to={routes.story()}>
-            К истории <Arrow />
+          <Link to={next ? routes.storyChapter(next.id) : routes.story()}>
+            Пропустить — {next ? `к главе ${next.id}` : 'к истории'} <Arrow />
           </Link>
         </div>
+        <p className={styles.gapHint}>
+          Закрепление — {chapter.practice.length} заданий по тексту главы, 5–10 минут. Следующая эпоха откроется, когда все главы этой
+          закреплены хотя бы на лёгком.
+        </p>
+        <Link to={routes.storyStep(chapter.id, total)}>
+          <Arrow direction="left" /> К последнему шагу
+        </Link>
       </footer>
     </div>
   );

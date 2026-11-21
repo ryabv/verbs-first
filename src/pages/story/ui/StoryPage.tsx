@@ -4,6 +4,7 @@ import {
   branchRead,
   chapterOpen,
   chapterRank,
+  chapterRead,
   doneAt,
   getChapter,
   PROLOGUE,
@@ -11,7 +12,6 @@ import {
   STORY_LEVEL_LABELS,
   STORY_LEVELS,
   STORY_PLACES,
-  useStoryLevel,
   useStoryProgress,
   type LevelRank,
   type StoryBranch,
@@ -25,6 +25,7 @@ import { buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check, Meander } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import { storyDeck } from '../lib/deck';
+import { lockReason } from '../lib/lock';
 import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
 import { CatIcon } from './CatIcon';
@@ -36,23 +37,27 @@ import styles from './Story.module.css';
 /** /story — карта острова: места глав, тропа, неоткрытые места под «?», находки. */
 export function StoryPage() {
   const progress = useStoryProgress();
-  const level = useStoryLevel();
-  // Шаги, пройденные на выбранном уровне или сложнее.
-  const doneOf = (id: number) => doneAt(progress[id] ?? {}, level);
-  // Уровень главы: 0 — не пройдена, 1…3 — пройдена на лёгком, среднем, сложном.
+  // Прочитанные шаги главы.
+  const doneOf = (id: number) => doneAt(progress[id] ?? {}, 'light');
+  // Уровень закрепления главы: 0 — не закреплена, 1…3 — на лёгком, среднем, сложном.
   const rankOf = (id: number): LevelRank => {
     const c = getChapter(id);
     return c ? chapterRank(c, progress[id] ?? {}) : 0;
   };
-  const finished = (id: number) => rankOf(id) >= 1;
+  // Глава дочитана — место на карте пройдено, находка — в рюкзаке.
+  const finished = (id: number) => chapterRead(progress[id] ?? {});
+  const isOpen = (id: number) => {
+    const c = getChapter(id);
+    return Boolean(c && chapterOpen(c, STORY_CHAPTERS, progress));
+  };
 
-  // Текущая глава — первая написанная и не пройденная; если все пройдены — последняя.
+  // Текущая глава — первая написанная и не дочитанная; если все дочитаны — последняя.
   const current = STORY_CHAPTERS.find((c) => !finished(c.id)) ?? STORY_CHAPTERS.at(-1);
   // Пролог (алфавит) — свой прогресс курса чтения; не обязателен, глава 1 открыта и без него.
   const [prologuePart] = useState(readingPart);
   const stateOf = (chapter: number): PlaceState => {
     if (chapter === PROLOGUE) return prologuePart >= 1 ? 'done' : 'open';
-    if (!getChapter(chapter) || !chapterOpen(chapter, rankOf)) return 'fog';
+    if (!isOpen(chapter)) return 'fog';
     if (finished(chapter)) return 'done';
     return chapter === current?.id ? 'current' : 'open';
   };
@@ -89,7 +94,7 @@ export function StoryPage() {
     return c ? c.steps.filter((s) => doneOf(id).includes(s.id)).length / c.steps.length : 0;
   };
   // Рассказы кота — у мест открытых глав, доступны сразу.
-  const catBranches = STORY_CHAPTERS.filter((c) => chapterOpen(c.id, rankOf)).flatMap((c) =>
+  const catBranches = STORY_CHAPTERS.filter((c) => isOpen(c.id)).flatMap((c) =>
     (c.branches ?? []).map((b) => ({ chapter: c, branch: b, levels: progress[c.id] ?? {} })),
   );
   const mapBranches: MapBranch[] = catBranches.map(({ chapter: c, branch: b, levels }) => ({
@@ -116,12 +121,10 @@ export function StoryPage() {
   const chapterCard = selected === PROLOGUE ? (
     <PrologueCard part={prologuePart} />
   ) : chapter ? (
-    chapterOpen(chapter.id, rankOf) ? (
+    isOpen(chapter.id) ? (
       <ChapterCard chapter={chapter} rank={rankOf(chapter.id)} />
     ) : (
-      <p className={styles.fogNote}>
-        <b>Глава {chapter.id}</b> откроется, когда вы пройдёте главу {chapter.id - 1} — хотя бы на лёгком уровне.
-      </p>
+      <p className={styles.fogNote}>{lockReason(chapter, progress).text}</p>
     )
   ) : (
     <p className={styles.fogNote}>
@@ -315,7 +318,7 @@ function ChapterCard({ chapter, rank }: { chapter: StoryChapter; rank: LevelRank
         {passed && (
           <span className={styles.finished}>
             {' '}
-            · пройдена: {passed} <Check />
+            · закреплена: {passed} <Check />
           </span>
         )}
       </span>

@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { sentenceGaps, STORY_END, withGaps, type StoryChapter, type StoryStep } from '@/entities/story';
-import type { TextToken } from '@/entities/verb';
+import { STORY_END, type StoryChapter, type StoryStep } from '@/entities/story';
 import { Phrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { Laurel } from '@/shared/ui/ornament';
-import { gapIndex, inFragment, tokenId } from '../lib/task';
+import { inFragment } from '../lib/task';
 import { storyDeck, STORY_DECK } from '../lib/deck';
 import { ChapterTitle } from './ChapterTitle';
 import { TranslateButton } from './TranslateButton';
@@ -15,16 +14,14 @@ import styles from './Story.module.css';
 interface Props {
   chapter: StoryChapter;
   step: StoryStep;
-  /** Пройденные шаги главы: их пропуски заполнены, реплики на слух открыты. */
+  /** Прочитанные шаги главы. */
   done: readonly string[];
-  /** Задача текущего шага решена (или показан ответ). */
-  solved: boolean;
-  /** Режим «нажмите слова»: выбранные токены и переключатель. */
-  tap?: { picked: ReadonlySet<string>; toggle: (id: string, text: string) => void; verdict?: ReadonlyMap<string, boolean> };
+  /** Вопрос текущего шага отвечен: реплика вопроса на слух открыта. */
+  answered: boolean;
 }
 
-/** Предложение — реплика задания на слух (его audio): прячем до ответа, иначе ответ виден в тексте. */
-const listensTo = (s: StoryStep, greek: string) => s.task?.kind === 'choose' && s.task.audio === greek;
+/** Предложение — реплика вопроса на слух (его audio): прячем до ответа, иначе ответ виден в тексте. */
+const listensTo = (s: StoryStep, greek: string) => s.check?.audio === greek;
 
 /** Клик пришёлся на что-то своё (слово, кнопку, окно слова) или это выделение текста — не переход. */
 const ownClick = (e: MouseEvent) =>
@@ -32,10 +29,10 @@ const ownClick = (e: MouseEvent) =>
 
 /**
  * Правая панель: вся глава, текущий кусок подсвечен и в фокусе. Текст поделён на куски по шагам:
- * номер шага стоит на полях куска, нажатие на другой кусок открывает его шаг. Чтобы целый текст не выдавал ответы,
- * пропуски ещё не пройденных шагов пустые, а реплики заданий на слух размыты до ответа.
+ * номер шага стоит на полях куска, нажатие на другой кусок открывает его шаг. Текст целый, без пропусков;
+ * спрятана только реплика вопроса на слух — до ответа.
  */
-export function StoryText({ chapter, step, done, solved, tap }: Props) {
+export function StoryText({ chapter, step, done, answered }: Props) {
   const navigate = useNavigate();
   const currentRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -59,59 +56,13 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
     if (r.top < Math.max(top, 0) || r.bottom > window.innerHeight) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, []);
 
-  /** Шаг открыт: текущий — если решён, остальные — если пройдены. */
-  const isOpen = (s: StoryStep) => (s.id === step.id ? solved : done.includes(s.id));
-
-  /** Пропуск какого шага это слово (и открыт ли он). */
-  const gapOf = (n: number, token: TextToken) => {
-    for (const s of chapter.steps) {
-      const g = gapIndex(s, n, token);
-      if (g >= 0) return { owner: s, index: g, open: isOpen(s) };
-    }
-    return undefined;
-  };
+  /** Вопрос шага отвечен: текущий — сейчас, остальные — если шаг прочитан. */
+  const isOpen = (s: StoryStep) => (s.id === step.id ? answered : done.includes(s.id));
 
   /** Шаг, до ответа на который реплика спрятана (номер шага с 1), или 0. */
   const hiddenUntil = (n: number) => {
     const i = chapter.steps.findIndex((s) => listensTo(s, chapter.sentences[n - 1]!.greek) && !isOpen(s));
     return i + 1;
-  };
-
-  const renderToken = (n: number) => (token: TextToken, i: number) => {
-    const gap = gapOf(n, token);
-    const current = gap?.owner.id === step.id;
-    if (gap && !gap.open) {
-      const multi = current && step.task?.kind === 'gap' && step.task.gaps.length > 1;
-      return (
-        <span className={current ? styles.gap : `${styles.gap} ${styles.gapLater}`} aria-label={current ? `Пропуск ${gap.index + 1}` : 'Пропуск'}>
-          {multi ? gap.index + 1 : '…'}
-        </span>
-      );
-    }
-    // Заполненный пропуск и слова после ответа — обычные слова с переводом (подсветка — в tokenClass).
-    if (gap && current) return undefined;
-    if (!tap || solved || !inFragment(step, n)) return undefined;
-    const id = tokenId(n, i);
-    const verdict = tap.verdict?.get(id);
-    const cls = [styles.tapWord, tap.picked.has(id) && styles.tapPicked, verdict === true && styles.tapRight, verdict === false && styles.tapWrong]
-      .filter(Boolean)
-      .join(' ');
-    return (
-      <button type="button" className={cls} aria-pressed={tap.picked.has(id)} onClick={() => tap.toggle(id, token.text)}>
-        {token.text}
-      </button>
-    );
-  };
-
-  /** Подсветка после ответа: заполненный пропуск, верно/лишнее в «нажмите слова». */
-  const tokenClass = (n: number) => (token: TextToken, i: number) => {
-    const gap = gapOf(n, token);
-    if (gap && gap.owner.id === step.id) return styles.filled;
-    if (!tap || !solved || !inFragment(step, n)) return undefined;
-    const verdict = tap.verdict?.get(tokenId(n, i));
-    if (verdict === true) return styles.tapRight;
-    if (verdict === false) return styles.tapWrong;
-    return undefined;
   };
 
   /** lead — номер шага на полях, перед первым предложением куска (как номер стиха в книге). */
@@ -124,16 +75,14 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
           {lead}
           {inFragment(step, n)
             ? 'Эту реплику сначала прослушайте — текст появится после ответа.'
-            : `Реплика спрятана до задания на слух (шаг ${hidden}).`}
+            : `Реплика спрятана до вопроса на слух (шаг ${hidden}).`}
         </p>
       );
     }
-    // Нерешённые пропуски озвучка пропускает (пауза вместо слова) — звук не выдаёт ответ.
-    const openGaps = sentenceGaps(chapter, n).filter((g) => !isOpen(g.step));
     const shown = translated.has(n);
     const after = (
       <span className={styles.lineTools}>
-        <SpeakButton text={withGaps(s.greek, openGaps.map((g) => g.word))} />
+        <SpeakButton text={s.greek} />
         <TranslateButton shown={shown} onToggle={() => toggleTranslation(n)} />
       </span>
     );
@@ -145,8 +94,6 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
           russian={s.russian}
           deck={STORY_DECK}
           wordDeck={storyDeck}
-          renderToken={renderToken(n)}
-          tokenClass={tokenClass(n)}
           after={after}
         />
         {shown && <span className={styles.translation}>{s.russian}</span>}
@@ -171,9 +118,9 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
     if (!owner) return <div key={`free-${sentences[0]}`} className={styles.outside}>{sentences.map((n) => render(n))}</div>;
     const isCurrent = index === currentIndex;
     // Номер книжным шрифтом; пройденный — в лавровом венке (как медальоны уроков), текущий — терракотовый.
-    const isDone = done.includes(owner.id) || (isCurrent && solved && Boolean(owner.task));
+    const isDone = done.includes(owner.id);
     const mark = [styles.stepMark, isDone && styles.stepMarkDone, isCurrent && styles.stepMarkCurrent].filter(Boolean).join(' ');
-    const status = isDone ? 'пройден' : owner.task ? 'задание не сделано' : 'не прочитан';
+    const status = isDone ? 'прочитан' : 'не прочитан';
     const title = `Шаг ${index + 1}. ${owner.title} — ${status}`;
     const face = (
       <>
@@ -214,7 +161,7 @@ export function StoryText({ chapter, step, done, solved, tap }: Props) {
       <ChapterTitle chapter={chapter} />
       {groups.map(renderGroup)}
       <Link to={routes.storyStep(chapter.id, 'end')} className={done.includes(STORY_END) ? `${styles.toEnd} ${styles.toEndDone}` : styles.toEnd}>
-        ✦ Вся глава и конспект
+        ✦ Конец главы и закрепление
       </Link>
     </div>
   );

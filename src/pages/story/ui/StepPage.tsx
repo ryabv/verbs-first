@@ -1,128 +1,47 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import {
-  chapterRank,
-  doneAt,
-  levelRank,
-  markStoryStep,
-  useStoryLevel,
-  useStoryLevels,
-  type StoryChapter,
-  type StoryGap,
-  type StoryStep,
-} from '@/entities/story';
-import { analyzePhrase } from '@/features/card-add';
+import { doneAt, markStoryStep, useStoryLevels, type StoryChapter, type StoryCheck, type StoryStep } from '@/entities/story';
+import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
-import { Arrow } from '@/shared/ui/ornament';
+import { Arrow, Check } from '@/shared/ui/ornament';
 import { storyDeck } from '../lib/deck';
-import { inFragment, tapCorrect, tokenId } from '../lib/task';
+import { shuffle } from '../lib/task';
 import { CatIcon } from './CatIcon';
-import { LevelSwitch } from './LevelSwitch';
 import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
-import { StoryTask } from './StoryTask';
 import { StoryText } from './StoryText';
 import styles from './Story.module.css';
 
-/** Шаг главы: слева объяснение и задача, справа текст. */
+/** Шаг главы: слева объяснение и вопрос на понимание, справа текст. Замков нет: «Дальше» доступно всегда. */
 export function StepPage({ chapter, index }: { chapter: StoryChapter; index: number }) {
   const step = chapter.steps[index]!;
-  const level = useStoryLevel();
-  // key — по шагу и уровню: при переходе или смене уровня задача начинается заново.
-  return <Step key={`${step.id}-${level}`} chapter={chapter} step={step} index={index} />;
-}
-
-/** Слова текущего куска, которые надо нажать: id токенов. */
-function tapTargets(chapter: StoryChapter, step: StoryStep): Map<string, string> {
-  const out = new Map<string, string>();
-  if (step.task?.kind !== 'tap') return out;
-  const answer = new Set(step.task.answer);
-  chapter.sentences.forEach((s, si) => {
-    if (!inFragment(step, si + 1)) return;
-    analyzePhrase(s.greek).forEach((t, ti) => t.isWord && answer.has(t.text) && out.set(tokenId(si + 1, ti), t.text));
-  });
-  return out;
-}
-
-/** Значение глагола в пропуске — из разбора всего предложения (θα подсказывает будущее): «работать». */
-function verbMeaning(chapter: StoryChapter, gap: StoryGap): string | undefined {
-  const sentence = chapter.sentences[gap.sentence - 1]?.greek ?? '';
-  return analyzePhrase(sentence).find((t) => t.text === gap.word)?.verb?.verb.translation;
+  // key — по шагу: при переходе вопрос начинается заново.
+  return <Step key={step.id} chapter={chapter} step={step} index={index} />;
 }
 
 function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep; index: number }) {
   const navigate = useNavigate();
-  const level = useStoryLevel();
   const levels = useStoryLevels(chapter.id);
-  // Пройдено на этом уровне или сложнее — засчитано.
-  const done = doneAt(levels, level);
-  const wasDone = (levels[step.id] ?? 0) >= levelRank(level);
-  const [solved, setSolved] = useState(wasDone || !step.task);
-  const [picked, setPicked] = useState<Map<string, string>>(() => (wasDone ? tapTargets(chapter, step) : new Map()));
-  const [tapVerdict, setTapVerdict] = useState<Map<string, boolean> | undefined>();
-  // «Нажмите слова»: пока задание не начато, текст ведёт себя как обычно (слова открывают перевод).
-  const [tapStarted, setTapStarted] = useState(false);
+  const done = doneAt(levels, 'light');
+  const wasRead = done.includes(step.id);
+  const [answered, setAnswered] = useState(wasRead || !step.check);
   const total = chapter.steps.length;
-  const solve = useCallback(() => {
-    setSolved(true);
-    markStoryStep(chapter.id, step.id, level);
-  }, [chapter.id, step.id, level]);
 
-  const targets = useMemo(() => tapTargets(chapter, step), [chapter, step]);
-  const isTap = step.task?.kind === 'tap';
-
-  const showAnswer = () => {
-    if (isTap) setPicked(new Map(targets));
-    setTapVerdict(undefined);
-    solve();
-  };
+  // Шаг открыт — значит, прочитан: глава не держит ученика на вопросе.
+  useEffect(() => markStoryStep(chapter.id, step.id), [chapter.id, step.id]);
 
   const goNext = () => {
-    if (!step.task) markStoryStep(chapter.id, step.id);
     // Следующий шаг — без прокрутки наверх: кусок рядом, текст сам подвинется, если его не видно.
     if (index + 1 < total) navigate(routes.storyStep(chapter.id, index + 2), { preventScrollReset: true });
     else navigate(routes.storyStep(chapter.id, 'end'));
   };
 
-  const tap =
-    isTap && (tapStarted || solved)
-    ? {
-        picked: new Set(picked.keys()),
-        verdict: tapVerdict,
-        toggle: (id: string, text: string) => {
-          if (solved) return;
-          setTapVerdict(undefined);
-          setPicked((m) => {
-            const next = new Map(m);
-            if (next.has(id)) next.delete(id);
-            else next.set(id, text);
-            return next;
-          });
-        },
-      }
-    : undefined;
-
-  const startTap = () => {
-    setTapStarted(true);
-    // На телефоне текст — над заданием: показываем кусок, где нажимать слова.
-    const el = document.querySelector('[aria-current="step"]');
-    const r = el?.getBoundingClientRect();
-    if (el && r && (r.top < 0 || r.bottom > window.innerHeight)) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  };
-
-  const checkTap = () => {
-    const answer = step.task?.kind === 'tap' ? step.task.answer : [];
-    const ok = tapCorrect([...picked.values()], answer);
-    setTapVerdict(new Map([...picked.keys()].map((id) => [id, targets.has(id)])));
-    return ok;
-  };
-
   return (
     <div className={styles.stepPage}>
       <div className={styles.split}>
-        {/* Левая колонка закреплена целиком: крошки, объяснение, задача. Справа листается текст; шаги — куски текста. */}
+        {/* Левая колонка закреплена целиком: крошки, объяснение, вопрос. Справа листается текст; шаги — куски текста. */}
         <div className={styles.leftCol}>
           <div className={styles.stepHead}>
             <Breadcrumbs
@@ -132,7 +51,6 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 { label: step.title },
               ]}
             />
-            <LevelSwitch passed={chapterRank(chapter, levels)} />
           </div>
           <section className={styles.lessonPane}>
             <h1 className={styles.stepTitle}>{step.title}</h1>
@@ -141,20 +59,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                 <Rich text={p} wordDeck={storyDeck} />
               </p>
             ))}
-            <StoryTask step={step} level={level} meaningOf={(g) => g.meaning ?? verbMeaning(chapter, g)} solved={solved} onSolved={solve} onReveal={showAnswer} tap={
-                isTap
-                  ? {
-                      count: picked.size,
-                      check: checkTap,
-                      started: tapStarted,
-                      start: startTap,
-                      reset: () => {
-                        setPicked(new Map());
-                        setTapVerdict(undefined);
-                      },
-                    }
-                  : undefined
-              } />
+            {step.check && <CheckCard check={step.check} answered={answered} onAnswer={() => setAnswered(true)} />}
 
             <CatTales chapter={chapter} step={step} />
 
@@ -168,18 +73,65 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
                   <Arrow direction="left" /> К главе
                 </Link>
               )}
-              <Button onClick={goNext} disabled={!solved}>
-                {index + 1 < total ? 'Дальше' : 'Вся глава'} <Arrow />
+              <Button onClick={goNext}>
+                {index + 1 < total ? 'Дальше' : 'Конец главы'} <Arrow />
               </Button>
             </nav>
           </section>
         </div>
 
         <Manuscript chapter={chapter} className={styles.textPane} label="Текст главы">
-          <StoryText chapter={chapter} step={step} done={done} solved={solved} tap={tap} />
+          <StoryText chapter={chapter} step={step} done={done} answered={answered} />
         </Manuscript>
       </div>
     </div>
+  );
+}
+
+/**
+ * Вопрос на понимание: одно нажатие, провалить нельзя. Неверный вариант — подсказка «посмотрите в текст»
+ * и сразу виден верный; продолжить можно и без ответа.
+ */
+function CheckCard({ check, answered, onAnswer }: { check: StoryCheck; answered: boolean; onAnswer: () => void }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  const [order] = useState(() => shuffle(check.options.map((_, i) => i)));
+  const right = picked === check.answer;
+  const shown = answered || picked !== null;
+  const pick = (i: number) => {
+    setPicked(i);
+    onAnswer();
+  };
+  return (
+    <section className={styles.check} aria-label="Вопрос на понимание">
+      <p className={styles.taskPrompt}>
+        {check.prompt}
+        {check.audio && <SpeakButton text={check.audio} />}
+      </p>
+      <div className={styles.options}>
+        {order.map((i) => {
+          const cls = [
+            styles.option,
+            shown && i === check.answer && styles.optionRight,
+            picked === i && !right && styles.optionWrong,
+          ]
+            .filter(Boolean)
+            .join(' ');
+          return (
+            <button key={i} type="button" className={cls} disabled={shown} onClick={() => pick(i)}>
+              {check.options[i]}
+            </button>
+          );
+        })}
+      </div>
+      {picked !== null &&
+        (right ? (
+          <p className={styles.solved}>
+            <Check /> Верно.
+          </p>
+        ) : (
+          <p className={styles.hintWrong}>Не совсем — верный ответ отмечен. Загляните в текст справа.</p>
+        ))}
+    </section>
   );
 }
 

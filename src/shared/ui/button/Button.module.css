@@ -14,4 +14,4 @@
 .secondary { background: var(--bg); color: var(--text); border: 2px solid var(--border); }
 .secondary:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text); }
 .ghost { background: transparent; color: var(--accent); padding: 0.3rem 0.5rem; }
-.ghost:hover:not(:disabled) { background: var(--surface-muted); }
+.ghost:hover:not(:disabled) { background: var(--surface-muted); color: var(--accent); }

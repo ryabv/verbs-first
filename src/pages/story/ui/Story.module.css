@@ -576,3 +576,36 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .catBadgeSmall { flex: none; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--bg); color: var(--accent-strong); }
 .catTalesLead { margin: 0 0 4px; font-size: 0.9rem; color: var(--text-muted); }
 .catTalesList { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+
+/* Вопрос на понимание внутри чтения: легче задания — без рамки, полоса слева. */
+.check { margin: 20px 0 0; padding: 4px 0 4px 16px; border-left: 3px solid var(--accent); }
+
+/* Закрепление: копия предложения или куска главы. */
+.practiceSentence { margin: 0 0 14px; font-family: var(--font-display); font-size: 1.2rem; line-height: 1.55; }
+.practiceLine { margin: 0 0 6px; }
+.practiceSentence .gap { min-width: 4em; }
+
+/* Плитки: собрать фразу. Строка ответа — сверху, запас — снизу. */
+.tileLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 0 12px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--border-strong);
+}
+.tile {
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.tile:hover:not(:disabled) { border-color: var(--accent); }
+.tile:disabled { opacity: 0.35; cursor: default; }
