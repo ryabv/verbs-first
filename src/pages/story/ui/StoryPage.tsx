@@ -99,6 +99,7 @@ export function StoryPage() {
   );
   const mapBranches: MapBranch[] = catBranches.map(({ chapter: c, branch: b, levels }) => ({
     key: `${c.id}:${b.id}`,
+    chapter: c.id,
     title: b.title,
     x: b.x,
     y: b.y,
@@ -151,9 +152,9 @@ export function StoryPage() {
       <Meander className={styles.cartoucheMeander} />
       <h1 className={styles.cartoucheTitle}>История</h1>
       <p className={styles.cartoucheLead}>
-        Учим греческий по одной большой истории: Анна приезжает на остров Анемуса, где тётя спрятала тайну.
-        Каждая глава — новое место на карте; неоткрытые места отмечены «?». Ещё не читаете по-гречески — начните
-        с пролога на пароме.
+        Учим греческий по одной большой истории: Анна приезжает на Кипр, где тётя спрятала тайну, и идёт по её следу
+        через всю историю острова. Каждая глава — новое место на карте; неоткрытые места отмечены «?». Ещё не читаете
+        по-гречески — начните с пролога: алфавит в дороге.
       </p>
       {findsBtn}
       <Meander className={styles.cartoucheMeander} />
@@ -233,7 +234,7 @@ function PrologueCard({ part }: { part: number }) {
         Греческий алфавит
       </Link>
       <p className={styles.tileIntro}>
-        Пока паром идёт к острову, Анна учится читать по-гречески. Уже читаете — начинайте сразу с главы 1.
+        Пока самолёт летит на Кипр, Анна учится читать по-гречески. Уже читаете — начинайте сразу с главы 1.
       </p>
       <div className={styles.cardActions}>
         <Link to={routes.alphabet()} className={buttonClassName(finished ? 'secondary' : 'primary')}>

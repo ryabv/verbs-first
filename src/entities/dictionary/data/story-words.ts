@@ -75,7 +75,6 @@ export const STORY_WORDS: DictEntry[] = [
   // Имена и места (вымышленные)
   { greek: 'η Μόσχα', russian: 'Москва' },
   { greek: 'η Μαυρίδη', russian: 'Мавриди (фамилия)' },
-  { greek: 'η Ανεμούσα', russian: 'Анемуса (вымышленный остров)' },
   { greek: 'η Μαρίνα', russian: 'Марина' },
   { greek: 'η Ρούλα', russian: 'Рула' },
 ];

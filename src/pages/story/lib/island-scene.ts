@@ -10,8 +10,12 @@ import * as THREE from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { geo } from './cyprus';
 import { MAP_H, MAP_W, noise, rng } from './island';
-import { getTerrain, GRID_STEP, ROADS, SETTLEMENTS } from './terrain';
+import { routeRoads } from './roads';
+import { getTerrain, GRID_STEP, ROADS, SETTLEMENTS, type Terrain } from './terrain';
+
+export { loadHeightmap } from './heightmap';
 
 export interface ScreenPoint {
   x: number;
@@ -35,7 +39,7 @@ const MIN_DIST = 120;
 const FOV = 32;
 /** Где можно держать центр камеры (координаты карты). */
 // Снизу — с запасом: на телефоне место у южного берега поднимается над карточкой.
-const BOUNDS = { x0: 80, x1: 920, y0: 80, y1: 760 };
+const BOUNDS = { x0: 80, x1: MAP_W - 80, y0: 80, y1: MAP_H + 120 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const clamp01 = (v: number) => clamp(v, 0, 1);
@@ -89,9 +93,10 @@ const GLSL_COLOR = /* glsl */ `
     }
     col = mix(col, uForest * (0.8 + 0.4 * n1), smoothstep(0.35, 0.7, vMask.z));
     col = mix(col, uTown * (0.92 + 0.16 * n1), smoothstep(0.3, 0.75, vMask.x) * 0.9);
-    float rock = max(smoothstep(0.3, 0.55, slope + (n1 - 0.5) * 0.15), smoothstep(60.0, 95.0, h + n1 * 24.0));
+    float rock = max(smoothstep(0.3, 0.55, slope + (n1 - 0.5) * 0.15), smoothstep(105.0, 140.0, h + n1 * 24.0));
     col = mix(col, uRock * (0.8 + 0.4 * n1), rock);
-    col = mix(col, uPeak, smoothstep(100.0, 125.0, h + n1 * 18.0));
+    // Троодос в соснах почти до вершины; светлая макушка — только у Олимпа.
+    col = mix(col, uPeak, smoothstep(130.0, 145.0, h + n1 * 10.0));
     float beach = 1.0 - smoothstep(0.7, 2.0 + n1 * 2.0, h);
     col = mix(col, uSand * (0.94 + 0.12 * n1), beach * (1.0 - smoothstep(0.2, 0.45, slope)));
   }
@@ -173,6 +178,21 @@ async function labelMesh(text: string, color: string, size: number, spacing: num
   return mesh;
 }
 
+/** Мягкое пятно света для огней: белый центр, прозрачный край (цвет — у материала). */
+function glowTexture(): THREE.Texture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(0.18, 'rgba(255,255,255,0.85)');
+  g.addColorStop(0.45, 'rgba(255,255,255,0.22)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
 /** Линия, лежащая на рельефе: отрезки дробятся, чтобы не уходить под землю. */
 function drape(pts: readonly [number, number][], lift: number): number[] {
   const terrain = getTerrain();
@@ -190,9 +210,52 @@ function drape(pts: readonly [number, number][], lift: number): number[] {
   return out;
 }
 
+/**
+ * Дорога — лента на рельефе заданной ширины (в единицах карты: вблизи шире, издали тоньше).
+ * Края ленты берут высоту рельефа под собой — на склоне дорога не висит и не тонет.
+ */
+function ribbon(terrain: Terrain, pts: readonly [number, number][], width: number, lift: number): THREE.BufferGeometry {
+  // Точки через ~1 единицу.
+  const line: [number, number][] = [];
+  pts.forEach(([x, y], i) => {
+    if (!i) return void line.push([x, y]);
+    const [px, py] = pts[i - 1]!;
+    const n = Math.max(1, Math.ceil(Math.hypot(x - px, y - py)));
+    for (let k = 1; k <= n; k++) line.push([px + ((x - px) * k) / n, py + ((y - py) * k) / n]);
+  });
+  const pos = new Float32Array(line.length * 6);
+  line.forEach(([x, y], i) => {
+    const [ax, ay] = line[Math.max(0, i - 1)]!;
+    const [bx, by] = line[Math.min(line.length - 1, i + 1)]!;
+    const len = Math.hypot(bx - ax, by - ay) || 1;
+    const nx = (-(by - ay) / len) * (width / 2);
+    const ny = ((bx - ax) / len) * (width / 2);
+    for (const [s, o] of [[1, 0], [-1, 3]] as const) {
+      const qx = x + nx * s;
+      const qy = y + ny * s;
+      pos.set([qx, -qy, Math.max(0, terrain.heightAt(qx, qy)) + lift], i * 6 + o);
+    }
+  });
+  const index: number[] = [];
+  for (let i = 0; i < line.length - 1; i++) {
+    const a = i * 2;
+    // Против часовой, если смотреть сверху (ось y карты перевёрнута): лицом к камере.
+    index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setIndex(index);
+  g.computeVertexNormals();
+  return g;
+}
+
 export function createIslandScene(host: HTMLElement, start: { x: number; y: number }): IslandScene {
   let disposed = false;
   const terrain = getTerrain();
+  const roadPaths = routeRoads(terrain, ROADS, MAP_W, MAP_H);
+  /** Клетки 3×3 под дорогами — там не растут деревья. */
+  const onRoad = new Set<number>();
+  for (const { path } of roadPaths) for (const [x, y] of path) for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) onRoad.add((Math.round(y / 3) + b) * 1000 + Math.round(x / 3) + a);
   const css = getComputedStyle(document.documentElement);
   const cssColor = (name: string) => css.getPropertyValue(name).trim();
   const color = (name: string) => new THREE.Color(cssColor(name));
@@ -243,8 +306,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
 
   const scene = new THREE.Scene();
   const deep = color('--map-deep');
-  scene.background = deep;
-  scene.fog = new THREE.Fog(deep, 800, 2600);
+  scene.background = color('--map-sky');
+  scene.fog = new THREE.Fog(color('--map-sky'), 800, 2600);
 
   const ground = new THREE.Mesh(geometry, groundMat);
   ground.castShadow = true;
@@ -252,12 +315,10 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   scene.add(ground);
 
   // Дно за краем карты и вода поверх: рябь ловит блики солнца.
-  const seabed = new THREE.Mesh(new THREE.PlaneGeometry(8000, 8000), new THREE.MeshStandardMaterial({ color: deep, roughness: 1 }));
+  const seabed = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W * 8, MAP_W * 8), new THREE.MeshStandardMaterial({ color: deep, roughness: 1 }));
   seabed.position.set(MAP_W / 2, -MAP_H / 2, -37);
   scene.add(seabed);
-  const water = new THREE.Mesh(
-    new THREE.PlaneGeometry(8000, 8000),
-    new THREE.MeshStandardMaterial({
+  const waterMat = new THREE.MeshStandardMaterial({
       color: color('--map-sea'),
       transparent: true,
       opacity: 0.42,
@@ -266,8 +327,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       normalMap: waveNormals(),
       normalScale: new THREE.Vector2(0.08, 0.08),
       depthWrite: false,
-    }),
-  );
+    });
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W * 8, MAP_W * 8), waterMat);
   water.position.set(MAP_W / 2, -MAP_H / 2, 0);
   water.receiveShadow = true;
   scene.add(water);
@@ -345,12 +406,12 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   const pines: [number, number, number][] = [];
   const broad: [number, number, number][] = [];
   const stepT = small ? 3.2 : 2.6;
-  for (let y = 60; y < 600; y += stepT) {
-    for (let x = 100; x < 920; x += stepT) {
+  for (let y = 40; y < MAP_H - 40; y += stepT) {
+    for (let x = 40; x < MAP_W - 40; x += stepT) {
       const tx = x + (treeRand() - 0.5) * stepT;
       const ty = y + (treeRand() - 0.5) * stepT;
       const h = terrain.heightAt(tx, ty);
-      if (h < 1.5 || h > 95) continue;
+      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3))) continue;
       const mk = terrain.maskAt(tx, ty);
       // Лес густо, по кустарнику — редкие деревья, на полях и в посёлках — ни одного.
       const chance = mk.forest > 0.4 ? 0.85 * mk.forest : mk.field > 0.3 || mk.town > 0.25 ? 0 : 0.035;
@@ -359,12 +420,13 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       (h > 35 || treeRand() < 0.3 ? pines : broad).push([tx, ty, size]);
     }
   }
-  // Оливковая роща — ровные ряды.
+  // Оливковая роща у Куклии — ровные ряды.
+  const [gx, gy] = geo(32.6, 34.725);
   for (let a = -10; a <= 10; a++) {
     for (let b = -7; b <= 7; b++) {
-      const x = 205 + a * 4.6 + b * 1.2;
-      const y = 385 + b * 4.6 - a * 1.2;
-      if (Math.hypot(x - 205, y - 385) < 46 && terrain.heightAt(x, y) > 1.5) broad.push([x, y, 0.85 + treeRand() * 0.3]);
+      const x = gx + a * 4.6 + b * 1.2;
+      const y = gy + b * 4.6 - a * 1.2;
+      if (Math.hypot(x - gx, y - gy) < 46 && terrain.heightAt(x, y) > 1.5) broad.push([x, y, 0.85 + treeRand() * 0.3]);
     }
   }
   // Дерево = ствол + крона на нём: тень начинается от земли, кроны не «висят».
@@ -384,8 +446,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   scene.add(trunks);
 
   /** Кроны: center — высота центра кроны над землёй в долях размера, squash — приплюснутость. */
-  const crowns = (geo: THREE.BufferGeometry, list: [number, number, number][], center: number, squash: number) => {
-    const mesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true }), list.length);
+  const crowns = (shape: THREE.BufferGeometry, list: [number, number, number][], center: number, squash: number) => {
+    const mesh = new THREE.InstancedMesh(shape, new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true }), list.length);
     list.forEach(([x, y, s], i) => {
       q.setFromAxisAngle(up, noise(x * 3, y * 3) * 6);
       mesh.setMatrixAt(i, m.compose(pos.set(x, -y, terrain.heightAt(x, y) + s * center), q, scl.set(s, s, s * squash)));
@@ -401,16 +463,145 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   crowns(new THREE.IcosahedronGeometry(1.1, 1), broad, 1.2 + 1.1 * 0.82, 0.82);
 
   // ---------- свет ----------
-  scene.add(new THREE.HemisphereLight(color('--map-light'), color('--map-dry'), 1.15));
-  const sun = new THREE.DirectionalLight(color('--map-light'), 2.4);
-  sun.position.set(MAP_W / 2 - 420, -MAP_H / 2 + 360, 480);
+  const ambient = new THREE.HemisphereLight();
+  scene.add(ambient);
+  const sun = new THREE.DirectionalLight();
   sun.target.position.set(MAP_W / 2, -MAP_H / 2, 0);
   sun.castShadow = true;
   sun.shadow.mapSize.set(small ? 2048 : 4096, small ? 2048 : 4096);
-  Object.assign(sun.shadow.camera, { left: -620, right: 620, top: 620, bottom: -620, near: 1, far: 2000 });
+  Object.assign(sun.shadow.camera, { left: -MAP_W * 0.58, right: MAP_W * 0.58, top: MAP_W * 0.58, bottom: -MAP_W * 0.58, near: 1, far: 4000 });
   sun.shadow.bias = -0.0003;
   sun.shadow.normalBias = 0.25;
   scene.add(sun, sun.target);
+
+  // ---------- огни (вечер, тёмная тема) ----------
+  // Светящиеся точки поверх сцены (аддитивно): окна домов и церквей, фонари на улицах вдоль дорог.
+  const glowRand = rng(53);
+  const windows: number[] = [];
+  const addWindow = (x: number, y: number, rot: number, along: number, z: number) => {
+    windows.push(x + Math.cos(rot) * along, -(y + Math.sin(rot) * along), z);
+  };
+  for (const hs of houses) {
+    if (glowRand() > 0.7) continue;
+    // Окно — на стене, что смотрит на юг: камера смотрит с юга, иначе огонь закроет сам дом.
+    const side = Math.sin(hs.rot) >= 0 ? 1 : -1;
+    addWindow(hs.x, hs.y, hs.rot, side * (hs.w / 2 + 0.5), terrain.heightAt(hs.x, hs.y) + hs.h * 0.55);
+  }
+  for (const c of churches) addWindow(c.x, c.y, c.rot, 2.7, terrain.heightAt(c.x, c.y) + 3);
+  const lamps: number[] = [];
+  for (const { path } of roadPaths) {
+    let run = 0;
+    path.forEach(([x, y], i) => {
+      if (i) run += Math.hypot(x - path[i - 1]![0], y - path[i - 1]![1]);
+      if (run < 5) return;
+      run = 0;
+      if (terrain.maskAt(x, y).town > 0.3) lamps.push(x, -y, terrain.heightAt(x, y) + 1.4);
+    });
+  }
+  const glowTex = glowTexture();
+  const glowPoints = (list: number[], size: number) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(list, 3));
+    const p = new THREE.Points(
+      g,
+      new THREE.PointsMaterial({ map: glowTex, size, sizeAttenuation: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+    );
+    p.renderOrder = 6;
+    scene.add(p);
+    return p;
+  };
+  const glows = [glowPoints(windows, 9), glowPoints(lamps, 9)];
+
+  /** Освещение целиком: день или вечер. Между ними — плавный переход (смешивание всех полей). */
+  interface Mood {
+    sky: THREE.Color;
+    sea: THREE.Color;
+    ambient: THREE.Color;
+    ground: THREE.Color;
+    ambientPower: number;
+    sun: THREE.Color;
+    sunPower: number;
+    sunAt: THREE.Vector3;
+    exposure: number;
+    /** Огни: 0 — погашены, 1 — горят. */
+    lights: number;
+  }
+  const moodNow = (): Mood => {
+    const evening = document.documentElement.dataset.theme === 'dark';
+    return {
+      sky: color('--map-sky'),
+      sea: color('--map-sea'),
+      ambient: color('--map-ambient'),
+      ground: color('--map-ambient-ground'),
+      ambientPower: evening ? 1.05 : 1.15,
+      sun: color('--map-sun'),
+      sunPower: evening ? 1.7 : 2.4,
+      // Днём — высоко с северо-запада; вечером — низко с запада, тени длинные.
+      sunAt: evening ? new THREE.Vector3(MAP_W / 2 - 1500, -MAP_H / 2 + 250, 480) : new THREE.Vector3(MAP_W / 2 - 840, -MAP_H / 2 + 720, 960),
+      exposure: evening ? 1.08 : 1.12,
+      lights: evening ? 1 : 0,
+    };
+  };
+  /** Смесь двух освещений: t = 0 — a, t = 1 — b. */
+  const blend = (a: Mood, b: Mood, t: number): Mood => {
+    const mix = (x: number, y: number) => x + (y - x) * t;
+    return {
+      sky: a.sky.clone().lerp(b.sky, t),
+      sea: a.sea.clone().lerp(b.sea, t),
+      ambient: a.ambient.clone().lerp(b.ambient, t),
+      ground: a.ground.clone().lerp(b.ground, t),
+      ambientPower: mix(a.ambientPower, b.ambientPower),
+      sun: a.sun.clone().lerp(b.sun, t),
+      sunPower: mix(a.sunPower, b.sunPower),
+      sunAt: a.sunAt.clone().lerp(b.sunAt, t),
+      exposure: mix(a.exposure, b.exposure),
+      lights: mix(a.lights, b.lights),
+    };
+  };
+  const glowColor = color('--map-glow');
+  const setMood = (next: Mood) => {
+    scene.background = next.sky;
+    (scene.fog as THREE.Fog).color.copy(next.sky);
+    waterMat.color.copy(next.sea);
+    ambient.color.copy(next.ambient);
+    ambient.groundColor.copy(next.ground);
+    ambient.intensity = next.ambientPower;
+    sun.color.copy(next.sun);
+    sun.intensity = next.sunPower;
+    sun.position.copy(next.sunAt);
+    renderer.toneMappingExposure = next.exposure;
+    for (const p of glows) {
+      p.visible = next.lights > 0.01;
+      const mat = p.material as THREE.PointsMaterial;
+      mat.color = glowColor;
+      mat.opacity = next.lights;
+    }
+    // Вечером стены чуть светятся тёплым — свет из окон.
+    for (const mat of [houseMesh.material, churchBody.material] as THREE.MeshStandardMaterial[]) {
+      mat.emissive.copy(glowColor).multiplyScalar(0.12 * next.lights);
+    }
+  };
+  let mood = moodNow();
+  let moodRaf = 0;
+  /** Тема сменилась — за 0,6 с перетекаем к новому освещению (без анимации, если её просили убрать). */
+  const applyMood = (animate = true) => {
+    cancelAnimationFrame(moodRaf);
+    const from = mood;
+    const to = moodNow();
+    const still = !animate || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const t0 = performance.now();
+    const step = (now: number) => {
+      const t = still ? 1 : clamp01((now - t0) / 600);
+      // Прерванный переход начнётся с того, что видно сейчас.
+      mood = blend(from, to, t * t * (3 - 2 * t));
+      setMood(mood);
+      invalidate();
+      if (t < 1) moodRaf = requestAnimationFrame(step);
+    };
+    step(t0);
+  };
+  const themeObserver = new MutationObserver(() => applyMood());
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   // ---------- дороги, тропа, надписи ----------
   const lineMaterials: LineMaterial[] = [];
@@ -433,20 +624,33 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     line.renderOrder = 4;
     group.add(line);
   };
-  const roads = new THREE.Group();
-  for (const r of ROADS) addLine(roads, r, { color: '--map-road', width: 1.3, opacity: 0.6, lift: 0.6 });
-  scene.add(roads);
+  // Дороги: тёмная обочина и светлое полотно поверх; polygonOffset — лента не мерцает сквозь склон.
+  const roadMat = (name: string, offset: number) =>
+    new THREE.MeshStandardMaterial({ color: color(name), roughness: 0.95, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset });
+  const edgeMat = roadMat('--map-road-edge', -2);
+  const surfaceMat = roadMat('--map-road', -4);
+  for (const { path, major } of roadPaths) {
+    const w = major ? 2.2 : 1.5;
+    for (const [mat, width, lift] of [[edgeMat, w + 0.9, 0.25], [surfaceMat, w, 0.3]] as const) {
+      const mesh = new THREE.Mesh(ribbon(terrain, path, width, lift), mat);
+      mesh.receiveShadow = true;
+      mesh.renderOrder = 3;
+      scene.add(mesh);
+    }
+  }
   const routeGroup = new THREE.Group();
   scene.add(routeGroup);
 
   void Promise.all([
-    labelMesh('Анемуса', cssColor('--map-roof'), 150, 34, cssColor('--map-label')).then((mesh) => {
-      mesh.position.set(560, -300, 110);
+    labelMesh('Кипр', cssColor('--map-roof'), 300, 60, cssColor('--map-label')).then((mesh) => {
+      const [lx, ly] = geo(33.55, 35.13);
+      mesh.position.set(lx, -ly, 160);
       (mesh.material as THREE.MeshBasicMaterial).opacity = 0.7;
       return mesh;
     }),
-    labelMesh('Эгейское море', cssColor('--map-sea-label'), 84, 18).then((mesh) => {
-      mesh.position.set(820, -50, 1);
+    labelMesh('Средиземное море', cssColor('--map-sea-label'), 150, 30).then((mesh) => {
+      const [lx, ly] = geo(33.0, 35.6);
+      mesh.position.set(lx, -ly, 1);
       (mesh.material as THREE.MeshBasicMaterial).opacity = 0.55;
       return mesh;
     }),
@@ -465,7 +669,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   };
 
   // ---------- камера ----------
-  const camera = new THREE.PerspectiveCamera(FOV, 1, 1, 6000);
+  const camera = new THREE.PerspectiveCamera(FOV, 1, 1, MAP_W * 6);
   camera.up.set(0, 0, 1);
   const view = { x: start.x, y: start.y, dist: 300 };
   let maxDist = 900;
@@ -540,7 +744,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     for (const mat of lineMaterials) mat.resolution.set(w, h);
     // Самое дальнее — весь остров в кадре.
     const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-    maxDist = clamp(Math.max(440 / (tan * camera.aspect), 300 / tan), 500, 2600);
+    maxDist = clamp(Math.max((MAP_W * 0.47) / (tan * camera.aspect), (MAP_H * 0.47) / tan), 500, MAP_W * 2.6);
     closeDist = clamp(Math.max(105 / (tan * camera.aspect), 100 / tan), MIN_DIST * 1.4, maxDist * 0.6);
     if (!started) {
       // Старт — приближенно, у места, где сейчас Анна; отдалить можно колесом или кнопкой.
@@ -551,6 +755,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   };
   const observer = new ResizeObserver(resize);
   observer.observe(host);
+  applyMood(false);
   resize();
 
   // ---------- управление ----------
@@ -686,6 +891,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       disposed = true;
       cancelAnimationFrame(raf);
       observer.disconnect();
+      themeObserver.disconnect();
+      cancelAnimationFrame(moodRaf);
       host.removeEventListener('pointerdown', onDown);
       host.removeEventListener('pointermove', onMove);
       host.removeEventListener('pointerup', onUp);
@@ -693,7 +900,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       host.removeEventListener('click', onClickCapture, true);
       host.removeEventListener('wheel', onWheel);
       scene.traverse((o) => {
-        if (o instanceof THREE.Mesh) {
+        if (o instanceof THREE.Mesh || o instanceof THREE.Points) {
           o.geometry.dispose();
           const mat = o.material as THREE.Material & { map?: THREE.Texture | null; normalMap?: THREE.Texture | null };
           mat.map?.dispose();

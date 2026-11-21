@@ -62,7 +62,7 @@
   height: 3.5rem;
   border-radius: 50%;
   background: var(--bg);
-  box-shadow: 0 3px 10px rgb(0 0 0 / 0.45);
+  box-shadow: var(--map-marker-halo), 0 3px 10px rgb(0 0 0 / 0.45);
   transition: transform 0.15s;
 }
 .markerBtn:hover .ring { transform: scale(1.08); }
@@ -72,10 +72,11 @@
     conic-gradient(var(--accent) calc(var(--part) * 360deg), var(--accent-soft) 0);
   animation: breathe 2.4s ease-in-out infinite;
 }
-[data-selected] .ring { box-shadow: 0 0 0 4px var(--brand), 0 3px 12px rgb(0 0 0 / 0.5); }
+[data-selected] .ring { box-shadow: 0 0 0 4px var(--brand), var(--map-marker-halo), 0 3px 12px rgb(0 0 0 / 0.5); }
 
 /* Закрытое место — бледная монета с вопросом. */
-[data-state='fog'] .ring { width: 2.5rem; height: 2.5rem; background: var(--surface-muted); opacity: 0.9; }
+/* Без ореола: неоткрытое место не должно спорить с открытыми. */
+[data-state='fog'] .ring { width: 2.5rem; height: 2.5rem; background: var(--surface-muted); opacity: 0.9; box-shadow: 0 3px 10px rgb(0 0 0 / 0.45); }
 .fogMark { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-subtle); }
 
 .here {
@@ -147,8 +148,8 @@
 }
 
 @keyframes breathe {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), 0 3px 10px rgb(0 0 0 / 0.45); }
-  50% { box-shadow: 0 0 0 7px var(--accent-soft), 0 3px 10px rgb(0 0 0 / 0.45); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), var(--map-marker-halo), 0 3px 10px rgb(0 0 0 / 0.45); }
+  50% { box-shadow: 0 0 0 7px var(--accent-soft), var(--map-marker-halo), 0 3px 10px rgb(0 0 0 / 0.45); }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-state='current'] .ring { animation: none; }
@@ -181,7 +182,7 @@
   border-radius: 50%;
   background: var(--bg);
   color: var(--accent-strong);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+  box-shadow: var(--map-marker-halo), 0 2px 8px rgb(0 0 0 / 0.4);
   cursor: pointer;
   pointer-events: auto;
   transition: transform 0.15s;
@@ -207,8 +208,8 @@
 .marker[data-selected] .catBtn { box-shadow: 0 0 0 3px var(--brand), 0 2px 8px rgb(0 0 0 / 0.45); }
 
 @keyframes catCall {
-  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), 0 2px 8px rgb(0 0 0 / 0.4); }
-  50% { box-shadow: 0 0 0 6px var(--accent-soft), 0 2px 8px rgb(0 0 0 / 0.4); }
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), var(--map-marker-halo), 0 2px 8px rgb(0 0 0 / 0.4); }
+  50% { box-shadow: 0 0 0 6px var(--accent-soft), var(--map-marker-halo), 0 2px 8px rgb(0 0 0 / 0.4); }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-cat='open'] .catBtn { animation: none; }

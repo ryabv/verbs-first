@@ -8,6 +8,7 @@
     "build": "rspack build",
     "typecheck": "tsc --noEmit",
     "audio": "tsx scripts/generate-audio.ts",
+    "map:heights": "tsx scripts/build-heightmap.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "prepare": "simple-git-hooks",

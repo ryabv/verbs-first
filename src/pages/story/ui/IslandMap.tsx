@@ -6,10 +6,12 @@ import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
 import type { PlaceState } from './StoryMap';
 
-/** Рассказ кота на карте: метка рядом с местом главы. */
+/** Рассказ кота на карте: маленькая монетка на краю медальона своей главы. */
 export interface MapBranch {
   /** Уникален на всей карте: «глава:id». */
   key: string;
+  /** Глава, к медальону которой монетка прикреплена. */
+  chapter: number;
   title: string;
   x: number;
   y: number;
@@ -40,6 +42,44 @@ interface Props {
 }
 
 const NO_BRANCHES: readonly MapBranch[] = [];
+
+/** Медальоны глав ближе этого (пиксели экрана) раздвигаются: иначе соседние места слипаются. */
+const MIN_GAP = 64;
+/** Монетки котов — по кругу у медальона главы: радиус (px) и углы (градусы, 0 — вправо, минус — вверх). */
+const CAT_RADIUS = 42;
+const CAT_ANGLES = [-25, -155, -65, -115];
+
+type Screen = { x: number; y: number; visible: boolean };
+
+/** Поставить метку в точку экрана. */
+function place(el: HTMLElement, q: Screen) {
+  el.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
+  el.style.visibility = q.visible ? 'visible' : 'hidden';
+}
+
+/** Раздвинуть близкие точки экрана: несколько проходов попарного отталкивания. */
+function spread(points: Screen[]) {
+  for (let pass = 0; pass < 4; pass++) {
+    for (let i = 0; i < points.length; i++) {
+      for (let j = i + 1; j < points.length; j++) {
+        const a = points[i]!;
+        const b = points[j]!;
+        if (!a.visible || !b.visible) continue;
+        let dx = b.x - a.x;
+        let dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        if (d >= MIN_GAP) continue;
+        // Совпали — разводим по горизонтали.
+        if (d < 0.01) [dx, dy] = [1, 0];
+        const push = (MIN_GAP - d) / 2 / (d || 1);
+        a.x -= dx * push;
+        a.y -= dy * push;
+        b.x += dx * push;
+        b.y += dy * push;
+      }
+    }
+  }
+}
 const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
 const xy = (p: StoryPlace): [number, number] => [p.x, p.y];
 
@@ -72,23 +112,29 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
     if (!host) return;
     let cancelled = false;
     void import('../lib/island-scene')
-      .then(({ createIslandScene }) => {
+      .then(async ({ createIslandScene, loadHeightmap }) => {
+        await loadHeightmap();
         if (cancelled) return;
         const here = places.find((q) => q.chapter === startRef.current && !q.offMap) ?? places[0]!;
         const scene = createIslandScene(host, { x: here.x - 30, y: here.y - 45 });
         sceneRef.current = scene;
         scene.onFrame((project) => {
-          for (const p of places) {
+          const at = places.map((p) => project(p.x, p.y));
+          spread(at);
+          places.forEach((p, i) => {
             const el = markers.current.get(p.chapter);
-            if (!el) continue;
-            const q = project(p.x, p.y);
-            el.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
-            el.style.visibility = q.visible ? 'visible' : 'hidden';
-          }
+            if (el) place(el, at[i]!);
+          });
+          // Коты — по кругу у медальона своей главы, по порядку.
+          const used = new Map<number, number>();
           for (const el of catMarkers.current.values()) {
-            const q = project(Number(el.dataset.x), Number(el.dataset.y));
-            el.style.transform = `translate(${q.x.toFixed(1)}px, ${q.y.toFixed(1)}px)`;
-            el.style.visibility = q.visible ? 'visible' : 'hidden';
+            const chapter = Number(el.dataset.chapter);
+            const q = at[places.findIndex((p) => p.chapter === chapter)];
+            if (!q) continue;
+            const n = used.get(chapter) ?? 0;
+            used.set(chapter, n + 1);
+            const angle = ((CAT_ANGLES[n % CAT_ANGLES.length]!) * Math.PI) / 180;
+            place(el, { x: q.x + Math.cos(angle) * CAT_RADIUS, y: q.y + Math.sin(angle) * CAT_RADIUS, visible: q.visible });
           }
         });
         setStatus('ready');
@@ -139,7 +185,8 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
     <div className={styles.band}>
       <div ref={hostRef} className={styles.host} data-status={status}>
         {status === 'loading' && <p className={styles.loading}>Рисуем остров…</p>}
-        <ul className={styles.markers} aria-label="Места глав на карте">
+        {/* Метки — всегда светлые (light-palette): на вечерней карте тёмные монеты терялись. */}
+        <ul className={`${styles.markers} light-palette`} aria-label="Места глав на карте">
           {places.map((p, i) => {
             const state = states[i]!;
             const open = state !== 'fog';
@@ -194,8 +241,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
                 else catMarkers.current.delete(b.key);
               }}
               className={styles.marker}
-              data-x={b.x}
-              data-y={b.y}
+              data-chapter={b.chapter}
               data-cat={b.read ? 'read' : 'open'}
               data-selected={selectedBranch === b.key || undefined}
             >

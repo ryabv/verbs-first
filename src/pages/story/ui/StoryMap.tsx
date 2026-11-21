@@ -13,13 +13,10 @@ interface Props {
   onSelect: (chapter: number) => void;
 }
 
-/** Порт, откуда уходит паром за край карты. */
-const PORT = { x: 455, y: 528 };
-
 const route = (list: readonly StoryPlace[]) => list.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join(' ');
 
 /**
- * Плоская карта острова — запасная, когда нет WebGL для 3D-карты (IslandMap).
+ * Плоская карта Кипра — запасная, когда нет WebGL для 3D-карты (IslandMap).
  * Рисунок, тропа по сюжету и туман — в SVG; места глав — кнопки поверх (в процентах от размера карты).
  */
 export function StoryMap({ places, stateOf, selected, onSelect }: Props) {
@@ -46,8 +43,6 @@ export function StoryMap({ places, stateOf, selected, onSelect }: Props) {
       <div className={styles.wrap}>
         <svg className={styles.map} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
           <IslandArt />
-          {/* Паром в Пирей — за край карты. */}
-          <path d={`M${PORT.x} ${PORT.y + 12} C 600 610, 820 620, 1000 600`} className={styles.ferry} />
           {ahead.length > 0 && <path d={route(ahead)} className={styles.routeAhead} />}
           {reached.length > 1 && <path d={route(reached)} className={styles.routeDone} />}
           {/* Туман над закрытыми местами. */}
@@ -55,7 +50,7 @@ export function StoryMap({ places, stateOf, selected, onSelect }: Props) {
             {places
               .filter((p) => stateOf(p.chapter) === 'fog')
               .map((p) => {
-                return <ellipse key={p.chapter} cx={p.x} cy={p.y} rx="62" ry="38" />;
+                return <ellipse key={p.chapter} cx={p.x} cy={p.y} rx="124" ry="76" />;
               })}
           </g>
         </svg>

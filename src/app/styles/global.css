@@ -2,8 +2,11 @@
  * Палитра — эгейская: белёные стены, синее море, терракота амфор, олива.
  * Тёплый серый для поверхностей, терракотовый бренд, эгейский синий для ссылок и кнопок.
  * Основной текст — системный шрифт; крупные заголовки — Alegreya (есть кириллица и греческий).
+ *
+ * .light-palette — светлая палитра в любой теме (метки на вечерней карте: светлые, как подсвеченные таблички).
  */
-:root {
+:root,
+.light-palette {
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-muted: #f7f4f3;
@@ -42,7 +45,8 @@
 
 
 :root {
-  /* 3D-карта «Истории»: цвета острова одни для обеих тем, как у фотографии. */
+  /* 3D-карта «Истории»: цвета земли одни для обеих тем, как у фотографии; свет, небо и море — свои
+     (светлая тема — день, тёмная — вечер с огоньками в городах, см. :root[data-theme='dark']). */
   --map-deep: #0f2f4d;
   --map-sea: #1a5f8a;
   --map-shallow: #2a93a8;
@@ -65,8 +69,16 @@
   --map-roof: #f3efe6;
   --map-roof-alt: #bf6e48;
   --map-dome: #2f68b4;
-  --map-road: #efe4c8;
+  --map-road: #e6dcc4;
+  --map-road-edge: #9c8c6a;
   --map-light: #ffffff;
+  --map-sky: #0f2f4d;
+  --map-sun: #ffffff;
+  --map-ambient: #ffffff;
+  --map-ambient-ground: #b8aa72;
+  --map-glow: #ffc870;
+  /* Ореол меток глав: днём нет, вечером — тёплый, как от фонаря. */
+  --map-marker-halo: 0 0 0 0 transparent;
   --map-ui: #ffffff;
   --map-label: #3a2c1c;
   --map-sea-label: #cfe2ea;
@@ -75,7 +87,21 @@
   --parchment-edge: #d6c39f;
 }
 
+/* Смена темы — старая страница растворяется в новой за полсекунды (theme-switcher, View Transitions). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.5s;
+}
+
 :root[data-theme='dark'] {
+  /* Карта вечером: низкое солнце с запада, тёмное небо и море, огни в городах. */
+  --map-sky: #0d1326;
+  --map-sea: #143a58;
+  --map-sun: #ffc08f;
+  --map-ambient: #8f9fd0;
+  --map-ambient-ground: #5a4a52;
+  --map-sea-label: #8fa6ba;
+  --map-marker-halo: 0 0 16px 3px rgb(255 200 112 / 0.5);
   --bg: #232529;
   --surface: #292c31;
   --surface-muted: #292c31;

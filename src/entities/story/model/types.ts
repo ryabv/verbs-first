@@ -140,6 +140,6 @@ export interface StoryPlace {
   name: string;
   x: number;
   y: number;
-  /** За краем карты (паром в Пирей): рисуется у края с линией парома. */
+  /** За краем карты (место вне острова): метка у края, без тропы. */
   offMap?: boolean;
 }

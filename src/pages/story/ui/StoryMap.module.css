@@ -4,9 +4,9 @@
 
 /* ---------- остров ---------- */
 .sea { fill: var(--accent-soft); }
-.wave { fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: 0.18; stroke-linecap: round; }
-.shallows { fill: none; stroke: var(--accent); stroke-width: 22; opacity: 0.12; stroke-linejoin: round; }
-.land { fill: var(--olive-soft); stroke: var(--olive); stroke-width: 2.5; stroke-linejoin: round; }
+.wave { fill: none; stroke: var(--accent); stroke-width: 2.8; opacity: 0.18; stroke-linecap: round; }
+.shallows { fill: none; stroke: var(--accent); stroke-width: 44; opacity: 0.12; stroke-linejoin: round; }
+.land { fill: var(--olive-soft); stroke: var(--olive); stroke-width: 4; stroke-linejoin: round; }
 .highland { fill: var(--olive); opacity: 0.1; }
 .mountain { fill: var(--surface-hover); stroke: var(--text-subtle); stroke-width: 2; stroke-linejoin: round; }
 .snow { fill: var(--bg); }
@@ -16,7 +16,7 @@
 .dome { fill: var(--accent); opacity: 0.7; }
 .islandName {
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 68px;
   font-style: italic;
   letter-spacing: 0.12em;
   text-anchor: middle;
@@ -28,13 +28,12 @@
 .compass .compassNorth { fill: var(--brand); opacity: 0.9; }
 .compassLabel { font-size: 16px; font-weight: 700; text-anchor: middle; fill: var(--brand); }
 
-/* ---------- тропа и паром ---------- */
-.ferry { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 2 8; stroke-linecap: round; opacity: 0.6; }
-.routeAhead { fill: none; stroke: var(--text-subtle); stroke-width: 2.5; stroke-dasharray: 7 9; stroke-linecap: round; stroke-linejoin: round; opacity: 0.5; }
-.routeDone { fill: none; stroke: var(--brand); stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
+/* ---------- тропа ---------- */
+.routeAhead { fill: none; stroke: var(--text-subtle); stroke-width: 5; stroke-dasharray: 14 18; stroke-linecap: round; stroke-linejoin: round; opacity: 0.5; }
+.routeDone { fill: none; stroke: var(--brand); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Туман: мягкие облака цвета фона над закрытыми местами. */
-.fogCloud ellipse { fill: var(--surface-hover); opacity: 0.9; filter: blur(12px); }
+.fogCloud ellipse { fill: var(--surface-hover); opacity: 0.9; filter: blur(24px); }
 
 /* ---------- места: кнопки поверх карты ---------- */
 .places { list-style: none; margin: 0; padding: 0; }
@@ -107,7 +106,7 @@
 
 @media (max-width: 600px) {
   /* Узкий экран: карта шире экрана и листается вбок — места и подписи не слипаются. */
-  .wrap { width: 680px; }
+  .wrap { width: 1100px; }
   .dot { width: 24px; height: 24px; border-width: 2px; font-size: 0.75rem; }
   .pulse { width: 24px; height: 24px; }
   .label { bottom: 14px; font-size: 0.72rem; }
