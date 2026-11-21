@@ -1,76 +1,72 @@
 import { useSyncExternalStore } from 'react';
+import { newId, table, type DbRecord, type Fields, type Table } from '@/shared/lib/db';
 import { cardKey } from '../lib/answers';
 import { addDays, dayKey, newSrs, schedule } from '../lib/srs';
 import type { Card, CardsState, Deck, Direction, WordInput } from './types';
 
 /**
- * Хранилище карточек: localStorage + подписка для React.
- * Это независимый сервис — уроки только добавляют в него слова.
- * Когда появится бэкенд, меняется только этот файл.
+ * Хранилище карточек — таблицы `decks`, `cards`, `activity_days` (IndexedDB, схема сервера): запись на набор,
+ * на карточку и на день занятий. Это независимый сервис — уроки только добавляют в него слова.
+ * Действия ниже собирают новое состояние целиком (как раньше), а `setState` записывает в базу только
+ * изменившиеся записи: сравнение по ссылке — состояние неизменяемое.
  */
 
-const STORAGE_KEY = 'verbs-first:cards:v1';
 export const DEFAULT_DECK_ID = 'my-words';
 /** Свой набор по умолчанию: сюда идут слова, у которых нет набора урока. */
 export const DEFAULT_DECK: Deck = { id: DEFAULT_DECK_ID, title: 'Мои слова', createdAt: 0 };
 
 const EMPTY: CardsState = { decks: [DEFAULT_DECK], cards: [], days: [] };
 
-/** Старый формат: один набор в поле deckId. */
-function migrateCard(card: Card & { deckId?: string }): Card {
-  if (Array.isArray(card.deckIds)) return card;
-  const { deckId, ...rest } = card;
-  return { ...rest, deckIds: [deckId ?? DEFAULT_DECK_ID] };
+type Row<T> = T & DbRecord;
+const decksTable = table('decks');
+const cardsTable = table('cards');
+const daysTable = table('activity_days');
+
+/** Служебные поля базы — в состоянии они не нужны (иначе каждое чтение давало бы «изменение»). */
+function strip<T extends { id: string }>(row: T & Partial<DbRecord>): T {
+  const { updatedAt: _u, deletedAt: _d, ...rest } = row;
+  return rest as unknown as T;
 }
 
-function load(): CardsState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as Partial<CardsState>;
-    const decks = Array.isArray(parsed.decks) ? parsed.decks : [];
-    const cards = Array.isArray(parsed.cards) ? parsed.cards.map(migrateCard) : [];
-    return {
-      decks: decks.some((d) => d.id === DEFAULT_DECK_ID) ? decks : [DEFAULT_DECK, ...decks],
-      cards,
-      days: Array.isArray(parsed.days) ? parsed.days : [],
-    };
-  } catch {
-    return EMPTY;
-  }
-}
-
-let state: CardsState | null = null;
-const listeners = new Set<() => void>();
+let built: { decks: readonly unknown[]; cards: readonly unknown[]; days: readonly unknown[]; state: CardsState } | null = null;
 
 function getState(): CardsState {
-  state ??= load();
+  const d = decksTable.all();
+  const c = cardsTable.all();
+  const y = daysTable.all();
+  if (built && built.decks === d && built.cards === c && built.days === y) return built.state;
+  const decks = d.map((x) => strip<Deck>(x));
+  const state: CardsState = {
+    decks: decks.some((x) => x.id === DEFAULT_DECK_ID) ? decks : [DEFAULT_DECK, ...decks],
+    cards: c.map((x) => strip<Card>(x)),
+    days: y.map((x) => x.id).toSorted(),
+  };
+  built = { decks: d, cards: c, days: y, state };
   return state;
 }
 
+/** Записать разницу: новые и изменённые записи — put, исчезнувшие — надгробие. */
+function sync<T extends { id: string }>(prev: readonly T[], next: readonly T[], t: Table<Row<T>>) {
+  const before = new Map(prev.map((x) => [x.id, x]));
+  const after = new Set(next.map((x) => x.id));
+  const changed = next.filter((x) => before.get(x.id) !== x);
+  if (changed.length) t.put(...(changed as Fields<Row<T>>[]));
+  const gone = prev.filter((x) => !after.has(x.id)).map((x) => x.id);
+  if (gone.length) t.remove(...gone);
+}
+
 function setState(next: CardsState) {
-  state = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    /* приватный режим: карточки живут до перезагрузки */
-  }
-  listeners.forEach((l) => l());
+  const prev = getState();
+  sync(prev.decks, next.decks, decksTable);
+  sync(prev.cards, next.cards, cardsTable);
+  const days = new Set(prev.days);
+  const fresh = next.days.filter((x) => !days.has(x));
+  if (fresh.length) daysTable.put(...fresh.map((id) => ({ id })));
 }
 
 function subscribe(listener: () => void) {
-  listeners.add(listener);
-  // Другая вкладка изменила карточки — перечитываем.
-  const onStorage = (e: StorageEvent) => {
-    if (e.key !== STORAGE_KEY) return;
-    state = load();
-    listener();
-  };
-  window.addEventListener('storage', onStorage);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener('storage', onStorage);
-  };
+  const offs = [decksTable.subscribe(listener), cardsTable.subscribe(listener), daysTable.subscribe(listener)];
+  return () => offs.forEach((off) => off());
 }
 
 export function useCards(): CardsState {
@@ -79,7 +75,7 @@ export function useCards(): CardsState {
 
 // ---------- действия ----------
 
-const makeId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+const makeId = newId;
 
 /** Набор урока создаётся по первому добавленному слову. */
 export function ensureDeck(deck: Omit<Deck, 'createdAt'>): void {

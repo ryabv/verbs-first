@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { LETTERS, type Letter } from '@/entities/alphabet';
+import { table } from '@/shared/lib/db';
 import { speak } from '@/shared/lib/speech';
 import { Button } from '@/shared/ui/button';
 import styles from './AlphabetOrder.module.css';
 
 type Case = 'lower' | 'upper';
 
-const BEST_KEY = 'verbs-first:alphabet-order:best';
+const BEST_KEY = 'alphabet-order';
 /** После скольких ошибок на одной букве подсвечиваем правильную. */
 const HINT_AFTER = 2;
 
@@ -15,21 +16,16 @@ interface Best {
   ms: number;
 }
 
+/** Личный рекорд — таблица `records` (IndexedDB, схема сервера). */
+const records = table('records');
+
 function readBest(): Best | null {
-  try {
-    const raw = localStorage.getItem(BEST_KEY);
-    return raw ? (JSON.parse(raw) as Best) : null;
-  } catch {
-    return null;
-  }
+  const row = records.get(BEST_KEY);
+  return row?.mistakes !== undefined && row.ms !== undefined ? { mistakes: row.mistakes, ms: row.ms } : null;
 }
 
 function saveBest(best: Best) {
-  try {
-    localStorage.setItem(BEST_KEY, JSON.stringify(best));
-  } catch {
-    /* приватный режим */
-  }
+  records.put({ id: BEST_KEY, ...best });
 }
 
 const isBetter = (a: Best, b: Best | null) => !b || a.mistakes < b.mistakes || (a.mistakes === b.mistakes && a.ms < b.ms);

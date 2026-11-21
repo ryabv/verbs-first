@@ -78,4 +78,8 @@ React 19 + TypeScript + rspack + pnpm, Feature-Sliced Design, без бэкен�
   и сочетания, проверка: `pnpm reading:check`.
 - Изменение зависимостей → закоммитить `pnpm-lock.yaml` (CI ставит `--frozen-lockfile`).
 - Пуш в `main` сразу деплоит сайт.
+- Данные ученика (прогресс, карточки, награды, рекорды, ответы) — только в IndexedDB через `shared/lib/db` (`table`, `setting`,
+  `logAttempt`) по схеме сервера: `id`, `updatedAt`, удаление — надгробие `deletedAt`. Схема — только в `shared/lib/db/schema.ts`
+  (типы записей не объявлять в слайсах); новая таблица или поле — там же, `DB_VERSION` +1 и шаг миграции
+  ([ARCHITECTURE.md](docs/ARCHITECTURE.md#хранилище-учебных-данных)). localStorage — только настройки устройства.
 - PWA: меняете кэширование в `public/sw.js` — поднимите `VERSION`; иконки приложения — из `public/icons/*.svg`.

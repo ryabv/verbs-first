@@ -1,80 +1,47 @@
+import { table } from '@/shared/lib/db';
+
 export interface StoredProgress {
   completed: string[];
   current?: string;
 }
 
 /**
- * Ключ прогресса урока: урок, ДЗ и экзамен — один путь.
- * Раньше ДЗ хранилось отдельно (`verbs-first:homework:<id>`) — его вливаем при чтении.
+ * Прогресс урока — таблица `lesson_progress` (IndexedDB, схема сервера): запись на урок или курс чтения,
+ * пройденные шаги и текущий шаг. При слиянии устройств пройденные шаги объединяются.
  */
+/** Ключ (id записи) прогресса урока: урок, ДЗ и экзамен — один путь. */
 export const progressKey = {
-  lesson: (lessonId: number) => `verbs-first:lesson:${lessonId}`,
+  lesson: (lessonId: number) => `lesson:${lessonId}`,
   /** Курс чтения («Урок 0»): этапы алфавита на карте. */
-  reading: 'verbs-first:reading',
+  reading: 'reading',
 };
 
-/** Старый ключ ДЗ — только у уроков; у прочих ключей (алфавит) его нет. */
-const legacyHomeworkKey = (storageKey: string): string | null =>
-  storageKey.startsWith('verbs-first:lesson:') ? storageKey.replace('verbs-first:lesson:', 'verbs-first:homework:') : null;
+const lessons = table('lesson_progress');
 
-/** localStorage может быть недоступен (приватный режим) — тогда прогресс живёт только в памяти. */
-function readRaw(key: string): StoredProgress | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<StoredProgress>;
-    return { completed: Array.isArray(parsed.completed) ? parsed.completed : [], current: parsed.current };
-  } catch {
-    return null;
-  }
-}
-
-/** Прогресс урока (с влитым старым прогрессом ДЗ, если он был). */
 export function readProgress(key: string): StoredProgress {
-  const main = readRaw(key) ?? { completed: [] };
-  const legacyKey = legacyHomeworkKey(key);
-  const legacy = legacyKey ? readRaw(legacyKey) : null;
-  if (!legacy) return main;
-  return { ...main, completed: [...new Set([...main.completed, ...legacy.completed])] };
+  const row = lessons.get(key);
+  return row ? { completed: row.completed, current: row.current } : { completed: [] };
 }
 
 export function writeProgress(key: string, progress: StoredProgress): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(progress));
-    // Старый прогресс ДЗ уже влит в progress (см. readProgress).
-    const legacyKey = legacyHomeworkKey(key);
-    if (legacyKey) localStorage.removeItem(legacyKey);
-  } catch {
-    /* не критично */
-  }
+  lessons.put({ id: key, completed: progress.completed, current: progress.current });
 }
 
 export function clearProgress(key: string): void {
-  try {
-    localStorage.removeItem(key);
-    const legacyKey = legacyHomeworkKey(key);
-    if (legacyKey) localStorage.removeItem(legacyKey);
-  } catch {
-    /* не критично */
-  }
+  lessons.remove(key);
 }
 
-/** Медальоны, которые ученик уже видел на карте: новые показываем с анимацией один раз. */
-const awardsKey = (lessonId: number | string) => `verbs-first:awards-seen:${lessonId}`;
+/**
+ * Медальоны, которые ученик уже видел на карте: новые показываем с анимацией один раз.
+ * Таблица `awards`: запись на урок, `seen` — этапы, чей медальон показан.
+ */
+const awards = table('awards');
+const awardsKey = (lessonId: number | string) => `lesson:${lessonId}`;
 
 export function readSeenAwards(lessonId: number | string): string[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(awardsKey(lessonId)) ?? '[]');
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
+  return awards.get(awardsKey(lessonId))?.seen ?? [];
 }
 
 export function writeSeenAwards(lessonId: number | string, stageIds: readonly string[]): void {
-  try {
-    localStorage.setItem(awardsKey(lessonId), JSON.stringify(stageIds));
-  } catch {
-    /* не критично */
-  }
+  awards.put({ id: awardsKey(lessonId), seen: [...stageIds] });
 }

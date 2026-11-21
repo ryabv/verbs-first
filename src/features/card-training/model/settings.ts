@@ -1,4 +1,5 @@
 import type { Direction } from '@/entities/card';
+import { setting } from '@/shared/lib/db';
 
 /** Что показываем. */
 export type Prompt = 'ru' | 'gr' | 'audio';
@@ -35,29 +36,13 @@ export function answerLanguage({ prompt, answer }: TrainingSettings): 'gr' | 'ru
 /** Прогресс копится отдельно для «вспоминаю греческое» и «понимаю греческое». */
 export const directionOf = (s: TrainingSettings): Direction => (answerLanguage(s) === 'gr' ? 'ru-gr' : 'gr-ru');
 
-const MODE_KEY = 'verbs-first:cards:mode';
-/** Прежние настройки (показываем + отвечаем) — переводим в ближайший режим. */
-const OLD_KEY = 'verbs-first:cards:settings';
+/** Режим тренировки — настройка ученика (таблица settings). */
+const mode = setting<Mode>('cards-mode', 'recall', MODE_IDS);
 
 export function readMode(): Mode {
-  try {
-    const raw = localStorage.getItem(MODE_KEY);
-    if (raw && raw in MODES) return raw as Mode;
-    const old = JSON.parse(localStorage.getItem(OLD_KEY) ?? 'null') as Partial<TrainingSettings> | null;
-    if (old?.prompt === 'audio') return 'listen';
-    if (old?.answer === 'write') return 'write';
-    if (old?.answer === 'self') return 'flip';
-    if (old?.prompt === 'gr') return 'recognize';
-  } catch {
-    /* по умолчанию */
-  }
-  return 'recall';
+  return mode.read();
 }
 
-export function writeMode(mode: Mode): void {
-  try {
-    localStorage.setItem(MODE_KEY, mode);
-  } catch {
-    /* не критично */
-  }
+export function writeMode(next: Mode): void {
+  mode.write(next);
 }

@@ -14,6 +14,7 @@ import {
   type StoryChapter,
 } from '@/entities/story';
 import { routes } from '@/shared/config/routes';
+import { logAttempt } from '@/shared/lib/db';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check } from '@/shared/ui/ornament';
@@ -58,9 +59,13 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
   const [celebrate, setCelebrate] = useState(false);
   const closeCelebration = useCallback(() => setCelebrate(false), []);
 
+  const log = (result: 'right' | 'revealed' | 'skipped') =>
+    task && logAttempt({ source: 'story-practice', item: `${chapter.id}:${task.id}`, kind: task.kind, level, result });
+
   const solve = () => {
     if (!task) return;
     setSolved(true);
+    log('right');
     markStoryStep(chapter.id, practiceKey(task), level);
     // Пауза — чтобы ученик успел увидеть «Верно» на последнем задании.
     if (!completeAtStart && chapter.practice.every((t) => t.id === task.id || isDone(t))) setTimeout(() => setCelebrate(true), 700);
@@ -68,6 +73,7 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
   const reveal = () => {
     if (!task) return;
     setSolved(true);
+    log('revealed');
     setRevealed((r) => new Set(r).add(task.id));
   };
   const next = () => {
@@ -129,7 +135,14 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
                 Дальше <Arrow />
               </Button>
             ) : (
-              <button type="button" className={styles.linkBtn} onClick={next}>
+              <button
+                type="button"
+                className={styles.linkBtn}
+                onClick={() => {
+                  log('skipped');
+                  next();
+                }}
+              >
                 Пропустить
               </button>
             )}

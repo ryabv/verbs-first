@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initTheme } from '@/features/theme-switcher';
+import { initDb } from '@/shared/lib/db';
 import { AppRouter } from './providers/router';
 import './styles/global.css';
 
@@ -18,8 +19,11 @@ if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
 const root = document.getElementById('root');
 if (!root) throw new Error('#root not found');
 
-createRoot(root).render(
-  <StrictMode>
-    <AppRouter />
-  </StrictMode>,
-);
+// Учебные данные читаются из IndexedDB в память до первого кадра: страницы читают их синхронно.
+void initDb().finally(() => {
+  createRoot(root).render(
+    <StrictMode>
+      <AppRouter />
+    </StrictMode>,
+  );
+});

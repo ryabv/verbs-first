@@ -1,40 +1,20 @@
+import type { Schema, SrsFields } from '@/shared/lib/db';
+
 /** Направление тренировки: на каком языке ученик отвечает. */
 export type Direction = 'ru-gr' | 'gr-ru';
 export const DIRECTIONS: readonly Direction[] = ['ru-gr', 'gr-ru'];
 
-/** Насколько хорошо знаем слово в одном направлении (коробка Лейтнера). */
-export interface Srs {
-  /** Коробка 0…5: верный ответ +1, ошибка — 0. */
-  box: number;
-  /** Сколько раз отвечали. 0 — новое слово. */
-  seen: number;
-  /** Когда повторить (начало дня, мс). Нет — пора (карточки до интервалов). */
-  due?: number;
-}
+/** Насколько хорошо знаем слово в одном направлении (коробка Лейтнера). Поля — схема базы. */
+export type Srs = SrsFields;
 
 /**
  * Одно слово = одна карточка с общим прогрессом, даже если слово лежит в нескольких наборах.
- * Поэтому при тренировке нескольких наборов общее слово не показывается чаще.
+ * Поля — таблица `cards` (shared/lib/db/schema.ts).
  */
-export interface Card {
-  id: string;
-  /** Наборы, в которых лежит слово (минимум один). */
-  deckIds: string[];
-  greek: string;
-  russian: string;
-  createdAt: number;
-  progress: Record<Direction, Srs>;
-}
+export type Card = { id: string } & Schema['cards'];
 
-/** Набор карточек. У наборов из уроков есть lessonId. */
-export interface Deck {
-  id: string;
-  title: string;
-  lessonId?: number;
-  createdAt: number;
-  /** Когда в набор последний раз добавляли слово — для быстрых кнопок «недавние наборы». */
-  usedAt?: number;
-}
+/** Набор карточек. У наборов из уроков есть lessonId. Поля — таблица `decks`. */
+export type Deck = { id: string } & Schema['decks'];
 
 /** Слово до добавления в карточки. */
 export interface WordInput {
