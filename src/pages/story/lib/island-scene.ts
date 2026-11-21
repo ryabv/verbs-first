@@ -711,6 +711,45 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   }
   const routeGroup = new THREE.Group();
   scene.add(routeGroup);
+  /** Точки через равные промежутки по ломаной; лежат на рельефе, не освещаются (видны и вечером). */
+  const addDots = (pts: readonly [number, number][], opts: { color: string; rim?: string; size: number; step: number; opacity?: number }) => {
+    const at: [number, number][] = [];
+    let carry = opts.step / 2;
+    for (let i = 1; i < pts.length; i++) {
+      const [ax, ay] = pts[i - 1]!;
+      const [bx, by] = pts[i]!;
+      const len = Math.hypot(bx - ax, by - ay);
+      let s = carry;
+      for (; s <= len; s += opts.step) at.push([ax + ((bx - ax) * s) / len, ay + ((by - ay) * s) / len]);
+      carry = s - len;
+    }
+    // Каждая точка — по склону (нормаль рельефа) и с запасом над полотном дороги: на склоне не тонет краем.
+    const normal = new THREE.Vector3();
+    const tilt = at.map(([x, y]) => {
+      normal.set(terrain.heightAt(x - 1, y) - terrain.heightAt(x + 1, y), terrain.heightAt(x, y + 1) - terrain.heightAt(x, y - 1), 2).normalize();
+      return new THREE.Quaternion().setFromUnitVectors(up, normal);
+    });
+    const layer = (name: string, radius: number, lift: number, order: number) => {
+      const mat = new THREE.MeshBasicMaterial({
+        color: color(name),
+        transparent: true,
+        opacity: opts.opacity ?? 1,
+        depthWrite: false,
+        fog: false,
+        // Цвет бренда как в интерфейсе — без тонокоррекции сцены.
+        toneMapped: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -12,
+        polygonOffsetUnits: -12,
+      });
+      const mesh = new THREE.InstancedMesh(new THREE.CircleGeometry(radius, 16), mat, at.length);
+      at.forEach(([x, y], i) => mesh.setMatrixAt(i, m.compose(pos.set(x, -y, Math.max(0, terrain.heightAt(x, y)) + lift), tilt[i]!, scl.set(1, 1, 1))));
+      mesh.renderOrder = order;
+      routeGroup.add(mesh);
+    };
+    if (opts.rim) layer(opts.rim, opts.size + 0.3, 0.9, 4);
+    layer(opts.color, opts.size, 1, 5);
+  };
 
   void Promise.all([
     labelMesh('Кипр', cssColor('--map-roof'), 300, 60, cssColor('--map-label')).then((mesh) => {
@@ -732,11 +771,16 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   });
 
   const update: IslandScene['update'] = (route) => {
-    for (const l of routeGroup.children) (l as Line2).geometry.dispose();
+    for (const o of routeGroup.children) {
+      const mesh = o as THREE.Mesh | Line2;
+      mesh.geometry.dispose();
+      if (mesh instanceof THREE.Mesh) (mesh.material as THREE.Material).dispose();
+    }
     routeGroup.clear();
-    // Тропа — по дорогам, как ехала бы Анна: пройденное — подсветка дороги цветом бренда, вперёд — пунктир.
-    if (route.done.length > 1) addLine(routeGroup, trail(route.done), { color: '--brand', width: 3, opacity: 0.9, lift: 0.8 });
-    if (route.ahead.length > 1) addLine(routeGroup, trail(route.ahead), { color: '--map-ui', width: 2.5, dashed: true, opacity: 0.9, lift: 0.8 });
+    // Тропа — по дорогам, как ехала бы Анна, пунктиром из точек, как на старых картах:
+    // пройденное — точки цвета бренда со светлой каймой, вперёд — светлые и помельче.
+    if (route.done.length > 1) addDots(trail(route.done), { color: '--brand', rim: '--map-ui', size: 0.8, step: 3.2 });
+    if (route.ahead.length > 1) addDots(trail(route.ahead), { color: '--map-ui', size: 0.55, step: 3.2, opacity: 0.85 });
     // Полёт пролога — белый пунктир в воздухе, как след на карте авиарейсов.
     if (route.flight && route.flight.length > 1) addLine(routeGroup, route.flight, { color: '--map-ui', width: 2.5, dashed: true, opacity: 0.85 });
     invalidate();

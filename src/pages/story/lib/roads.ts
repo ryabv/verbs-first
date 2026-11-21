@@ -161,9 +161,51 @@ export function routeRoads(terrain: Terrain, roads: readonly Road[], width: numb
   });
 }
 
-/** Тропа по сюжету между местами: по рельефу и по возможности — по готовым дорогам. */
+/** Ближе этого (единицы карты) к дороге — точка тропы ложится на ось дороги. */
+const SNAP = 6;
+const bucketKey = (i: number, j: number) => j * 10000 + i;
+
+/**
+ * Тропа по сюжету между местами: по рельефу и по возможности — по готовым дорогам.
+ * Поиск идёт по грубой сетке, поэтому найденный путь потом прижимается к оси ближайшей дороги.
+ */
 export function trailFinder(terrain: Terrain, roads: readonly RoutedRoad[], width: number, height: number) {
   const find = finder(terrain, width, height, roads.map((r) => r.path));
+  // Отрезки дорог по корзинам SNAP × SNAP — ближайший ищется только в соседних.
+  const buckets = new Map<number, [Pt, Pt][]>();
+  for (const { path } of roads) {
+    for (let k = 1; k < path.length; k++) {
+      const a = path[k - 1]!;
+      const b = path[k]!;
+      const id = bucketKey(Math.floor((a[0] + b[0]) / 2 / SNAP), Math.floor((a[1] + b[1]) / 2 / SNAP));
+      const list = buckets.get(id);
+      if (list) list.push([a, b]);
+      else buckets.set(id, [[a, b]]);
+    }
+  }
+  const snap = ([x, y]: Pt): Pt => {
+    let best: Pt = [x, y];
+    let bestD = SNAP;
+    const i0 = Math.floor(x / SNAP);
+    const j0 = Math.floor(y / SNAP);
+    for (let i = i0 - 1; i <= i0 + 1; i++) {
+      for (let j = j0 - 1; j <= j0 + 1; j++) {
+        for (const [[ax, ay], [bx, by]] of buckets.get(bucketKey(i, j)) ?? []) {
+          const dx = bx - ax;
+          const dy = by - ay;
+          const t = Math.min(1, Math.max(0, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+          const px = ax + dx * t;
+          const py = ay + dy * t;
+          const d = Math.hypot(x - px, y - py);
+          if (d < bestD) {
+            bestD = d;
+            best = [px, py];
+          }
+        }
+      }
+    }
+    return best;
+  };
   return (points: readonly Pt[]): Pt[] => {
     if (points.length < 2) return [...points];
     const path: Pt[] = [];
@@ -171,6 +213,8 @@ export function trailFinder(terrain: Terrain, roads: readonly RoutedRoad[], widt
       const leg = find(points[i]!, points[i + 1]!);
       path.push(...(i ? leg.slice(1) : leg));
     }
-    return chaikin(path, 3);
+    // Концы — сами места (они могут стоять в стороне от дороги), середина — на оси дороги.
+    const smooth = chaikin(path, 3);
+    return smooth.map((p, i) => (i === 0 || i === smooth.length - 1 ? p : snap(p)));
   };
 }
