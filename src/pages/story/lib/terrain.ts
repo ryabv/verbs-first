@@ -3,7 +3,7 @@
  * на карте целого острова. Сверху — мелкая фактура от шума, солёные озёра, города и деревни с полями.
  * Всё считается один раз на сетке и дальше берётся билинейной выборкой. Координаты карты: x вправо, y вниз.
  */
-import { ISLETS, LAKES, LOWLANDS, MAP_H, MAP_W, SETTLEMENTS } from './cyprus';
+import { AIRPORT, ISLETS, LAKES, LOWLANDS, MAP_H, MAP_W, SETTLEMENTS } from './cyprus';
 import { elevationAt } from './heightmap';
 import { fbm, noise } from './island';
 
@@ -24,6 +24,10 @@ function elevation(x: number, y: number): number {
   const wx = x + (fbm(x / 7, y / 7, 2) - 0.5) * 2.5;
   const wy = y + (fbm(x / 7 + 9, y / 7 - 4, 2) - 0.5) * 2.5;
   let e = elevationAt(wx, wy);
+  // Аэропорт — ровная площадка на 12 м над морем (даже если сетка высот считает край полосы морем).
+  const flat = airportMask(x, y);
+  // В море площадку не тянем: берег остаётся берегом, а не прямоугольным молом.
+  if (flat > 0 && e > 0) e += (12 - e) * flat;
   for (const [cx, cy, rx, ry] of LOWLANDS) {
     const k = Math.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
     // Плавно: в середине 2 м, к краю — без влияния (без скачка высоты — без лесенки).
@@ -58,6 +62,16 @@ function ridged(x: number, y: number): number {
   return sum;
 }
 
+/** Площадка аэропорта: 1 — ровно (полоса, перрон, терминал), к краю — плавно в рельеф. */
+export function airportMask(x: number, y: number): number {
+  const [dx, dy] = AIRPORT.dir;
+  const along = (x - AIRPORT.x) * dx + (y - AIRPORT.y) * dy;
+  const side = -((x - AIRPORT.x) * dy - (y - AIRPORT.y) * dx);
+  const half = AIRPORT.length / 2 + 4;
+  // Поперёк: к югу — обочина полосы, к северу — перрон и терминал.
+  return smooth(half + 6, half, Math.abs(along)) * smooth(-8, -4, side) * smooth(24, 18, side);
+}
+
 export function townMask(x: number, y: number): number {
   let m = 0;
   for (const s of SETTLEMENTS) m = Math.max(m, Math.exp(-(((x - s.x) ** 2 + (y - s.y) ** 2) / (s.r * s.r)) * 1.2));
@@ -77,7 +91,7 @@ function sample(x: number, y: number) {
   const town = townMask(x, y);
   const mountain = smooth(12, 60, h);
   // У самой воды фактуры нет — она рвала бы линию берега.
-  const inland = smooth(2, 25, e) * (1 - town);
+  const inland = smooth(2, 25, e) * (1 - town) * (1 - airportMask(x, y));
   h += ((fbm(x / 14, y / 14, 3) - 0.5) * (1.5 + 5 * mountain) + (ridged(x / 16, y / 16) - 0.45) * 5 * mountain) * inland;
 
   let fieldNear = 0;
@@ -86,9 +100,9 @@ function sample(x: number, y: number) {
     const d = Math.hypot(x - st.x, y - st.y);
     fieldNear = Math.max(fieldNear, 1 - smooth(st.fields * 0.4, st.fields * 0.75, d));
   }
-  const field = clamp01(fieldNear * smooth(30, 16, h) * smooth(0.6, 2, h) * (1 - town * 1.4) * smooth(0.42, 0.5, fbm(x / 50 + 3, y / 50, 3)));
+  const field = clamp01((1 - airportMask(x, y)) * fieldNear * smooth(30, 16, h) * smooth(0.6, 2, h) * (1 - town * 1.4) * smooth(0.42, 0.5, fbm(x / 50 + 3, y / 50, 3)));
   // Лес — в горах (Троодос, Пафосский лес, склоны Пентадактилоса); низины Кипра сухие — там кустарник и поля.
-  const forest = clamp01(smooth(0.45, 0.58, fbm(x / 70 + 40, y / 70, 4)) * smooth(20, 38, h) * smooth(175, 145, h) * (1 - field) * (1 - town));
+  const forest = clamp01((1 - airportMask(x, y)) * smooth(0.45, 0.58, fbm(x / 70 + 40, y / 70, 4)) * smooth(20, 38, h) * smooth(175, 145, h) * (1 - field) * (1 - town));
   return { h, town, field, forest };
 }
 

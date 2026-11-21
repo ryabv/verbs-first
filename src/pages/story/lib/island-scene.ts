@@ -12,8 +12,9 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { geo } from './cyprus';
 import { MAP_H, MAP_W, noise, rng } from './island';
-import { routeRoads } from './roads';
-import { getTerrain, GRID_STEP, ROADS, SETTLEMENTS, type Terrain } from './terrain';
+import { routeRoads, trailFinder } from './roads';
+import { AIRPORT, airportPoint } from './cyprus';
+import { airportMask, getTerrain, GRID_STEP, ROADS, SETTLEMENTS, type Terrain } from './terrain';
 
 export { loadHeightmap } from './heightmap';
 
@@ -24,14 +25,15 @@ export interface ScreenPoint {
 }
 export interface IslandScene {
   /** Тропа по сюжету: пройденная часть и отрезок вперёд. */
-  update(route: { done: [number, number][]; ahead: [number, number][] }): void;
+  /** flight — точки x, y и высота над землёй (над морем — над водой). */
+  update(route: { done: [number, number][]; ahead: [number, number][]; flight?: [number, number, number][] }): void;
   /**
    * Плавно навести камеру на точку карты. at — где на холсте должна оказаться точка (пиксели):
    * например, в свободной от карточки части; без него — в центре.
    */
   focus(x: number, y: number, at?: { x: number; y: number }): void;
   /** Вызывается после каждого кадра: перевод точки карты в пиксели холста. */
-  onFrame(cb: (project: (x: number, y: number) => ScreenPoint) => void): void;
+  onFrame(cb: (project: (x: number, y: number, z?: number) => ScreenPoint) => void): void;
   dispose(): void;
 }
 
@@ -253,6 +255,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   let disposed = false;
   const terrain = getTerrain();
   const roadPaths = routeRoads(terrain, ROADS, MAP_W, MAP_H);
+  const trail = trailFinder(terrain, roadPaths, MAP_W, MAP_H);
   /** Клетки 3×3 под дорогами — там не растут деревья. */
   const onRoad = new Set<number>();
   for (const { path } of roadPaths) for (const [x, y] of path) for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) onRoad.add((Math.round(y / 3) + b) * 1000 + Math.round(x / 3) + a);
@@ -401,6 +404,68 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   domes.castShadow = true;
   scene.add(churchBody, domes);
 
+  // ---------- аэропорт Пафоса ----------
+  // Плоские части лежат на выровненной площадке (terrain: airportMask) и рисуются поверх земли.
+  const airportLamps: number[] = [];
+  {
+    const [dx, dy] = AIRPORT.dir;
+    const angle = Math.atan2(-dy, dx);
+    const pad = terrain.heightAt(AIRPORT.x, AIRPORT.y);
+    const flatMat = (name: string, offset: number) =>
+      new THREE.MeshStandardMaterial({ color: color(name), roughness: 0.9, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset });
+    /** Плоский прямоугольник: along/side — центр в осях полосы, len — вдоль полосы, wid — поперёк. */
+    const slab = (mat: THREE.Material, along: number, side: number, len: number, wid: number, lift: number) => {
+      const [x, y] = airportPoint(along, side);
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(len, wid), mat);
+      mesh.position.set(x, -y, pad + lift);
+      mesh.rotation.z = angle;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    };
+    const L = AIRPORT.length;
+    const W = AIRPORT.width;
+    slab(flatMat('--map-road-edge', -1), 0, 0, L + 2, W + 1.4, 0.1);
+    slab(flatMat('--map-runway', -2), 0, 0, L, W, 0.14);
+    const mark = flatMat('--map-runway-mark', -3);
+    // Осевой пунктир и «зебры» на торцах.
+    for (let a = -L / 2 + 4; a <= L / 2 - 4; a += 3) slab(mark, a, 0, 1.5, 0.16, 0.18);
+    for (const end of [-1, 1]) for (const s of [-1.1, -0.55, 0.55, 1.1]) slab(mark, end * (L / 2 - 1.3), s, 1.8, 0.24, 0.18);
+    // Рулёжка к перрону, перрон.
+    const apron = flatMat('--map-apron', -2);
+    slab(apron, 2, 4, 1.4, 5, 0.12);
+    slab(apron, 2, 9, 17, 6, 0.12);
+    // Терминал и вышка.
+    const solid = (shape: THREE.BufferGeometry, mat: THREE.Material, along: number, side: number, z: number) => {
+      const [x, y] = airportPoint(along, side);
+      const mesh = new THREE.Mesh(shape, mat);
+      mesh.position.set(x, -y, pad + z);
+      mesh.rotation.z = angle;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+      return mesh;
+    };
+    const wall = new THREE.MeshStandardMaterial({ color: color('--map-roof'), roughness: 0.7 });
+    solid(new THREE.BoxGeometry(13, 3.4, 2.4), wall, 2, 13.6, 1.2);
+    solid(new THREE.CylinderGeometry(0.55, 0.7, 6, 10).rotateX(Math.PI / 2), wall, 11, 13.2, 3);
+    solid(new THREE.CylinderGeometry(1.25, 1, 1.3, 10).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: color('--map-dome'), roughness: 0.3 }), 11, 13.2, 6.6);
+    // Самолёт на стоянке: фюзеляж, крылья, киль, стабилизатор — носом вдоль полосы.
+    const body = new THREE.MeshStandardMaterial({ color: color('--map-runway-mark'), roughness: 0.5 });
+    const planeAt = (part: THREE.BufferGeometry, along: number, side: number, z: number) => solid(part, body, along, side, z);
+    planeAt(new THREE.CylinderGeometry(0.42, 0.42, 6, 10).rotateZ(Math.PI / 2), -3, 9, 0.75);
+    planeAt(new THREE.ConeGeometry(0.42, 1, 10).rotateZ(-Math.PI / 2), 0.5, 9, 0.75);
+    planeAt(new THREE.BoxGeometry(1.3, 6.4, 0.12), -3.2, 9, 0.6);
+    planeAt(new THREE.BoxGeometry(0.8, 2.4, 0.1), -5.6, 9, 0.85);
+    planeAt(new THREE.BoxGeometry(0.9, 0.1, 1.3), -5.7, 9, 1.4);
+    // Огни вдоль полосы (вечером).
+    for (let a = -L / 2; a <= L / 2; a += 3) {
+      for (const s of [-1, 1]) {
+        const [x, y] = airportPoint(a, s * (W / 2 + 0.4));
+        airportLamps.push(x, -y, pad + 0.5);
+      }
+    }
+  }
+
   // ---------- деревья ----------
   const treeRand = rng(31);
   const pines: [number, number, number][] = [];
@@ -411,7 +476,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       const tx = x + (treeRand() - 0.5) * stepT;
       const ty = y + (treeRand() - 0.5) * stepT;
       const h = terrain.heightAt(tx, ty);
-      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3))) continue;
+      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3)) || airportMask(tx, ty) > 0.05) continue;
       const mk = terrain.maskAt(tx, ty);
       // Лес густо, по кустарнику — редкие деревья, на полях и в посёлках — ни одного.
       const chance = mk.forest > 0.4 ? 0.85 * mk.forest : mk.field > 0.3 || mk.town > 0.25 ? 0 : 0.035;
@@ -510,7 +575,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     scene.add(p);
     return p;
   };
-  const glows = [glowPoints(windows, 9), glowPoints(lamps, 9)];
+  const glows = [glowPoints(windows, 9), glowPoints(lamps, 9), glowPoints(airportLamps, 6)];
 
   /** Освещение целиком: день или вечер. Между ними — плавный переход (смешивание всех полей). */
   interface Mood {
@@ -605,9 +670,15 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
 
   // ---------- дороги, тропа, надписи ----------
   const lineMaterials: LineMaterial[] = [];
-  const addLine = (group: THREE.Group, pts: readonly [number, number][], opts: { color: string; width: number; dashed?: boolean; opacity?: number; lift?: number }) => {
+  /** Линия по рельефу (точки x, y) или в воздухе (x, y, z — высота задана). */
+  const addLine = (
+    group: THREE.Group,
+    pts: readonly [number, number][] | readonly [number, number, number][],
+    opts: { color: string; width: number; dashed?: boolean; opacity?: number; lift?: number },
+  ) => {
     const g = new LineGeometry();
-    g.setPositions(drape(pts, opts.lift ?? 1.4));
+    const air = pts[0]?.length === 3;
+    g.setPositions(air ? (pts as readonly [number, number, number][]).flatMap(([x, y, z]) => [x, -y, z + Math.max(0, terrain.heightAt(x, y))]) : drape(pts as readonly [number, number][], opts.lift ?? 1.4));
     const mat = new LineMaterial({
       color: color(opts.color).getHex(),
       linewidth: opts.width,
@@ -663,8 +734,11 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   const update: IslandScene['update'] = (route) => {
     for (const l of routeGroup.children) (l as Line2).geometry.dispose();
     routeGroup.clear();
-    if (route.done.length > 1) addLine(routeGroup, route.done, { color: '--brand', width: 4.5, lift: 2 });
-    if (route.ahead.length > 1) addLine(routeGroup, route.ahead, { color: '--map-ui', width: 3, dashed: true, opacity: 0.95, lift: 2 });
+    // Тропа — по дорогам, как ехала бы Анна: пройденное — подсветка дороги цветом бренда, вперёд — пунктир.
+    if (route.done.length > 1) addLine(routeGroup, trail(route.done), { color: '--brand', width: 3, opacity: 0.9, lift: 0.8 });
+    if (route.ahead.length > 1) addLine(routeGroup, trail(route.ahead), { color: '--map-ui', width: 2.5, dashed: true, opacity: 0.9, lift: 0.8 });
+    // Полёт пролога — белый пунктир в воздухе, как след на карте авиарейсов.
+    if (route.flight && route.flight.length > 1) addLine(routeGroup, route.flight, { color: '--map-ui', width: 2.5, dashed: true, opacity: 0.85 });
     invalidate();
   };
 
@@ -701,10 +775,11 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   renderer.domElement.style.height = '100%';
   host.prepend(renderer.domElement);
 
-  let frameCb: (project: (x: number, y: number) => ScreenPoint) => void = noop;
+  let frameCb: (project: (x: number, y: number, z?: number) => ScreenPoint) => void = noop;
   const v = new THREE.Vector3();
-  const project = (x: number, y: number): ScreenPoint => {
-    v.set(x, -y, Math.max(0, terrain.heightAt(x, y))).project(camera);
+  /** z — высота над землёй (над морем — над водой); без неё — на рельефе. */
+  const project = (x: number, y: number, z = 0): ScreenPoint => {
+    v.set(x, -y, z + Math.max(0, terrain.heightAt(x, y))).project(camera);
     return {
       x: ((v.x + 1) / 2) * host.clientWidth,
       y: ((1 - v.y) / 2) * host.clientHeight,

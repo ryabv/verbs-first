@@ -115,6 +115,25 @@ export const ISLETS: readonly [number, number, number, number][] = [
   [...geo(34.62, 35.72), 3, 20], // Клидес у мыса Апостолос Андреас
 ];
 
+/**
+ * Аэропорт Пафоса: центр полосы, направление (единичный вектор по карте, курс ≈110° — полоса 11/29),
+ * длина и ширина полосы. Крупнее настоящего (2,7 км), чтобы читался на карте острова.
+ */
+const RUNWAY_HEADING = (110 * Math.PI) / 180;
+export const AIRPORT = {
+  // Чуть севернее настоящей оси: на сетке высот берег у торцов полосы — уже море.
+  x: geo(32.4886, 34.7238)[0],
+  y: geo(32.4886, 34.7238)[1],
+  dir: [Math.sin(RUNWAY_HEADING), -Math.cos(RUNWAY_HEADING)] as [number, number],
+  length: 36,
+  width: 3.2,
+};
+/** Точка аэропорта в осях полосы: along — вдоль (к востоку), side — поперёк (плюс — к северу, к терминалу). */
+export const airportPoint = (along: number, side: number): [number, number] => {
+  const [dx, dy] = AIRPORT.dir;
+  return [AIRPORT.x + dx * along + dy * side, AIRPORT.y + dy * along - dx * side];
+};
+
 export interface Settlement {
   name: string;
   x: number;
@@ -188,4 +207,6 @@ export const ROADS: readonly Road[] = [
   { via: [at('Пафос'), at('Пейя')] },
   { via: [at('Пафос'), at('Полис')] },
   { via: [at('Хирокития'), at('Лефкара')] },
+  // Подъезд к аэропорту — от терминала к шоссе Пафос — Куклия.
+  { via: [airportPoint(2, 13), geo(32.5, 34.738)] },
 ];

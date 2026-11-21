@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { PROLOGUE, STORY_PLACES as places, type StoryPlace } from '@/entities/story';
 import { Medallion } from '@/shared/ui/ornament';
 import { CatIcon } from './CatIcon';
+import { airportPoint, AIRPORT } from '../lib/cyprus';
 import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
 import type { PlaceState } from './StoryMap';
@@ -83,13 +84,44 @@ function spread(points: Screen[]) {
 const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
 const xy = (p: StoryPlace): [number, number] => [p.x, p.y];
 
-/** Тропа по сюжету: пройденные места и один отрезок вперёд — тропа ко всем местам выдала бы сюжет. */
+/** Путь Анны по острову начинается у терминала аэропорта. */
+const ARRIVAL = airportPoint(2, 13);
+const plane = places.find((p) => p.altitude !== undefined);
+
+/**
+ * Полёт пролога: от самолёта в воздухе на продолжение оси полосы (кривая Безье — к торцу полосы самолёт
+ * подходит уже вдоль неё), плавное снижение, касание у западного торца и пробег по полосе.
+ */
+const FLIGHT: [number, number, number][] = plane
+  ? [
+      ...Array.from({ length: 48 }, (_, i): [number, number, number] => {
+        const t = i / 47;
+        const [ax, ay] = [plane.x, plane.y];
+        const [bx, by] = airportPoint(-AIRPORT.length / 2 + 3, 0);
+        const [cx, cy] = airportPoint(-AIRPORT.length / 2 - 50, 0);
+        const u = 1 - t;
+        return [u * u * ax + 2 * u * t * cx + t * t * bx, u * u * ay + 2 * u * t * cy + t * t * by, 0.4 + (plane.altitude! - 0.4) * u ** 1.6];
+      }),
+      [...airportPoint(4, 0), 0.4],
+    ]
+  : [];
+/** Самолётик — на этой доле пути. */
+const PLANE_AT = 0.42;
+
+/**
+ * Тропа по сюжету: от аэропорта через пройденные места и один отрезок вперёд — тропа ко всем местам выдала бы сюжет.
+ * Пролог в воздухе — дуга полёта.
+ */
 function routeOf(states: readonly PlaceState[]) {
-  const onIsland = places.filter((p) => !p.offMap);
+  const onIsland = places.filter((p) => !p.offMap && p.altitude === undefined);
   const reached = onIsland.filter((p) => states[places.indexOf(p)] !== 'fog');
   const last = reached.at(-1);
-  const next = last ? onIsland[onIsland.indexOf(last) + 1] : undefined;
-  return { done: reached.map(xy), ahead: last && next ? [xy(last), xy(next)] : [] };
+  const next = last ? onIsland[onIsland.indexOf(last) + 1] : onIsland[0];
+  return {
+    done: [ARRIVAL, ...reached.map(xy)],
+    ahead: next ? [last ? xy(last) : ARRIVAL, xy(next)] : [],
+    flight: FLIGHT,
+  };
 }
 
 /**
@@ -103,6 +135,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
   const markers = useRef(new Map<number, HTMLLIElement>());
   // Метки рассказов кота: координаты — в data-x/data-y, чтобы цикл кадра не зависел от React.
   const catMarkers = useRef(new Map<string, HTMLLIElement>());
+  const planeRef = useRef<HTMLLIElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   // Старт — приближенно у места, где сейчас Анна (чуть севернее: впереди видно остров).
   const startRef = useRef(start);
@@ -119,12 +152,21 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
         const scene = createIslandScene(host, { x: here.x - 30, y: here.y - 45 });
         sceneRef.current = scene;
         scene.onFrame((project) => {
-          const at = places.map((p) => project(p.x, p.y));
+          const at = places.map((p) => project(p.x, p.y, p.altitude));
           spread(at);
           places.forEach((p, i) => {
             const el = markers.current.get(p.chapter);
             if (el) place(el, at[i]!);
           });
+          // Самолётик на дуге полёта — носом по направлению движения на экране.
+          const planeEl = planeRef.current;
+          if (planeEl && FLIGHT.length) {
+            const k = Math.round(PLANE_AT * (FLIGHT.length - 1));
+            const a = project(...FLIGHT[k]!);
+            const b = project(...FLIGHT[k + 1]!);
+            place(planeEl, a);
+            planeEl.style.setProperty('--angle', `${Math.atan2(b.y - a.y, b.x - a.x)}rad`);
+          }
           // Коты — по кругу у медальона своей главы, по порядку.
           const used = new Map<number, number>();
           for (const el of catMarkers.current.values()) {
@@ -233,6 +275,18 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
               </li>
             );
           })}
+          {plane && (
+            <li ref={planeRef} className={styles.marker} aria-hidden="true">
+              <span className={styles.plane}>
+                <svg viewBox="0 0 24 24" width="22" height="22">
+                  <path
+                    d="M21.5 12c0-.8-.7-1.4-1.5-1.4h-5.3L9.6 3H7.7l2.6 7.6H5.2L3.6 8.4H2l1 3.6-1 3.6h1.6l1.6-2.2h5.1L7.7 21h1.9l5.1-7.6H20c.8 0 1.5-.6 1.5-1.4Z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+            </li>
+          )}
           {branches.map((b) => (
             <li
               key={b.key}

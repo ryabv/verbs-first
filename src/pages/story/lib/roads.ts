@@ -67,9 +67,12 @@ const NEIGHBOURS: readonly [number, number][] = [
   [2, 1], [1, 2], [-1, 2], [-2, 1], [-2, -1], [-1, -2], [1, -2], [2, -1],
 ];
 
-function finder(terrain: Terrain, width: number, height: number) {
+/** prefer — клетки, где идти дешевле (готовые дороги): тропа по сюжету прижимается к ним. */
+function finder(terrain: Terrain, width: number, height: number, prefer?: readonly Pt[][]) {
   const cols = Math.floor(width / STEP) + 1;
   const rows = Math.floor(height / STEP) + 1;
+  const cheap = new Uint8Array(cols * rows);
+  for (const path of prefer ?? []) for (const [x, y] of path) cheap[Math.round(y / STEP) * cols + Math.round(x / STEP)] = 1;
   const h = new Float32Array(cols * rows);
   for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) h[j * cols + i] = terrain.heightAt(i * STEP, j * STEP);
   const cost = new Float32Array(cols * rows);
@@ -107,11 +110,12 @@ function finder(terrain: Terrain, width: number, height: number) {
         if (hn < 0.3 && n !== goal) continue;
         const len = Math.hypot(di, dj) * STEP;
         const grade = (Math.abs(hn - h[c]!) / len) * GRADE;
-        const g = cost[c]! + len * (1 + CLIMB * grade * grade);
+        const g = cost[c]! + len * (1 + CLIMB * grade * grade) * (cheap[n] ? 0.3 : 1);
         if (g < cost[n]!) {
           cost[n] = g;
           from[n] = c;
-          heap.push(n, g + Math.hypot(ni - gx, nj - gy) * STEP);
+          // Оценка до цели — с учётом скидки на дорогах, иначе поиск недооценил бы обход по дороге.
+          heap.push(n, g + Math.hypot(ni - gx, nj - gy) * STEP * (prefer ? 0.3 : 1));
         }
       }
     }
@@ -155,4 +159,18 @@ export function routeRoads(terrain: Terrain, roads: readonly Road[], width: numb
     }
     return { path: chaikin(path, 3), major };
   });
+}
+
+/** Тропа по сюжету между местами: по рельефу и по возможности — по готовым дорогам. */
+export function trailFinder(terrain: Terrain, roads: readonly RoutedRoad[], width: number, height: number) {
+  const find = finder(terrain, width, height, roads.map((r) => r.path));
+  return (points: readonly Pt[]): Pt[] => {
+    if (points.length < 2) return [...points];
+    const path: Pt[] = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const leg = find(points[i]!, points[i + 1]!);
+      path.push(...(i ? leg.slice(1) : leg));
+    }
+    return chaikin(path, 3);
+  };
 }
