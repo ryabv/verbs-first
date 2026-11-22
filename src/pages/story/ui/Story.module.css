@@ -331,9 +331,6 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .stepMarkCurrent, .stepMarkCurrent.stepMarkDone { color: var(--brand); }
 .markNum { font-size: 1.15em; }
 .stepMarkDone .markNum { font-size: 1em; }
-.toEnd { align-self: flex-start; margin-top: 12px; font-family: var(--font); font-size: 0.9rem; color: var(--text-subtle); text-decoration: none; }
-.toEnd:hover { color: var(--brand); }
-.toEndDone { color: var(--success); }
 .gapLater { border-bottom-color: var(--border-strong); color: var(--text-subtle); font-weight: 400; }
 .filled { color: var(--success); font-weight: 600; }
 /* Название главы над текстом. На телефоне — только вместе со всем текстом (как и остальные куски). */
@@ -434,8 +431,8 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   .manuscriptImage { width: calc(100% + 32px); height: 96px; margin: 0 -16px; }
   .manuscriptMeander { margin: 12px 0; }
   .manuscript .text { font-size: 1.18rem; }
-  .outside, .text > .textHead, .toEnd { display: none; }
-  .textExpanded .outside, .textExpanded > .textHead, .textExpanded > .toEnd { display: block; }
+  .outside, .text > .textHead { display: none; }
+  .textExpanded .outside, .textExpanded > .textHead { display: block; }
   .expand {
     display: block;
     align-self: flex-start;
@@ -461,10 +458,14 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
     bottom: 0;
     z-index: 4;
     margin: auto -16px 0;
-    padding: 10px max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
-    background: var(--bg);
-    border-top: 1px solid var(--border);
+    /* Сверху — 20px растворения внутри самой панели: в конце прокрутки текст до него не доходит,
+       а при прокрутке плавно уходит под кнопки, без жёсткой линии. */
+    padding: 28px max(20px, env(safe-area-inset-right)) calc(max(10px, env(safe-area-inset-bottom)) + 14px) max(20px, env(safe-area-inset-left));
+    background: linear-gradient(to bottom, transparent, var(--bg) 20px);
+    border-top: 0;
+    pointer-events: none;
   }
+  .stepNav > * { pointer-events: auto; }
   /* Крупный шрифт телефона: подписи навигации не переносим, сжимаем промежутки. */
   .stepNav { gap: 12px; }
   .stepNav > * { white-space: nowrap; }

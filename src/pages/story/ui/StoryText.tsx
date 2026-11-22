@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { STORY_END, type StoryChapter, type StoryStep } from '@/entities/story';
+import { type StoryChapter, type StoryStep } from '@/entities/story';
 import { Phrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
@@ -160,9 +160,6 @@ export function StoryText({ chapter, step, done, answered }: Props) {
       </button>
       <ChapterTitle chapter={chapter} />
       {groups.map(renderGroup)}
-      <Link to={routes.storyStep(chapter.id, 'end')} className={done.includes(STORY_END) ? `${styles.toEnd} ${styles.toEndDone}` : styles.toEnd}>
-        ✦ Конец главы и закрепление
-      </Link>
     </div>
   );
 }
