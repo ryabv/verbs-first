@@ -28,7 +28,7 @@ function Svg({ size = '1em', children, ...rest }: IconProps) {
 export function SpeakerIcon({ pending = false, ...props }: IconProps & { pending?: boolean }) {
   return (
     <Svg {...props}>
-      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" fillOpacity={0.15} />
+      <path d="M11 5 6 9H3v6h3l5 4V5z" />
       {pending ? (
         <path className={styles.spin} d="M17.5 7.5a4.5 4.5 0 1 1-3.9 2.3" />
       ) : (
@@ -44,7 +44,7 @@ export function SpeakerIcon({ pending = false, ...props }: IconProps & { pending
 export function SpeakerOffIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M11 5 6 9H3v6h3l5 4V5z" fill="currentColor" fillOpacity={0.15} />
+      <path d="M11 5 6 9H3v6h3l5 4V5z" />
       <path d="m16 9 5 6" />
       <path d="m21 9-5 6" />
     </Svg>
@@ -66,7 +66,7 @@ export function CardsIcon(props: IconProps) {
 export function LighthouseIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M9.5 9h5l1.5 12H8L9.5 9z" fill="currentColor" fillOpacity={0.12} />
+      <path d="M9.5 9h5l1.5 12H8L9.5 9z" />
       <path d="M10 6h4v3h-4z" />
       <path d="M12 3v3" />
       <path d="M9 14.5h6.3M8.6 18h6.8" />
@@ -80,7 +80,7 @@ export function LighthouseIcon(props: IconProps) {
 export function CalendarIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <rect x="4" y="5.5" width="16" height="15" rx="2" fill="currentColor" fillOpacity={0.12} />
+      <rect x="4" y="5.5" width="16" height="15" rx="2" />
       <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
       <path d="M8 14h2M14 14h2M8 17h2" />
     </Svg>
@@ -91,7 +91,7 @@ export function CalendarIcon(props: IconProps) {
 export function CupIcon({ filled = false, ...props }: IconProps & { filled?: boolean }) {
   return (
     <Svg {...props}>
-      <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4z" fill="currentColor" fillOpacity={filled ? 0.85 : 0.12} />
+      <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4z" fill={filled ? 'currentColor' : 'none'} fillOpacity={0.85} />
       <path d="M7.5 6H5a2.5 2.5 0 0 0 2.6 3.4M16.5 6H19a2.5 2.5 0 0 1-2.6 3.4" />
       <path d="M12 13.5V17M8.5 20h7M10 17h4l.6 3H9.4z" />
     </Svg>
@@ -102,7 +102,7 @@ export function CupIcon({ filled = false, ...props }: IconProps & { filled?: boo
 export function BookIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M12 6.5C10.3 5.2 7.8 4.6 3 4.8v13.4c4.8-.2 7.3.4 9 1.8 1.7-1.4 4.2-2 9-1.8V4.8c-4.8-.2-7.3.4-9 1.7z" fill="currentColor" fillOpacity={0.12} />
+      <path d="M12 6.5C10.3 5.2 7.8 4.6 3 4.8v13.4c4.8-.2 7.3.4 9 1.8 1.7-1.4 4.2-2 9-1.8V4.8c-4.8-.2-7.3.4-9 1.7z" />
       <path d="M12 6.5V20" />
       <path d="M6 8.5c1.5 0 2.7.2 3.6.6M6 11.5c1.5 0 2.7.2 3.6.6M14.4 9.1c.9-.4 2.1-.6 3.6-.6M14.4 12.1c.9-.4 2.1-.6 3.6-.6" />
     </Svg>
@@ -166,7 +166,7 @@ export function ColumnIcon(props: IconProps) {
 export function ProfileIcon(props: IconProps) {
   return (
     <Svg {...props}>
-      <circle cx="12" cy="8.5" r="3.5" fill="currentColor" fillOpacity={0.12} />
+      <circle cx="12" cy="8.5" r="3.5" />
       <path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" />
     </Svg>
   );

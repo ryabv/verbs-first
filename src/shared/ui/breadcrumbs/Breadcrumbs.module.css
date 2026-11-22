@@ -1,4 +1,5 @@
-.breadcrumbs { list-style: none; margin: 0 0 12px; padding: 0; color: var(--text-muted); font-size: 0.95rem; }
+.nav { margin: 0 0 12px; }
+.breadcrumbs { list-style: none; margin: 0; padding: 0; color: var(--text-muted); font-size: 0.95rem; }
 .item { display: inline; }
 .item + .item::before {
   content: '';
@@ -12,4 +13,22 @@
   --arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2.5 12H13' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M12.5 12 14.5 8.5Q18.5 9.6 22 12Q18.5 14.4 14.5 15.5Z' stroke='black' stroke-linejoin='round'/%3E%3C/svg%3E");
   -webkit-mask: var(--arrow) center / contain no-repeat;
   mask: var(--arrow) center / contain no-repeat;
+}
+
+/* Телефон: цепочка не помещается и не нужна — круглая стрелка «назад». */
+.back { display: none; }
+@media (max-width: 720px) {
+  .breadcrumbs, .noBack { display: none; }
+  .back {
+    display: inline-grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 0.95rem;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
+  }
 }

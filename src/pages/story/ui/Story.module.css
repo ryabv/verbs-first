@@ -1,5 +1,5 @@
 /* ---------- страницы истории и главы ---------- */
-.page { max-width: var(--content-width); margin: 0 auto; padding: 0 40px 48px; width: 100%; box-sizing: border-box; }
+.page { --page-x: 40px; max-width: var(--content-width); margin: 0 auto; padding: 0 var(--page-x) 48px; width: 100%; box-sizing: border-box; }
 .head { margin: 32px 0 20px; }
 .title { margin: 12px 0 0; font-size: 34px; }
 .subtitle { color: var(--text-muted); font-size: 1rem; }
@@ -278,6 +278,14 @@
 .heroPlate .cartoucheMeander { margin: 2px 0; }
 .heroPlate + .lead { margin-top: 20px; }
 
+/* Телефон: картинка — во всю ширину и под шторку (вырез экрана), стрелка «назад» — поверх неё. */
+@media (max-width: 720px) {
+  .head.chapterHead { position: relative; margin-top: 0; }
+  .heroBack { position: absolute; top: calc(10px + var(--safe-top, 0px)); left: 0; z-index: 2; margin: 0; }
+  .chapterHead .hero { margin: calc(-1 * var(--safe-top, 0px)) calc(-1 * var(--page-x)) 0; }
+  .chapterHead .heroImage { aspect-ratio: auto; height: calc(min(62vw, 300px) + var(--safe-top, 0px)); border-radius: 0; }
+}
+
 .stepTitle { margin: 0 0 12px; font-size: 1.7rem; }
 .para { margin: 0 0 12px; line-height: 1.6; }
 /* Окончание, основа — не слово: моноширинно, без перевода. */
@@ -410,7 +418,7 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .finishRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; width: 100%; }
 
 @media (max-width: 900px) {
-  .page, .mapPage { padding: 0 24px 40px; }
+  .page, .mapPage { --page-x: 24px; padding: 0 var(--page-x) 40px; }
   .head { margin-top: 20px; }
   .title { font-size: 28px; }
 
@@ -458,7 +466,7 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   .stepNav > :last-child { padding-inline: 16px; }
 }
 @media (max-width: 600px) {
-  .page, .mapPage { padding: 0 16px 32px; }
+  .page, .mapPage { --page-x: 16px; padding: 0 var(--page-x) 32px; }
   .split { padding-top: 12px; }
   /* Телефон: рукопись во всю ширину экрана — без боковых рамок, больше текста в строке. */
   .manuscript {
@@ -469,6 +477,12 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
     box-shadow: inset 0 -1px 0 var(--parchment-edge), 0 6px 22px rgb(0 0 0 / 0.14);
   }
   .manuscriptImage { width: calc(100% + 24px); margin: 0 -12px; border-radius: 0; }
+  /* Рукопись — от самого верха экрана (и под вырез), стрелка «назад» — поверх её картинки. */
+  .split { position: relative; padding-top: 0; }
+  .stepHead { position: absolute; top: 10px; left: 0; z-index: 3; }
+  .stepHead nav { margin: 0; }
+  .manuscript { margin-top: calc(-1 * var(--safe-top, 0px)); }
+  .manuscriptImage { height: calc(110px + var(--safe-top, 0px)); }
 }
 
 /* Уровень истории: три сегмента; пройденный — с венком. */

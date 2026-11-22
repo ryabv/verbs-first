@@ -46,7 +46,7 @@ export function CardsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'История', to: routes.home() }, { label: 'Карточки' }]} />
+        <Breadcrumbs items={[{ label: 'История', to: routes.home() }, { label: 'Карточки' }]} back={false} />
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Карточки</h1>
           {!training && (

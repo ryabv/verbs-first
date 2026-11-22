@@ -85,8 +85,8 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'История', to: routes.story() }, { label: `Глава ${chapter.id}` }]} />
+      <header className={`${styles.head} ${styles.chapterHead}`}>
+        <Breadcrumbs items={[{ label: 'История', to: routes.story() }, { label: `Глава ${chapter.id}` }]} className={styles.heroBack} />
         <div className={styles.hero}>
           {chapter.image && <PlaceImage key={chapter.id} image={chapter.image} className={styles.heroImage} eager />}
           <div className={styles.heroPlate}>
