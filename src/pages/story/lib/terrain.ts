@@ -3,7 +3,7 @@
  * на карте целого острова. Сверху — мелкая фактура от шума, солёные озёра, города и деревни с полями.
  * Всё считается один раз на сетке и дальше берётся билинейной выборкой. Координаты карты: x вправо, y вниз.
  */
-import { AIRPORT, ISLETS, LAKES, LOWLANDS, MAP_H, MAP_W, SETTLEMENTS } from './cyprus';
+import { AIRPORTS, type Airport, ISLETS, LAKES, LOWLANDS, MAP_H, MAP_W, SETTLEMENTS } from './cyprus';
 import { elevationAt } from './heightmap';
 import { fbm, noise } from './island';
 
@@ -24,10 +24,12 @@ function elevation(x: number, y: number): number {
   const wx = x + (fbm(x / 7, y / 7, 2) - 0.5) * 2.5;
   const wy = y + (fbm(x / 7 + 9, y / 7 - 4, 2) - 0.5) * 2.5;
   let e = elevationAt(wx, wy);
-  // Аэропорт — ровная площадка на 12 м над морем (даже если сетка высот считает край полосы морем).
-  const flat = airportMask(x, y);
+  // Аэропорт — ровная площадка (даже если сетка высот считает край полосы морем).
   // В море площадку не тянем: берег остаётся берегом, а не прямоугольным молом.
-  if (flat > 0 && e > 0) e += (12 - e) * flat;
+  for (const a of AIRPORTS) {
+    const flat = padMask(a, x, y);
+    if (flat > 0 && e > 0) e += (a.pad - e) * flat;
+  }
   for (const [cx, cy, rx, ry] of LOWLANDS) {
     const k = Math.sqrt(((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2);
     // Плавно: в середине 2 м, к краю — без влияния (без скачка высоты — без лесенки).
@@ -62,14 +64,21 @@ function ridged(x: number, y: number): number {
   return sum;
 }
 
-/** Площадка аэропорта: 1 — ровно (полоса, перрон, терминал), к краю — плавно в рельеф. */
+/** Площадка одного аэропорта: 1 — ровно (полоса), к краю — плавно в рельеф. */
+function padMask(a: Airport, x: number, y: number): number {
+  const [dx, dy] = a.dir;
+  const along = (x - a.x) * dx + (y - a.y) * dy;
+  const side = (x - a.x) * dy - (y - a.y) * dx;
+  const half = a.length / 2 + 4;
+  // Поперёк — только полоса с обочинами.
+  return smooth(half + 6, half, Math.abs(along)) * smooth(8, 4, Math.abs(side));
+}
+
+/** Площадки аэропортов: 1 — ровно, к краю — плавно в рельеф. */
 export function airportMask(x: number, y: number): number {
-  const [dx, dy] = AIRPORT.dir;
-  const along = (x - AIRPORT.x) * dx + (y - AIRPORT.y) * dy;
-  const side = -((x - AIRPORT.x) * dy - (y - AIRPORT.y) * dx);
-  const half = AIRPORT.length / 2 + 4;
-  // Поперёк: к югу — обочина полосы, к северу — перрон и терминал.
-  return smooth(half + 6, half, Math.abs(along)) * smooth(-8, -4, side) * smooth(24, 18, side);
+  let m = 0;
+  for (const a of AIRPORTS) m = Math.max(m, padMask(a, x, y));
+  return m;
 }
 
 export function townMask(x: number, y: number): number {

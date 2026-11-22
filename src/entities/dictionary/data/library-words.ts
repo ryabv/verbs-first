@@ -110,7 +110,12 @@ export const LIBRARY_WORDS: DictEntry[] = [
   { greek: 'ο φραπές', russian: 'фраппе (холодный кофе с пеной)', forms: ['φραπέ'] },
   { greek: 'το γάλα', russian: 'молоко' },
   { greek: 'το βασίλειο', russian: 'царство, королевство' },
-  { greek: 'ο άγιος', russian: 'святой', forms: ['αγίου'] },
+  {
+    greek: 'ο άγιος',
+    russian: 'святой',
+    forms: ['αγίου', 'Αγία'],
+    why: { Αγία: { note: 'Женский род: -ος → -α (после ι — -α, а не -η): Αγία Νάπα — «святая Напа».', rule: 'adjective#agreement' } },
+  },
   { greek: 'το ηφαίστειο', russian: 'вулкан' },
   { greek: 'ο τουρίστας', russian: 'турист', forms: ['τουρίστες'] },
   { greek: 'ο χορός', russian: 'танец', forms: ['χορό', 'χορούς'] },

@@ -12,8 +12,9 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { geo } from './cyprus';
 import { MAP_H, MAP_W, noise, rng } from './island';
+import { buildLandmarks, landmarkLayout } from './landmarks';
 import { routeRoads, trailFinder } from './roads';
-import { AIRPORT, airportPoint } from './cyprus';
+import { airportAt, AIRPORTS } from './cyprus';
 import { airportMask, getTerrain, GRID_STEP, ROADS, SETTLEMENTS, type Terrain } from './terrain';
 
 export { loadHeightmap } from './heightmap';
@@ -34,10 +35,16 @@ export interface IslandScene {
   focus(x: number, y: number, at?: { x: number; y: number }): void;
   /** Вызывается после каждого кадра: перевод точки карты в пиксели холста. */
   onFrame(cb: (project: (x: number, y: number, z?: number) => ScreenPoint) => void): void;
+  /** Церковь (центр города) под пикселем холста: название и точка над куполом (z — над землёй). */
+  churchAt(px: number, py: number): { name: string; x: number; y: number; z: number } | undefined;
   dispose(): void;
 }
 
 const MIN_DIST = 120;
+/** Церковь занимает круг такого радиуса (5 × 7 по плану). */
+const CHURCH_R = 4.5;
+/** Верх купола церкви над землёй. */
+const CHURCH_TOP = 5.5;
 const FOV = 32;
 /** Где можно держать центр камеры (координаты карты). */
 // Снизу — с запасом: на телефоне место у южного берега поднимается над карточкой.
@@ -346,9 +353,11 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   const slopeAt = (x: number, y: number) =>
     Math.hypot(terrain.heightAt(x + 1.5, y) - terrain.heightAt(x - 1.5, y), terrain.heightAt(x, y + 1.5) - terrain.heightAt(x, y - 1.5)) / 3;
 
+  // Приметы городов (маяк, стены, замки): вокруг них не строим и не сажаем.
+  const marks = landmarkLayout(terrain);
   const rand = rng(7);
   const houses: { x: number; y: number; w: number; d: number; h: number; rot: number; alt: boolean }[] = [];
-  const churches: { x: number; y: number; rot: number }[] = [];
+  const churches: { name: string; x: number; y: number; rot: number }[] = [];
   for (const s of SETTLEMENTS) {
     // Кварталы по повёрнутой сетке; часть линий — улицы.
     const rot = rand() * Math.PI;
@@ -357,6 +366,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     const cell = 4.2;
     const span = Math.ceil((s.r * 1.6) / cell);
     let placed = 0;
+    const first = houses.length;
     for (let a = -span; a <= span && placed < s.n; a++) {
       for (let b = -span; b <= span && placed < s.n; b++) {
         if (a % 3 === 0 || b % 4 === 0) continue;
@@ -366,12 +376,25 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
         if (rand() > Math.exp(-d * d * 1.3)) continue;
         const x = s.x + lx * cos - ly * sin;
         const y = s.y + lx * sin + ly * cos;
-        if (terrain.heightAt(x, y) < 0.8 || slopeAt(x, y) > 0.9) continue;
+        if (terrain.heightAt(x, y) < 0.8 || slopeAt(x, y) > 0.9 || marks.clear(x, y)) continue;
         houses.push({ x, y, w: 2.4 + rand() * 1.4, d: 2.2 + rand() * 1.2, h: 1.6 + rand() * 1.4, rot: rot + (rand() - 0.5) * 0.15, alt: rand() < 0.28 });
         placed++;
       }
     }
-    if (s.n >= 30) churches.push({ x: s.x + (rand() - 0.5) * s.r * 0.3, y: s.y + (rand() - 0.5) * s.r * 0.3, rot });
+    // Церковь — центр города; в деревне — на перекрёстке в самой середине (там улицы, домов нет).
+    let [cx, cy] = s.n >= 30 ? [s.x + (rand() - 0.5) * s.r * 0.3, s.y + (rand() - 0.5) * s.r * 0.3] : [s.x, s.y];
+    // Город в стенах (Никосия, Фамагуста) — церковь в самой середине старого города.
+    const walled = marks.list.find((l) => (l.kind === 'star' || l.kind === 'walls') && Math.hypot(l.x - s.x, l.y - s.y) < s.r);
+    if (walled) [cx, cy] = [walled.x, walled.y];
+    // Налезает на примету города (замок, стены) — ближайшее свободное место по спирали вокруг.
+    for (let k = 1; k < 80 && (marks.clear(cx, cy, CHURCH_R) || terrain.heightAt(cx, cy) < 0.8); k++) {
+      const a = k * 2.4;
+      cx = s.x + Math.cos(a) * k * 0.8;
+      cy = s.y + Math.sin(a) * k * 0.8;
+    }
+    churches.push({ name: s.name, x: cx, y: cy, rot });
+    // Дома этого города, на которые встала церковь, — убираем.
+    for (let i = houses.length - 1; i >= first; i--) if (Math.hypot(houses[i]!.x - cx, houses[i]!.y - cy) < CHURCH_R + 1.5) houses.splice(i, 1);
   }
   const houseMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ roughness: 0.75 }), houses.length);
   const roof = color('--map-roof');
@@ -404,13 +427,16 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   domes.castShadow = true;
   scene.add(churchBody, domes);
 
-  // ---------- аэропорт Пафоса ----------
+  const { lamps: landmarkLamps, lanterns } = buildLandmarks(scene, terrain, marks.list, color);
+
+  // ---------- аэропорты (Пафос, Ларнака): только полоса ----------
   // Плоские части лежат на выровненной площадке (terrain: airportMask) и рисуются поверх земли.
   const airportLamps: number[] = [];
-  {
-    const [dx, dy] = AIRPORT.dir;
+  for (const port of AIRPORTS) {
+    const airportPoint = (along: number, side: number) => airportAt(port, along, side);
+    const [dx, dy] = port.dir;
     const angle = Math.atan2(-dy, dx);
-    const pad = terrain.heightAt(AIRPORT.x, AIRPORT.y);
+    const pad = terrain.heightAt(port.x, port.y);
     const flatMat = (name: string, offset: number) =>
       new THREE.MeshStandardMaterial({ color: color(name), roughness: 0.9, polygonOffset: true, polygonOffsetFactor: offset, polygonOffsetUnits: offset });
     /** Плоский прямоугольник: along/side — центр в осях полосы, len — вдоль полосы, wid — поперёк. */
@@ -422,41 +448,14 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       mesh.receiveShadow = true;
       scene.add(mesh);
     };
-    const L = AIRPORT.length;
-    const W = AIRPORT.width;
+    const L = port.length;
+    const W = port.width;
     slab(flatMat('--map-road-edge', -1), 0, 0, L + 2, W + 1.4, 0.1);
     slab(flatMat('--map-runway', -2), 0, 0, L, W, 0.14);
     const mark = flatMat('--map-runway-mark', -3);
     // Осевой пунктир и «зебры» на торцах.
     for (let a = -L / 2 + 4; a <= L / 2 - 4; a += 3) slab(mark, a, 0, 1.5, 0.16, 0.18);
     for (const end of [-1, 1]) for (const s of [-1.1, -0.55, 0.55, 1.1]) slab(mark, end * (L / 2 - 1.3), s, 1.8, 0.24, 0.18);
-    // Рулёжка к перрону, перрон.
-    const apron = flatMat('--map-apron', -2);
-    slab(apron, 2, 4, 1.4, 5, 0.12);
-    slab(apron, 2, 9, 17, 6, 0.12);
-    // Терминал и вышка.
-    const solid = (shape: THREE.BufferGeometry, mat: THREE.Material, along: number, side: number, z: number) => {
-      const [x, y] = airportPoint(along, side);
-      const mesh = new THREE.Mesh(shape, mat);
-      mesh.position.set(x, -y, pad + z);
-      mesh.rotation.z = angle;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
-      return mesh;
-    };
-    const wall = new THREE.MeshStandardMaterial({ color: color('--map-roof'), roughness: 0.7 });
-    solid(new THREE.BoxGeometry(13, 3.4, 2.4), wall, 2, 13.6, 1.2);
-    solid(new THREE.CylinderGeometry(0.55, 0.7, 6, 10).rotateX(Math.PI / 2), wall, 11, 13.2, 3);
-    solid(new THREE.CylinderGeometry(1.25, 1, 1.3, 10).rotateX(Math.PI / 2), new THREE.MeshStandardMaterial({ color: color('--map-dome'), roughness: 0.3 }), 11, 13.2, 6.6);
-    // Самолёт на стоянке: фюзеляж, крылья, киль, стабилизатор — носом вдоль полосы.
-    const body = new THREE.MeshStandardMaterial({ color: color('--map-runway-mark'), roughness: 0.5 });
-    const planeAt = (part: THREE.BufferGeometry, along: number, side: number, z: number) => solid(part, body, along, side, z);
-    planeAt(new THREE.CylinderGeometry(0.42, 0.42, 6, 10).rotateZ(Math.PI / 2), -3, 9, 0.75);
-    planeAt(new THREE.ConeGeometry(0.42, 1, 10).rotateZ(-Math.PI / 2), 0.5, 9, 0.75);
-    planeAt(new THREE.BoxGeometry(1.3, 6.4, 0.12), -3.2, 9, 0.6);
-    planeAt(new THREE.BoxGeometry(0.8, 2.4, 0.1), -5.6, 9, 0.85);
-    planeAt(new THREE.BoxGeometry(0.9, 0.1, 1.3), -5.7, 9, 1.4);
     // Огни вдоль полосы (вечером).
     for (let a = -L / 2; a <= L / 2; a += 3) {
       for (const s of [-1, 1]) {
@@ -476,7 +475,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       const tx = x + (treeRand() - 0.5) * stepT;
       const ty = y + (treeRand() - 0.5) * stepT;
       const h = terrain.heightAt(tx, ty);
-      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3)) || airportMask(tx, ty) > 0.05) continue;
+      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3)) || airportMask(tx, ty) > 0.05 || marks.clear(tx, ty)) continue;
       const mk = terrain.maskAt(tx, ty);
       // Лес густо, по кустарнику — редкие деревья, на полях и в посёлках — ни одного.
       const chance = mk.forest > 0.4 ? 0.85 * mk.forest : mk.field > 0.3 || mk.town > 0.25 ? 0 : 0.035;
@@ -575,7 +574,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     scene.add(p);
     return p;
   };
-  const glows = [glowPoints(windows, 9), glowPoints(lamps, 9), glowPoints(airportLamps, 6)];
+  const glows = [glowPoints(windows, 9), glowPoints(lamps, 9), glowPoints(airportLamps, 6), glowPoints(landmarkLamps, 22)];
 
   /** Освещение целиком: день или вечер. Между ними — плавный переход (смешивание всех полей). */
   interface Mood {
@@ -645,6 +644,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
     for (const mat of [houseMesh.material, churchBody.material] as THREE.MeshStandardMaterial[]) {
       mat.emissive.copy(glowColor).multiplyScalar(0.12 * next.lights);
     }
+    // Фонарь маяка вечером горит весь.
+    for (const mat of lanterns) mat.emissive.copy(glowColor).multiplyScalar(1.4 * next.lights);
   };
   let mood = moodNow();
   let moodRaf = 0;
@@ -1001,6 +1002,22 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
         }
       }
       tweenTo(to);
+    },
+    churchAt: (px, py) => {
+      let best: (typeof churches)[number] | undefined;
+      let bestD = Infinity;
+      for (const c of churches) {
+        const top = project(c.x, c.y, CHURCH_TOP);
+        if (!top.visible) continue;
+        // Купол на экране бывает и крошечным: ловим не меньше чем в 12 px от него.
+        const side = project(c.x + 3, c.y, CHURCH_TOP);
+        const d = Math.hypot(top.x - px, top.y - py);
+        if (d < Math.max(12, Math.hypot(side.x - top.x, side.y - top.y)) && d < bestD) {
+          bestD = d;
+          best = c;
+        }
+      }
+      return best && { name: best.name, x: best.x, y: best.y, z: CHURCH_TOP };
     },
     onFrame: (cb) => {
       frameCb = cb;

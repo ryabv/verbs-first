@@ -31,6 +31,7 @@ import { STORY_PRAISE } from '@/entities/story/model/types';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
 import { PERSONS, SENTENCE_FORMS, TENSES } from '@/entities/verb/model/types';
+import { SETTLEMENTS } from '@/pages/story/lib/cyprus';
 import { speechText } from '@/shared/lib/speech/text';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
@@ -104,6 +105,8 @@ function collectTexts(): Set<string> {
   // Справочник: примеры к правилам.
   for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
   add(STORY_PRAISE.greek);
+  // Карта «Истории»: названия городов (подпись над церковью).
+  SETTLEMENTS.forEach((t) => add(t.greek));
   for (const c of STORY_CHAPTERS) {
     add(c.title);
     c.sentences.forEach((p) => add(p.greek));

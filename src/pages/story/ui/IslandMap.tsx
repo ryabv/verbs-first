@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from 'react';
 import { PROLOGUE, STORY_PLACES as places, type StoryPlace } from '@/entities/story';
+import { SpeakButton } from '@/features/pronounce';
+import { speak } from '@/shared/lib/speech';
 import { Medallion } from '@/shared/ui/ornament';
 import { CatIcon } from './CatIcon';
-import { airportPoint, AIRPORT } from '../lib/cyprus';
+import { airportPoint, AIRPORT, SETTLEMENTS, type Settlement } from '../lib/cyprus';
 import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
 import type { PlaceState } from './StoryMap';
@@ -81,11 +83,19 @@ function spread(points: Screen[]) {
     }
   }
 }
+/** Церковь (центр города) под точкой экрана — только над самой картой, не над медальонами и котами. */
+function churchUnder(host: HTMLElement | null, scene: IslandScene | undefined, e: { target: EventTarget | null; clientX: number; clientY: number }) {
+  if (!host || !scene || !(e.target instanceof HTMLCanvasElement)) return undefined;
+  const r = host.getBoundingClientRect();
+  const hit = scene.churchAt(e.clientX - r.left, e.clientY - r.top);
+  const found = hit && SETTLEMENTS.find((t) => t.name === hit.name);
+  return found && { place: found, z: hit.z };
+}
 const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
 const xy = (p: StoryPlace): [number, number] => [p.x, p.y];
 
-/** Путь Анны по острову начинается у терминала аэропорта. */
-const ARRIVAL = airportPoint(2, 13);
+/** Путь Анны по острову начинается у полосы аэропорта, там, где подъезд. */
+const ARRIVAL = airportPoint(2, 4);
 const plane = places.find((p) => p.altitude !== undefined);
 
 /**
@@ -136,6 +146,12 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
   // Метки рассказов кота: координаты — в data-x/data-y, чтобы цикл кадра не зависел от React.
   const catMarkers = useRef(new Map<string, HTMLLIElement>());
   const planeRef = useRef<HTMLLIElement>(null);
+  /** Название города над церковью: под курсором или закреплённое кликом (тапом). */
+  const townRef = useRef<HTMLDivElement>(null);
+  const [town, setTown] = useState<{ place: Settlement; z: number; pinned: boolean }>();
+  const townAt = useRef<{ x: number; y: number; z: number } | undefined>(undefined);
+  const townHide = useRef(0);
+  const projectRef = useRef<((x: number, y: number, z?: number) => Screen) | undefined>(undefined);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   // Старт — приближенно у места, где сейчас Анна (чуть севернее: впереди видно остров).
   const startRef = useRef(start);
@@ -152,6 +168,9 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
         const scene = createIslandScene(host, { x: here.x - 30, y: here.y - 45 });
         sceneRef.current = scene;
         scene.onFrame((project) => {
+          projectRef.current = project;
+          const townEl = townRef.current;
+          if (townEl && townAt.current) place(townEl, project(townAt.current.x, townAt.current.y, townAt.current.z));
           const at = places.map((p) => project(p.x, p.y, p.altitude));
           spread(at);
           places.forEach((p, i) => {
@@ -221,12 +240,68 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
     focus(b.x, b.y);
   };
 
+  // Подпись — над куполом; дальше её двигает onFrame вместе с картой.
+  useLayoutEffect(() => {
+    townAt.current = town && { x: town.place.x, y: town.place.y, z: town.z };
+    const el = townRef.current;
+    if (!el) return;
+    if (town && projectRef.current) place(el, projectRef.current(town.place.x, town.place.y, town.z));
+    else el.style.visibility = 'hidden';
+  }, [town]);
+  useEffect(() => () => clearTimeout(townHide.current), []);
+  // Клик (тап) по церкви — подпись остаётся и название звучит; клик мимо — подпись убирается.
+  // Клик после перетаскивания карту не трогает: его гасит сцена.
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const onClick = (e: globalThis.MouseEvent) => {
+      if (townRef.current?.contains(e.target as Node)) return;
+      const hit = churchUnder(host, sceneRef.current, e);
+      setTown(hit && { ...hit, pinned: true });
+      if (hit) void speak(hit.place.greek);
+    };
+    host.addEventListener('click', onClick);
+    return () => host.removeEventListener('click', onClick);
+  }, []);
+
+  /** Навели мышью на церковь — над куполом название города. Ушли — гаснет не сразу: можно дотянуться до 🔊. */
+  const hoverTown = (e: PointerEvent) => {
+    if (e.pointerType === 'touch' || e.buttons) return;
+    if (townRef.current?.contains(e.target as Node)) return clearTimeout(townHide.current);
+    const hit = churchUnder(hostRef.current, sceneRef.current, e);
+    if (hit) {
+      clearTimeout(townHide.current);
+      if (hit.place !== town?.place) setTown({ ...hit, pinned: false });
+    } else if (town && !town.pinned) {
+      clearTimeout(townHide.current);
+      townHide.current = window.setTimeout(() => setTown((t) => (t?.pinned ? t : undefined)), 350);
+    }
+  };
+  const leaveTown = () => setTown((t) => (t?.pinned ? t : undefined));
+
   if (status === 'failed') return <>{fallback}</>;
 
   return (
     <div className={styles.band}>
-      <div ref={hostRef} className={styles.host} data-status={status}>
+      <div
+        ref={hostRef}
+        className={styles.host}
+        data-status={status}
+        onPointerMove={hoverTown}
+        onPointerLeave={leaveTown}
+      >
         {status === 'loading' && <p className={styles.loading}>Рисуем остров…</p>}
+        <div ref={townRef} className={`${styles.marker} ${styles.townAnchor} light-palette`}>
+          {town && (
+            <div className={styles.town}>
+              <span className={styles.townGreek} lang="el">
+                {town.place.greek}
+              </span>
+              <SpeakButton text={town.place.greek} />
+              <span className={styles.townName}>{town.place.name}</span>
+            </div>
+          )}
+        </div>
         {/* Метки — всегда светлые (light-palette): на вечерней карте тёмные монеты терялись. */}
         <ul className={`${styles.markers} light-palette`} aria-label="Места глав на карте">
           {places.map((p, i) => {

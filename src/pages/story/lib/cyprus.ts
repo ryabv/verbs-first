@@ -96,7 +96,9 @@ export const COAST_POINTS: readonly [number, number][] = COAST_GEO.map(([lon, la
 /** Солёные озёра — вода внутри суши, без выхода к морю: центр, полуоси. Вокруг — обязательное кольцо суши. */
 export const LAKES: readonly [number, number, number, number][] = [
   [...geo(32.963, 34.62), 21, 17], // Акротири — по данным высот (≈4,5 × 4 км)
-  [...geo(33.618, 34.888), 10, 14], // Ларнака — Алики между городом и аэропортом; кольцо убирает обрывки воды из данных высот
+  // Ларнака — Алики между городом и аэропортом; кольцо убирает обрывки воды из данных высот.
+  // Чуть северо-западнее настоящего: иначе на сетке карты между озером и морем не помещается полоса аэропорта.
+  [...geo(33.608, 34.896), 10, 14],
 ];
 
 /**
@@ -104,6 +106,7 @@ export const LAKES: readonly [number, number, number, number][] = [
  */
 export const LOWLANDS: readonly [number, number, number, number][] = [
   [...geo(33.0, 34.648), 18, 10], // болото Закаки — между озером и портом Лимасола
+  [...geo(33.6236, 34.8699), 12, 11], // южнее аэропорта Ларнаки: солончаки у озера, данные высот рисуют там залив
 ];
 
 /**
@@ -116,26 +119,45 @@ export const ISLETS: readonly [number, number, number, number][] = [
 ];
 
 /**
- * Аэропорт Пафоса: центр полосы, направление (единичный вектор по карте, курс ≈110° — полоса 11/29),
- * длина и ширина полосы. Крупнее настоящего (2,7 км), чтобы читался на карте острова.
+ * Аэропорты: центр полосы, направление (единичный вектор по карте, по курсу полосы), длина и ширина полосы,
+ * с какой стороны подъезд (1 — слева от курса, -1 — справа), высота площадки (м). Крупнее настоящих — чтобы читались.
  */
-const RUNWAY_HEADING = (110 * Math.PI) / 180;
-export const AIRPORT = {
-  // Чуть севернее настоящей оси: на сетке высот берег у торцов полосы — уже море.
-  x: geo(32.4886, 34.7238)[0],
-  y: geo(32.4886, 34.7238)[1],
-  dir: [Math.sin(RUNWAY_HEADING), -Math.cos(RUNWAY_HEADING)] as [number, number],
-  length: 36,
-  width: 3.2,
+export interface Airport {
+  x: number;
+  y: number;
+  dir: [number, number];
+  length: number;
+  width: number;
+  access: 1 | -1;
+  pad: number;
+}
+const airport = (lon: number, lat: number, heading: number, length: number, access: 1 | -1, pad: number): Airport => {
+  const [x, y] = geo(lon, lat);
+  const h = (heading * Math.PI) / 180;
+  return { x, y, dir: [Math.sin(h), -Math.cos(h)], length, width: 3.2, access, pad };
 };
-/** Точка аэропорта в осях полосы: along — вдоль (к востоку), side — поперёк (плюс — к северу, к терминалу). */
-export const airportPoint = (along: number, side: number): [number, number] => {
-  const [dx, dy] = AIRPORT.dir;
-  return [AIRPORT.x + dx * along + dy * side, AIRPORT.y + dy * along - dx * side];
+export const AIRPORTS: readonly Airport[] = [
+  // Пафос: полоса 11/29 (курс ≈110°), подъезд с севера. Чуть севернее настоящей оси: на сетке высот берег у торцов — уже море.
+  airport(32.4886, 34.7238, 110, 36, 1, 12),
+  // Ларнака: полоса 04/22 (курс ≈43°) между Солёным озером и морем, подъезд со стороны города.
+  // Чуть северо-западнее настоящей оси: на сетке высот юго-восточный край — уже море.
+  airport(33.6196, 34.8795, 43, 26, 1, 4),
+];
+/** Аэропорт Пафоса — сюда прилетает Анна (пролог). */
+export const AIRPORT = AIRPORTS[0]!;
+/** Точка аэропорта в осях полосы: along — вдоль курса, side — поперёк (плюс — к подъезду). */
+export const airportAt = (a: Airport, along: number, side: number): [number, number] => {
+  const [dx, dy] = a.dir;
+  const s = side * a.access;
+  return [a.x + dx * along + dy * s, a.y + dy * along - dx * s];
 };
+/** Точка аэропорта Пафоса в осях полосы (along — к востоку, side — к северу, к подъезду). */
+export const airportPoint = (along: number, side: number) => airportAt(AIRPORT, along, side);
 
 export interface Settlement {
   name: string;
+  /** Название по-гречески (без артикля) — подпись над церковью и озвучка; в словаре — с артиклем (story-words.ts). */
+  greek: string;
   x: number;
   y: number;
   /** Радиус застройки и число домов. */
@@ -145,37 +167,67 @@ export interface Settlement {
   fields: number;
 }
 
-const town = (name: string, lon: number, lat: number, r: number, n: number, fields: number): Settlement => {
+const town = (name: string, greek: string, lon: number, lat: number, r: number, n: number, fields: number): Settlement => {
   const [x, y] = geo(lon, lat);
-  return { name, x, y, r, n, fields };
+  return { name, greek, x, y, r, n, fields };
 };
 
 /** Города и деревни: первые — крупные. */
 export const SETTLEMENTS: readonly Settlement[] = [
-  town('Никосия', 33.36, 35.17, 62, 700, 160),
-  town('Лимасол', 33.04, 34.685, 48, 520, 0),
-  town('Ларнака', 33.62, 34.92, 40, 380, 90),
-  town('Пафос', 32.43, 34.77, 38, 340, 80),
-  town('Фамагуста', 33.93, 35.125, 36, 300, 110),
-  town('Кирения', 33.32, 35.33, 24, 170, 0),
-  town('Морфу', 32.99, 35.2, 18, 110, 140),
-  town('Айя-Напа', 34.0, 34.99, 16, 90, 40),
-  town('Паралимни', 33.98, 35.04, 14, 80, 70),
-  town('Полис', 32.43, 35.03, 12, 55, 70),
-  town('Куклия', 32.575, 34.705, 10, 45, 80),
-  town('Хирокития', 33.34, 34.8, 8, 26, 60),
-  town('Парекклиша', 33.17, 34.73, 8, 26, 50),
-  town('Лефкара', 33.31, 34.87, 9, 34, 30),
-  town('Платрес', 32.86, 34.89, 8, 26, 0),
-  town('Какопетрия', 32.9, 34.99, 7, 22, 0),
-  town('Писсури', 32.7, 34.67, 8, 26, 50),
-  town('Пейя', 32.38, 34.88, 10, 40, 40),
-  town('Лапитос', 33.17, 35.34, 9, 34, 30),
-  town('Лефконико', 33.73, 35.25, 8, 26, 100),
-  town('Ризокарпасо', 34.4, 35.6, 9, 30, 50),
-  town('Дали', 33.42, 35.02, 9, 34, 110),
-  town('Атьену', 33.54, 35.06, 8, 28, 110),
-  town('Агрос', 33.01, 34.92, 6, 18, 0),
+  town('Никосия', 'Λευκωσία', 33.364, 35.1725, 62, 700, 160),
+  town('Лимасол', 'Λεμεσός', 33.04, 34.685, 48, 520, 0),
+  town('Ларнака', 'Λάρνακα', 33.62, 34.92, 40, 380, 90),
+  town('Пафос', 'Πάφος', 32.43, 34.77, 38, 340, 80),
+  town('Фамагуста', 'Αμμόχωστος', 33.93, 35.125, 36, 300, 110),
+  town('Кирения', 'Κερύνεια', 33.32, 35.33, 24, 170, 0),
+  town('Морфу', 'Μόρφου', 32.99, 35.2, 18, 110, 140),
+  town('Айя-Напа', 'Αγία Νάπα', 34.0, 34.99, 16, 90, 40),
+  town('Паралимни', 'Παραλίμνι', 33.98, 35.04, 14, 80, 70),
+  town('Полис', 'Πόλη Χρυσοχούς', 32.43, 35.03, 12, 55, 70),
+  town('Куклия', 'Κούκλια', 32.575, 34.705, 10, 45, 80),
+  town('Хирокития', 'Χοιροκοιτία', 33.34, 34.8, 8, 26, 60),
+  town('Парекклиша', 'Παρεκκλησιά', 33.17, 34.73, 8, 26, 50),
+  town('Лефкара', 'Λεύκαρα', 33.31, 34.87, 9, 34, 30),
+  town('Платрес', 'Πλάτρες', 32.86, 34.89, 8, 26, 0),
+  town('Какопетрия', 'Κακοπετριά', 32.9, 34.99, 7, 22, 0),
+  town('Писсури', 'Πισσούρι', 32.7, 34.67, 8, 26, 50),
+  town('Пейя', 'Πέγεια', 32.38, 34.88, 10, 40, 40),
+  town('Лапитос', 'Λάπηθος', 33.17, 35.34, 9, 34, 30),
+  town('Лефконико', 'Λευκόνοικο', 33.73, 35.25, 8, 26, 100),
+  town('Ризокарпасо', 'Ριζοκάρπασο', 34.4, 35.6, 9, 30, 50),
+  town('Дали', 'Δάλι', 33.42, 35.02, 9, 34, 110),
+  town('Атьену', 'Αθηένου', 33.54, 35.06, 8, 28, 110),
+  town('Агрос', 'Αγρός', 33.01, 34.92, 6, 18, 0),
+];
+
+/**
+ * Приметы крупных городов — то, по чему город узнают (крупнее настоящих, чтобы читались на карте острова):
+ * - lighthouse — маяк;
+ * - castle — замок: size — сторона, round — круглые башни по углам;
+ * - star — стены-звезда вокруг старого города: radius и число бастионов;
+ * - walls — прямоугольные стены с бастионами по углам: w × h;
+ * - aqueduct — акведук: length, rot — направление (радианы, 0 — на восток).
+ */
+export type Landmark = { name: string; x: number; y: number; rot: number } & (
+  | { kind: 'lighthouse' }
+  | { kind: 'castle'; size: number; round: boolean }
+  | { kind: 'star'; radius: number; bastions: number }
+  | { kind: 'walls'; w: number; h: number }
+  | { kind: 'aqueduct'; length: number }
+);
+const mark = <T extends Omit<Landmark, 'x' | 'y'>>(lon: number, lat: number, rest: T) => {
+  const [x, y] = geo(lon, lat);
+  return { x, y, ...rest } as Landmark;
+};
+export const LANDMARKS: readonly Landmark[] = [
+  mark(32.4069, 34.7566, { name: 'Маяк Пафоса', kind: 'lighthouse', rot: 0 }),
+  // Венецианские стены Никосии (1567): круг с одиннадцатью бастионами.
+  mark(33.364, 35.1725, { name: 'Венецианские стены Никосии', kind: 'star', radius: 20, bastions: 11, rot: 0.2 }),
+  mark(33.0417, 34.6722, { name: 'Замок Лимасола', kind: 'castle', size: 8, round: false, rot: 0.15 }),
+  // Акведук Камарес (XVIII век) — на западной окраине Ларнаки.
+  mark(33.601, 34.912, { name: 'Акведук Камарес', kind: 'aqueduct', length: 26, rot: -0.5 }),
+  mark(33.3218, 35.3413, { name: 'Замок Кирении', kind: 'castle', size: 11, round: true, rot: 0.1 }),
+  mark(33.939, 35.124, { name: 'Стены Фамагусты', kind: 'walls', w: 14, h: 19, rot: 0.25 }),
 ];
 
 const at = (name: string): [number, number] => {
@@ -207,6 +259,7 @@ export const ROADS: readonly Road[] = [
   { via: [at('Пафос'), at('Пейя')] },
   { via: [at('Пафос'), at('Полис')] },
   { via: [at('Хирокития'), at('Лефкара')] },
-  // Подъезд к аэропорту — от терминала к шоссе Пафос — Куклия.
-  { via: [airportPoint(2, 13), geo(32.5, 34.738)] },
+  // Подъезды к аэропортам — от полосы к шоссе Пафос — Куклия и к Ларнаке.
+  { via: [airportPoint(2, 4), geo(32.5, 34.738)] },
+  { via: [airportAt(AIRPORTS[1]!, 2, 4), at('Ларнака')] },
 ];

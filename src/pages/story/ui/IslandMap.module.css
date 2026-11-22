@@ -109,6 +109,28 @@
 .plateTitle { font-size: 0.85rem; font-weight: 600; color: var(--text); }
 .markerBtn:hover .plateTitle { color: var(--brand); }
 
+/* ---------- название города над церковью ---------- */
+.townAnchor { z-index: 1; }
+.town {
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  translate: -50% 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 4px;
+  padding: 3px 4px 4px 10px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: default;
+}
+.townGreek { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+.townName { grid-column: 1; font-size: 0.72rem; color: var(--text-subtle); }
+
 /* ---------- подсказка ---------- */
 .hint {
   position: absolute;

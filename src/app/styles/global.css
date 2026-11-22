@@ -69,6 +69,8 @@
   --map-roof: #f3efe6;
   --map-roof-alt: #bf6e48;
   --map-dome: #2f68b4;
+  /* Камень крепостей и замков — светлый известняк. */
+  --map-stone: #cdb68a;
   --map-road: #e6dcc4;
   --map-road-edge: #9c8c6a;
   --map-runway: #4b4a48;
