@@ -12,12 +12,8 @@ export function tilesOf(phrase: string): string[] {
   return phrase.match(/[\p{L}\p{M}]+/gu) ?? [];
 }
 
-/** Перемешать (Фишер — Йейтс): варианты в данных часто стоят верным первым. */
-export function shuffle<T>(xs: readonly T[]): T[] {
-  const out = [...xs];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
-  }
-  return out;
-}
+/**
+ * Перемешать по ключу задания: в данных верный вариант часто первый, а порядок показа
+ * должен быть одним и тем же при каждом открытии.
+ */
+export { seededShuffle as shuffle } from '@/shared/lib/random';

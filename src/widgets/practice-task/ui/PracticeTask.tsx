@@ -47,9 +47,9 @@ export function PracticeTask(props: Props) {
 
 type Of<K extends Task['kind']> = Omit<Props, 'task'> & { task: Extract<Task, { kind: K }> };
 
-/** Порядок показа вариантов — перемешан один раз (в данных верный часто первый). */
-function useOrder(n: number): number[] {
-  const [order] = useState(() => shuffle(Array.from({ length: n }, (_, i) => i)));
+/** Порядок показа вариантов — перемешан по ключу задания: при каждом открытии один и тот же. */
+function useOrder(n: number, seed: string): number[] {
+  const [order] = useState(() => shuffle(Array.from({ length: n }, (_, i) => i), seed));
   return order;
 }
 
@@ -95,7 +95,7 @@ function Options({
   onSolved: () => void;
   greek?: boolean;
 }) {
-  const order = useOrder(options.length);
+  const order = useOrder(options.length, options.join('|'));
   const [wrong, setWrong] = useState<number | null>(null);
   return (
     <>
@@ -319,7 +319,7 @@ function TranslatePractice({ task, level, solved, onSolved }: Of<'translate'>) {
         {level === 'light' ? 'Соберите по-гречески:' : 'Переведите на греческий:'} <b>{task.russian}</b>
       </p>
       {level === 'light' ? (
-        <Tiles greek={task.greek} decoys={task.decoys} solved={solved} onSolved={onSolved} />
+        <Tiles seed={task.id} greek={task.greek} decoys={task.decoys} solved={solved} onSolved={onSolved} />
       ) : (
         <Write accepted={task.greek} hint={level === 'medium' ? task.hint : undefined} label="Перевод" wide solved={solved} onSolved={onSolved} />
       )}
@@ -331,9 +331,9 @@ function TranslatePractice({ task, level, solved, onSolved }: Of<'translate'>) {
  * Плитки (`tiles`): нажатие переносит слово в строку ответа и обратно. Регистр и знаки не важны.
  * Плитки — из эталона (greek[0]) и лишних; засчитывается любой верный порядок из greek.
  */
-function Tiles({ greek, decoys, solved, onSolved }: { greek: readonly string[]; decoys: readonly string[]; solved: boolean; onSolved: () => void }) {
+function Tiles({ seed, greek, decoys, solved, onSolved }: { seed: string; greek: readonly string[]; decoys: readonly string[]; solved: boolean; onSolved: () => void }) {
   const target = tilesOf(greek[0]!);
-  const [pool] = useState(() => shuffle([...target, ...decoys].map((w) => w.toLowerCase())));
+  const [pool] = useState(() => shuffle([...target, ...decoys].map((w) => w.toLowerCase()), seed));
   // Номера плиток из pool в порядке ответа.
   const [line, setLine] = useState<number[]>([]);
   const [wrong, setWrong] = useState(false);

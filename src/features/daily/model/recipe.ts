@@ -1,6 +1,7 @@
 import type { PracticeTask, StoryChapter, StorySentence, WeekMaterial } from '@/entities/story';
 import { RUSSIAN_PRONOUNS, TENSE_LABELS, type Person, type TextToken } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
+import { seeded, seededShuffle } from '@/shared/lib/random';
 
 /**
  * Сборка дня по рецепту (docs/product/daily.md): день не пишется руками, а собирается из уже вычитанного —
@@ -40,33 +41,7 @@ export const DAY_SIZE = 8;
 
 // ---------- случайность по ключу ----------
 
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-  return h >>> 0;
-}
-
-/** Генератор с зерном (mulberry32): одно зерно — одна и та же последовательность. */
-function seeded(seed: string): () => number {
-  let a = hash(seed);
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function shuffled<T>(xs: readonly T[], seed: string): T[] {
-  const rnd = seeded(seed);
-  const out = [...xs];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
-  }
-  return out;
-}
+const shuffled = seededShuffle;
 
 /** n ловушек из списка, не совпадающих с верным (по `same`). */
 function decoys<T>(pool: readonly T[], right: T, n: number, seed: string, same: (a: T, b: T) => boolean): T[] {

@@ -12,6 +12,7 @@ import { CatIcon } from './CatIcon';
 import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import { StoryText } from './StoryText';
+import { useFocusMode } from '@/shared/lib/focus-mode';
 import styles from './Story.module.css';
 
 /** Шаг главы: слева объяснение и вопрос на понимание, справа текст. Замков нет: «Дальше» доступно всегда. */
@@ -38,6 +39,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
     else navigate(routes.storyStep(chapter.id, 'end'));
   };
 
+  useFocusMode();
   return (
     <div className={styles.stepPage}>
       <div className={styles.split}>
@@ -94,7 +96,7 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
  */
 function CheckCard({ check, answered, onAnswer }: { check: StoryCheck; answered: boolean; onAnswer: () => void }) {
   const [picked, setPicked] = useState<number | null>(null);
-  const [order] = useState(() => shuffle(check.options.map((_, i) => i)));
+  const [order] = useState(() => shuffle(check.options.map((_, i) => i), check.prompt));
   const right = picked === check.answer;
   const shown = answered || picked !== null;
   const pick = (i: number) => {

@@ -217,4 +217,6 @@ code { font-family: var(--font-mono); }
   #root > main { padding-top: var(--safe-top); }
   /* Без лишней прокрутки: экран минус панель разделов. */
   #root { min-height: calc(100svh - var(--tabbar)); }
+  /* Режим чтения (shared/lib/focus-mode): панели разделов нет, низ экрана — у кнопок страницы. */
+  :root[data-focus] { --tabbar: 0px; }
 }
