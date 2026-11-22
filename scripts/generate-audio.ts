@@ -27,6 +27,7 @@ import { getLesson, getLessonCatalog } from '@/entities/lesson/api/lessonApi';
 import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
 import { GRAMMAR_TOPICS } from '@/entities/grammar/data/topics';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
+import { WEEK_MATERIAL } from '@/entities/story/data/week-material';
 import { STORY_PRAISE } from '@/entities/story/model/types';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
@@ -105,6 +106,14 @@ function collectTexts(): Set<string> {
   // Справочник: примеры к правилам.
   for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
   add(STORY_PRAISE.greek);
+  // Материал недели глав: предложения (диктант, плитки) и тексты целиком (слушание).
+  for (const w of WEEK_MATERIAL) {
+    w.sentences.forEach((p) => add(p.greek));
+    for (const t of w.texts) {
+      t.sentences.forEach((p) => add(p.greek));
+      add(t.sentences.map((p) => p.greek).join(' '));
+    }
+  }
   // Карта «Истории»: названия городов (подпись над церковью).
   SETTLEMENTS.forEach((t) => add(t.greek));
   add(OLYMPUS.greek);

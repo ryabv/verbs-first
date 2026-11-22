@@ -1,5 +1,5 @@
 import type { DictEntry } from '../model/types';
-import { ADJ_F_PL } from './notes';
+import { ACC_M, ADJ_F_PL, ADJ_M_PL, ADJ_N, GEN_N, PL_M } from './notes';
 
 /**
  * Слова раздела «Тексты» (src/entities/library): словарная форма, перевод и формы из текстов.
@@ -63,9 +63,9 @@ export const LIBRARY_WORDS: DictEntry[] = [
 
   // Прилагательные и порядковые
   { greek: 'αρχαίος', russian: 'древний', forms: ['αρχαία', 'αρχαίους', 'αρχαίοι'] },
-  { greek: 'νέος', russian: 'новый; молодой', forms: ['νέους', 'νέα'] },
+  { greek: 'νέος', russian: 'новый; молодой', forms: ['νέους', 'νέα', 'νέο', 'νέες'], why: { νέο: ADJ_N, νέες: ADJ_F_PL } },
   { greek: 'παλιός', russian: 'старый', forms: ['παλιό', 'παλιά', 'παλιούς', 'παλιές'], why: { παλιές: ADJ_F_PL } },
-  { greek: 'πρώτος', russian: 'первый', forms: ['πρώτη', 'πρώτο', 'πρώτους'] },
+  { greek: 'πρώτος', russian: 'первый', forms: ['πρώτη', 'πρώτο', 'πρώτους', 'πρώτοι'], why: { πρώτοι: ADJ_M_PL } },
   { greek: 'τρίτος', russian: 'третий', forms: ['τρίτη', 'τρίτο'] },
   { greek: 'δέκατος', russian: 'десятый', forms: ['δέκατη', 'δέκατο'] },
   { greek: 'μέτριος', russian: 'средний; о кофе — средней сладости', forms: ['μέτρια', 'μέτριο'] },
@@ -144,7 +144,7 @@ export const LIBRARY_WORDS: DictEntry[] = [
   { greek: 'η πιπεριά', russian: 'перец (овощ)', forms: ['πιπεριές'] },
   { greek: 'η κουζίνα', russian: 'кухня' },
   { greek: 'το μυαλό', russian: 'ум, голова' },
-  { greek: 'το τετράδιο', russian: 'тетрадь' },
+  { greek: 'το τετράδιο', russian: 'тетрадь', forms: ['τετραδίου'], why: { τετραδίου: GEN_N } },
   { greek: 'ο δρόμος', russian: 'дорога, улица', forms: ['δρόμο', 'δρόμους'] },
   { greek: 'η σειρήνα', russian: 'сирена (мифическое существо)', forms: ['Σειρήνων'] },
   { greek: 'η γυναίκα', russian: 'женщина; жена' },
@@ -168,7 +168,7 @@ export const LIBRARY_WORDS: DictEntry[] = [
   { greek: 'η γη', russian: 'земля', forms: ['γης'] },
   { greek: 'η πέτρα', russian: 'камень' },
   { greek: 'το μαντείο', russian: 'оракул, прорицалище' },
-  { greek: 'ο άνθρωπος', russian: 'человек', forms: ['άνθρωποι'] },
+  { greek: 'ο άνθρωπος', russian: 'человек', forms: ['άνθρωποι', 'άνθρωπο'], why: { άνθρωποι: PL_M, άνθρωπο: ACC_M } },
   { greek: 'η ερώτηση', russian: 'вопрос', forms: ['ερωτήσεις'] },
   { greek: 'τα γενέθλια', russian: 'день рождения', forms: ['γενέθλιά'] },
   { greek: 'η έκρηξη', russian: 'взрыв; извержение' },

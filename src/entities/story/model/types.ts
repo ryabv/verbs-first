@@ -127,6 +127,26 @@ export interface StoryFind {
   icon: 'letter' | 'photo' | 'map' | 'tape' | 'key' | 'figurine';
 }
 
+/**
+ * Материал недели главы — для ежедневных заданий (фаза 2, docs/product/daily.md): на тех же глаголах и грамматике,
+ * что глава, с теми же правилами (пройденное, словарь, озвучка, вычитка). Сюжет главы не продолжает.
+ */
+export interface WeekMaterial {
+  chapter: number;
+  /** 2–3 коротких текста или диалога (5–10 предложений): чтение и слушание, вопросы на понимание. */
+  texts: WeekText[];
+  /** 20–30 предложений: перевод, диктант, плитки — варианты фраз главы на других лицах, временах, словах. */
+  sentences: StorySentence[];
+}
+
+export interface WeekText {
+  id: string;
+  title: string;
+  sentences: StorySentence[];
+  /** Вопросы к тексту: варианты по-русски, верный — answer. */
+  questions: StoryCheck[];
+}
+
 /** «Глава» 0 на карте — пролог: курс чтения (алфавит), не глава истории. */
 export const PROLOGUE = 0;
 

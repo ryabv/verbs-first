@@ -7,7 +7,7 @@ import { getLesson, getLessonCatalog, type Lesson } from '@/entities/lesson';
 import { LIBRARY_TEXTS } from '@/entities/library';
 import { DICTIONARY } from '@/entities/dictionary';
 import { GRAMMAR_TOPICS } from '@/entities/grammar';
-import { STORY_CHAPTERS, STORY_PRAISE } from '@/entities/story';
+import { STORY_CHAPTERS, STORY_PRAISE, WEEK_MATERIAL } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 import { OLYMPUS, SETTLEMENTS } from '@/pages/story/lib/cyprus';
 
@@ -25,6 +25,8 @@ for (const l of lessons) {
     if (s.kind === 'story') [...(s.examples ?? []), ...(s.words ?? [])].forEach((p) => texts.push(p.greek));
   });
 }
+// Материал недели глав (для ежедневных).
+for (const w of WEEK_MATERIAL) [...w.texts.flatMap((t) => t.sentences), ...w.sentences].forEach((s) => texts.push(s.greek));
 // Карта «Истории»: названия городов над церквями.
 SETTLEMENTS.forEach((t) => texts.push(t.greek));
 texts.push(OLYMPUS.greek, ...(OLYMPUS.note.match(/[\p{Script=Greek}]+/gu) ?? []));

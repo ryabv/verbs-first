@@ -18,15 +18,6 @@ interface Props {
   onSolved: () => void;
 }
 
-/** Названия заданий — по навыку (тип показывает чип, задание — что делать). */
-export const PRACTICE_SKILL: Record<Task['kind'], string> = {
-  gap: 'Письмо',
-  tap: 'Чтение',
-  choose: 'Чтение',
-  listen: 'Слушание',
-  translate: 'Письмо',
-};
-
 /**
  * Задание закрепления главы. Упражнение: слова без перевода — не подсказываем ответ.
  * Ошибиться можно сколько угодно; «Показать ответ» — у карточки задания (PracticePage).
@@ -319,7 +310,7 @@ function TranslatePractice({ task, level, solved, onSolved }: Of<'translate'>) {
         {level === 'light' ? 'Соберите по-гречески:' : 'Переведите на греческий:'} <b>{task.russian}</b>
       </p>
       {level === 'light' ? (
-        <Tiles greek={task.greek[0]!} decoys={task.decoys} solved={solved} onSolved={onSolved} />
+        <Tiles greek={task.greek} decoys={task.decoys} solved={solved} onSolved={onSolved} />
       ) : (
         <Write accepted={task.greek} hint={level === 'medium' ? task.hint : undefined} label="Перевод" wide solved={solved} onSolved={onSolved} />
       )}
@@ -327,15 +318,18 @@ function TranslatePractice({ task, level, solved, onSolved }: Of<'translate'>) {
   );
 }
 
-/** Плитки: нажатие переносит слово в строку ответа и обратно. Регистр и знаки не важны. */
-function Tiles({ greek, decoys, solved, onSolved }: { greek: string; decoys: readonly string[]; solved: boolean; onSolved: () => void }) {
-  const target = tilesOf(greek);
+/**
+ * Плитки (`tiles`): нажатие переносит слово в строку ответа и обратно. Регистр и знаки не важны.
+ * Плитки — из эталона (greek[0]) и лишних; засчитывается любой верный порядок из greek.
+ */
+function Tiles({ greek, decoys, solved, onSolved }: { greek: readonly string[]; decoys: readonly string[]; solved: boolean; onSolved: () => void }) {
+  const target = tilesOf(greek[0]!);
   const [pool] = useState(() => shuffle([...target, ...decoys].map((w) => w.toLowerCase())));
   // Номера плиток из pool в порядке ответа.
   const [line, setLine] = useState<number[]>([]);
   const [wrong, setWrong] = useState(false);
   const check = () => {
-    const ok = compareAnswer(line.map((i) => pool[i]).join(' '), [greek]) !== 'wrong';
+    const ok = compareAnswer(line.map((i) => pool[i]).join(' '), greek) !== 'wrong';
     if (ok) onSolved();
     else setWrong(true);
   };

@@ -8,10 +8,14 @@ export type {
   StoryPlace,
   StorySentence,
   StoryStep,
+  WeekMaterial,
+  WeekText,
 } from './model/types';
 export { STORY_CHAPTERS, STORY_PLANNED, getChapter } from './data/chapters';
 export { STORY_PLACES } from './data/map';
+export { WEEK_MATERIAL } from './data/week-material';
 export { PROLOGUE, STORY_PRAISE } from './model/types';
+export { PRACTICE_KINDS, TASK_SKILL_LABELS, type PracticeKind, type TaskSkill } from './model/tasks';
 export { STORY_LEVELS, STORY_LEVEL_LABELS, type StoryLevel } from './model/types';
 export {
   STORY_END,

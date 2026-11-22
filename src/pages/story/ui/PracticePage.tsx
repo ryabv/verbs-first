@@ -5,9 +5,11 @@ import {
   levelRank,
   markStoryStep,
   practiceKey,
+  PRACTICE_KINDS,
   STORY_CHAPTERS,
   STORY_LEVEL_LABELS,
   STORY_LEVELS,
+  TASK_SKILL_LABELS,
   useStoryLevel,
   useStoryLevels,
   type PracticeTask as PracticeTaskData,
@@ -21,7 +23,7 @@ import { Arrow, Check } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import { Celebration } from './Celebration';
 import { LevelSwitch } from './LevelSwitch';
-import { PRACTICE_SKILL, PracticeTask } from './PracticeTask';
+import { PracticeTask } from './PracticeTask';
 import styles from './Story.module.css';
 
 /** /story/:id/practice — закрепление главы: задания одно за другим на выбранном уровне. */
@@ -119,7 +121,7 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
         <section className={styles.task}>
           <div className={styles.taskHead}>
             <h2 className={styles.taskTitle}>
-              {PRACTICE_SKILL[task.kind]} · {index + 1} из {queue.length}
+              {TASK_SKILL_LABELS[PRACTICE_KINDS[task.kind].skill]} · {index + 1} из {queue.length}
             </h2>
             {!solved && (
               <button type="button" className={styles.linkBtn} onClick={reveal}>

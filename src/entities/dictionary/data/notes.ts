@@ -3,6 +3,9 @@ import type { FormNote } from '../model/types';
 /** Частые пояснения «Почему так?»: каждое ставится к форме явно, не правилом. */
 export const ACC_M: FormNote = { note: 'Винительный падеж (кого, что; после предлога): у мужского рода отпадает -ς.', rule: 'noun#accusative' };
 export const PL_A: FormNote = { note: 'Множественное число: -α, -η → -ες.', rule: 'noun#plural' };
+export const PL_N: FormNote = { note: 'Множественное число среднего рода: -ο → -α.', rule: 'noun#plural' };
+export const PL_M: FormNote = { note: 'Множественное число мужского рода: -ος → -οι.', rule: 'noun#plural' };
+export const GEN_N: FormNote = { note: 'Родительный падеж — «чей»: у среднего рода -ο → -ου (у -ιο ударение уходит на -ίου).', rule: 'noun#genitive' };
 export const GEN_F: FormNote = { note: 'Родительный падеж — «чей»: у женского рода добавляется -ς.', rule: 'noun#genitive' };
 
 export const ADJ_F: FormNote = { note: 'Прилагательное согласуется с существительным: женский род, -ος → -η.', rule: 'adjective#agreement' };
