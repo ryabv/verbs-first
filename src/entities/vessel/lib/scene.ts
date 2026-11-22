@@ -538,6 +538,8 @@ export function createVesselStage(host: HTMLElement): VesselStage {
     const fit = Math.max(1.5 / half, 2 / (half * camera.aspect));
     off.setLength(width < 600 ? fit : width / below < 0.9 ? 10 : 8);
     camera.position.copy(target).add(off);
+    // Телефон: фонари чуть ближе к экспонату — иначе висят впритык к краям кадра.
+    yard.setLanternInset(width < 600 ? 0.5 : 0);
     if (inset > 0) camera.setViewOffset(width, below, 0, -inset, width, height);
     else camera.clearViewOffset();
     camera.updateProjectionMatrix();

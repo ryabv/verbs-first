@@ -230,6 +230,11 @@ export interface Courtyard {
   setNight(night: boolean): void;
   /** Камера смотрит на `x`: стена, пол, солнце и фонари идут за ней. */
   follow(x: number): void;
+  /**
+   * Телефон: в кадре один экспонат, фонарь между экспонатами — впритык к краю. На каждом месте тогда два фонаря,
+   * каждый сдвинут на `d` к своему экспонату; 0 — один общий фонарь (компьютер).
+   */
+  setLanternInset(d: number): void;
 }
 
 /** Фонари — между экспонатами; светят ближайшие к камере, дальние гаснут плавно (без скачков при переходе). */
@@ -263,18 +268,29 @@ export function courtyard(scene: THREE.Scene): Courtyard {
   const glassGeo = new THREE.CylinderGeometry(0.13, 0.11, 0.32, 6);
   const capGeo = new THREE.ConeGeometry(0.17, 0.14, 6);
   const armGeo = new THREE.BoxGeometry(0.04, 0.04, 0.42);
-  const lanterns = new Map<number, THREE.Object3D>();
-  const lanternAt = (k: number) => {
-    if (lanterns.has(k)) return;
-    const lantern = new THREE.Group();
+  const lanterns = new Map<number, [THREE.Object3D, THREE.Object3D]>();
+  let inset = 0;
+  const lantern = () => {
+    const one = new THREE.Group();
     const cap = new THREE.Mesh(capGeo, frame);
     cap.position.y = 0.23;
     const arm = new THREE.Mesh(armGeo, frame);
     arm.position.set(0, 0.3, -0.21);
-    lantern.add(new THREE.Mesh(glassGeo, lanternGlass), cap, arm);
-    lantern.position.set((k + 0.5) * BAY, 2.6, WALL_Z + 0.42);
-    lanterns.set(k, lantern);
-    group.add(lantern);
+    one.add(new THREE.Mesh(glassGeo, lanternGlass), cap, arm);
+    return one;
+  };
+  const spreadLanterns = (k: number, [left, right]: [THREE.Object3D, THREE.Object3D]) => {
+    const x = (k + 0.5) * BAY;
+    left.position.set(x - inset, 2.6, WALL_Z + 0.42);
+    right.position.set(x + inset, 2.6, WALL_Z + 0.42);
+    right.visible = inset > 0;
+  };
+  const lanternAt = (k: number) => {
+    if (lanterns.has(k)) return;
+    const pair: [THREE.Object3D, THREE.Object3D] = [lantern(), lantern()];
+    spreadLanterns(k, pair);
+    lanterns.set(k, pair);
+    group.add(...pair);
   };
   scene.add(group);
 
@@ -338,6 +354,10 @@ export function courtyard(scene: THREE.Scene): Courtyard {
       candle.position.set(x + 1.5, 3.2, 7);
       candle.target.position.set(x, 0.9, 0);
       placeLamps();
+    },
+    setLanternInset(d) {
+      inset = d;
+      lanterns.forEach((pair, k) => spreadLanterns(k, pair));
     },
   };
   yard.follow(0);

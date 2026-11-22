@@ -27,7 +27,10 @@
 .nav a { white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); font-size: 0.95rem; }
 /* Иконка — в цвет ссылки (активная — терракотовая). */
 .navIcon { flex: none; width: 1.15em; height: 1.15em; vertical-align: 0; }
-.nav a:hover { color: var(--brand); }
+/* Только мышь: на телефоне :hover «залипает» после касания — подсвечивались два раздела сразу. */
+@media (hover: hover) {
+  .nav a:hover { color: var(--brand); }
+}
 .nav a.active { color: var(--brand); }
 .tools { margin-left: auto; }
 @media (max-width: 600px) {
@@ -49,12 +52,12 @@
     bottom: 0;
     z-index: 60;
     height: var(--tabbar);
-    padding: 0 4px env(safe-area-inset-bottom);
+    /* Скруглённые углы экрана Android не сообщают safe-area — отступ с запасом, чтобы крайние подписи не срезало. */
+    padding: 0 max(14px, env(safe-area-inset-right)) var(--tabbar-bottom) max(14px, env(safe-area-inset-left));
     justify-content: space-around;
     gap: 0;
     background: var(--bg);
     border-top: 1px solid var(--border);
-    box-shadow: 0 -4px 14px var(--daily-shadow);
   }
   .nav a { flex: 1; flex-direction: column; justify-content: center; gap: 3px; font-size: 0.72rem; line-height: 1.1; color: var(--text-muted); }
   .nav a.active { color: var(--brand); font-weight: 600; }

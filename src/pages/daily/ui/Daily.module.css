@@ -203,7 +203,7 @@
     display: flex;
     flex-direction: column;
     min-height: calc(100svh - var(--tabbar) - var(--safe-top));
-    padding-bottom: 12px;
+    padding-bottom: 20px;
   }
   .todayPage .month, .todayPage .play { width: 100%; }
   .todayPage .month { order: 1; margin-top: 14px; }
@@ -212,7 +212,8 @@
   .todayPage .shelf { display: none; }
   .todayPage .demo { order: 4; }
   .todayPage .playNote { display: none; }
-  .playBtn { padding: 9px 18px; font-size: 1rem; box-shadow: 0 4px 12px var(--daily-shadow); }
+  /* Кнопка — не во всю ширину, по центру; повыше, с отступом от панели разделов. */
+  .playBtn { display: inline-block; min-width: 60%; padding: 13px 40px; font-size: 1rem; box-shadow: 0 4px 12px var(--daily-shadow); }
   .monthHead { margin-bottom: 8px; }
   .monthTitle { font-size: 1.15rem; }
   .counter { font-size: 1.05rem; }

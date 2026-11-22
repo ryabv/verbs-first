@@ -208,7 +208,8 @@ code { font-family: var(--font-mono); }
    На компьютере её нет — 0. Всё прикреплённое к низу экрана поднимается на неё. */
 :root { --tabbar: 0px; }
 @media (max-width: 720px) {
-  :root { --tabbar: calc(60px + env(safe-area-inset-bottom)); --header-height: 0px; }
+  /* Снизу — не меньше 10px: в полноэкранном режиме Android safe-area = 0, а углы экрана скруглены. */
+  :root { --tabbar-bottom: max(10px, env(safe-area-inset-bottom)); --tabbar: calc(60px + var(--tabbar-bottom)); --header-height: 0px; }
   /* Шапки на телефоне нет. Содержимое — ниже «чёлки» (отступ у main); фоновые картинки (карта, витрина музея)
      уходят под неё отрицательным отступом, а кнопки и текст поверх них сдвинуты на --safe-top. */
   :root { --safe-top: env(safe-area-inset-top, 0px); }
