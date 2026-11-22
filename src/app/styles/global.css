@@ -71,6 +71,14 @@
   --map-dome: #2f68b4;
   /* Камень крепостей и замков — светлый известняк. */
   --map-stone: #cdb68a;
+  --map-snow: #ffffff;
+  /* Кот Ερμής на вершине Олимпа и канатка. */
+  --map-cat: #4a4540;
+  --map-cat-light: #f1ece3;
+  --map-cat-nose: #d98a8a;
+  --map-cat-eye: #e0b33c;
+  --map-cat-pupil: #1c1a18;
+  --map-cable: #3b3a38;
   --map-road: #e6dcc4;
   --map-road-edge: #9c8c6a;
   --map-runway: #4b4a48;

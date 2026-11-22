@@ -130,6 +130,16 @@
 }
 .townGreek { font-size: 0.95rem; font-weight: 600; color: var(--text); }
 .townName { grid-column: 1; font-size: 0.72rem; color: var(--text-subtle); }
+.townNote {
+  grid-column: 1 / -1;
+  max-width: 15rem;
+  margin: 4px 6px 2px 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--text);
+  white-space: normal;
+}
 
 /* ---------- подсказка ---------- */
 .hint {

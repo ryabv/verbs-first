@@ -154,6 +154,18 @@ export const airportAt = (a: Airport, along: number, side: number): [number, num
 /** Точка аэропорта Пафоса в осях полосы (along — к востоку, side — к северу, к подъезду). */
 export const airportPoint = (along: number, side: number) => airportAt(AIRPORT, along, side);
 
+/**
+ * Олимп (Хионистра, 1952 м) — высшая точка Кипра: снежная шапка, подъёмник и кот Ερμής на вершине.
+ * Подпись над котом — как у городов, с репликой кота.
+ */
+export const OLYMPUS = {
+  name: 'Олимп',
+  greek: 'Όλυμπος',
+  x: geo(32.8636, 34.9367)[0],
+  y: geo(32.8636, 34.9367)[1],
+  note: 'Ερμής: «Боги, по мифам, жили на другом Олимпе — в Греции. А на этом зимой катаются на лыжах»',
+};
+
 export interface Settlement {
   name: string;
   /** Название по-гречески (без артикля) — подпись над церковью и озвучка; в словаре — с артиклем (story-words.ts). */
@@ -259,6 +271,7 @@ export const ROADS: readonly Road[] = [
   { via: [at('Пафос'), at('Пейя')] },
   { via: [at('Пафос'), at('Полис')] },
   { via: [at('Хирокития'), at('Лефкара')] },
+  { via: [at('Агрос'), at('Лефкара')] },
   // Подъезды к аэропортам — от полосы к шоссе Пафос — Куклия и к Ларнаке.
   { via: [airportPoint(2, 4), geo(32.5, 34.738)] },
   { via: [airportAt(AIRPORTS[1]!, 2, 4), at('Ларнака')] },

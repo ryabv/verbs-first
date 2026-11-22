@@ -12,9 +12,10 @@ import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { geo } from './cyprus';
 import { MAP_H, MAP_W, noise, rng } from './island';
+import { catModel } from './cat-model';
 import { buildLandmarks, landmarkLayout } from './landmarks';
 import { routeRoads, trailFinder } from './roads';
-import { airportAt, AIRPORTS } from './cyprus';
+import { airportAt, AIRPORTS, OLYMPUS } from './cyprus';
 import { airportMask, getTerrain, GRID_STEP, ROADS, SETTLEMENTS, type Terrain } from './terrain';
 
 export { loadHeightmap } from './heightmap';
@@ -36,7 +37,8 @@ export interface IslandScene {
   /** Вызывается после каждого кадра: перевод точки карты в пиксели холста. */
   onFrame(cb: (project: (x: number, y: number, z?: number) => ScreenPoint) => void): void;
   /** Церковь (центр города) под пикселем холста: название и точка над куполом (z — над землёй). */
-  churchAt(px: number, py: number): { name: string; x: number; y: number; z: number } | undefined;
+  /** Подпись под пикселем холста: церковь (центр города) или кот на Олимпе — имя, точка карты, z — над землёй. */
+  labelAt(px: number, py: number): { name: string; x: number; y: number; z: number } | undefined;
   dispose(): void;
 }
 
@@ -45,6 +47,9 @@ const MIN_DIST = 120;
 const CHURCH_R = 4.5;
 /** Верх купола церкви над землёй. */
 const CHURCH_TOP = 5.5;
+/** Макушка кота на вершине Олимпа над землёй. */
+const CAT_SCALE = 1.6;
+const CAT_TOP = 3.3 * CAT_SCALE;
 const FOV = 32;
 /** Где можно держать центр камеры (координаты карты). */
 // Снизу — с запасом: на телефоне место у южного берега поднимается над карточкой.
@@ -56,7 +61,7 @@ const noop = () => {};
 
 /** Цвета земли — переменные --map-* (одни для обеих тем, как у фотографии). */
 const PALETTE = [
-  'deep', 'sea', 'shallow', 'lagoon', 'foam', 'sand', 'dry', 'grass', 'forest', 'rock', 'peak', 'town',
+  'deep', 'sea', 'shallow', 'lagoon', 'foam', 'sand', 'dry', 'grass', 'forest', 'rock', 'peak', 'snow', 'town',
   'wheat', 'field2', 'field3', 'plow', 'hedge',
 ] as const;
 const uniformName = (name: string) => `u${name[0]!.toUpperCase()}${name.slice(1)}`;
@@ -106,6 +111,10 @@ const GLSL_COLOR = /* glsl */ `
     col = mix(col, uRock * (0.8 + 0.4 * n1), rock);
     // Троодос в соснах почти до вершины; светлая макушка — только у Олимпа.
     col = mix(col, uPeak, smoothstep(130.0, 145.0, h + n1 * 10.0));
+    // Снежная шапка Олимпа: от uSnowLine до вершины, на крутом — пятнами.
+    // Край рваный (шум) — языки снега по ложбинам; на крутом — пятнами.
+    float snow = smoothstep(uSnowLine, uSnowLine + 2.0, h + (n1 - 0.5) * 16.0) * (1.0 - 0.45 * smoothstep(0.55, 0.95, slope));
+    col = mix(col, uSnow * (0.97 + 0.06 * n1), snow);
     float beach = 1.0 - smoothstep(0.7, 2.0 + n1 * 2.0, h);
     col = mix(col, uSand * (0.94 + 0.12 * n1), beach * (1.0 - smoothstep(0.2, 0.45, slope)));
   }
@@ -302,15 +311,38 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   geometry.setIndex(new THREE.BufferAttribute(index, 1));
   geometry.computeVertexNormals();
 
+  // Вершина Олимпа — самая высокая точка рядом с OLYMPUS (по рельефу).
+  const summit = { x: OLYMPUS.x, y: OLYMPUS.y, h: terrain.heightAt(OLYMPUS.x, OLYMPUS.y) };
+  for (let dy = -15; dy <= 15; dy++) {
+    for (let dx = -15; dx <= 15; dx++) {
+      const h = terrain.heightAt(OLYMPUS.x + dx, OLYMPUS.y + dy);
+      if (h > summit.h) Object.assign(summit, { x: OLYMPUS.x + dx, y: OLYMPUS.y + dy, h });
+    }
+  }
+
+  // Подъёмник — по южному склону, лицом к камере (она смотрит с юга); чуть восточнее вершины, чтобы не заслонять кота.
+  const skiLift = { from: { x: summit.x + 6, y: summit.y + 22 }, to: { x: summit.x + 3.5, y: summit.y + 5 } };
+  /** У вершины и вдоль подъёмника деревьев нет: снег и трасса. */
+  const olympusClear = (x: number, y: number) => {
+    if (Math.hypot(x - summit.x, y - summit.y) < 7) return true;
+    const { from, to } = skiLift;
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const t = Math.min(1, Math.max(0, ((x - from.x) * dx + (y - from.y) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(x - from.x - dx * t, y - from.y - dy * t) < 3;
+  };
+
   const groundMat = new THREE.MeshStandardMaterial({ roughness: 0.95 });
   groundMat.onBeforeCompile = (shader) => {
     for (const name of PALETTE) shader.uniforms[uniformName(name)] = { value: color(`--map-${name}`) };
+    // Шапка — на ~40 единиц высоты (≈540 м) от вершины: иначе снег сливается со светлой макушкой.
+    shader.uniforms.uSnowLine = { value: summit.h - 40 };
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec3 aMask;\nvarying vec3 vMask;\nvarying vec3 vPos;\nvarying vec3 vN;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMask = aMask;\nvPos = position;\nvN = normal;');
     const uniforms = PALETTE.map((name) => `uniform vec3 ${uniformName(name)};`).join('\n');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${uniforms}\nvarying vec3 vMask;\nvarying vec3 vPos;\nvarying vec3 vN;\n${GLSL_NOISE}`)
+      .replace('#include <common>', `#include <common>\n${uniforms}\nuniform float uSnowLine;\nvarying vec3 vMask;\nvarying vec3 vPos;\nvarying vec3 vN;\n${GLSL_NOISE}`)
       .replace('#include <color_fragment>', `#include <color_fragment>\n${GLSL_COLOR}`);
   };
 
@@ -429,6 +461,48 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
 
   const { lamps: landmarkLamps, lanterns } = buildLandmarks(scene, terrain, marks.list, color);
 
+  // ---------- Олимп: подъёмник по южному склону и кот Ερμής на вершине ----------
+  {
+    const at = (x: number, y: number, z: number) => new THREE.Vector3(x, -y, terrain.heightAt(x, y) + z);
+    const add = (mesh: THREE.Object3D) => {
+      mesh.castShadow = true;
+      scene.add(mesh);
+      return mesh;
+    };
+    // Канатка: опоры от нижней станции к верхней (чуть ниже вершины), трос по верхушкам, кресла.
+    const cable = new THREE.MeshStandardMaterial({ color: color('--map-cable'), roughness: 0.6 });
+    const { from, to } = skiLift;
+    const span = Math.hypot(to.x - from.x, to.y - from.y);
+    const n = Math.round(span / 3.6);
+    const tops: THREE.Vector3[] = [];
+    for (let i = 0; i <= n; i++) {
+      const x = from.x + ((to.x - from.x) * i) / n;
+      const y = from.y + ((to.y - from.y) * i) / n;
+      const pole = add(new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 3.2, 6).rotateX(Math.PI / 2), cable));
+      pole.position.copy(at(x, y, 1.2));
+      tops.push(at(x, y, 2.8));
+    }
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(tops), new THREE.LineBasicMaterial({ color: color('--map-cable') })));
+    const chairMat = new THREE.MeshStandardMaterial({ color: color('--map-roof-alt'), roughness: 0.6 });
+    for (let i = 0; i < n; i++) {
+      for (const t of [0.33, 0.75]) {
+        const chair = add(new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.45, 0.4), chairMat));
+        chair.position.lerpVectors(tops[i]!, tops[i + 1]!, t).setZ(chair.position.z - 0.55);
+      }
+    }
+    const station = new THREE.MeshStandardMaterial({ color: color('--map-roof'), roughness: 0.7 });
+    for (const s of [from, to]) {
+      const hut = add(new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 1.4), station));
+      hut.position.copy(at(s.x, s.y, 0.5));
+    }
+
+    // Кот сидит на самой вершине мордой на юг, к морю и к камере.
+    const cat = catModel(color);
+    cat.position.copy(at(summit.x, summit.y, -0.3));
+    cat.scale.setScalar(CAT_SCALE);
+    scene.add(cat);
+  }
+
   // ---------- аэропорты (Пафос, Ларнака): только полоса ----------
   // Плоские части лежат на выровненной площадке (terrain: airportMask) и рисуются поверх земли.
   const airportLamps: number[] = [];
@@ -475,7 +549,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       const tx = x + (treeRand() - 0.5) * stepT;
       const ty = y + (treeRand() - 0.5) * stepT;
       const h = terrain.heightAt(tx, ty);
-      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3)) || airportMask(tx, ty) > 0.05 || marks.clear(tx, ty)) continue;
+      if (h < 1.5 || h > 170 || onRoad.has(Math.round(ty / 3) * 1000 + Math.round(tx / 3)) || airportMask(tx, ty) > 0.05 || marks.clear(tx, ty) || olympusClear(tx, ty)) continue;
       const mk = terrain.maskAt(tx, ty);
       // Лес густо, по кустарнику — редкие деревья, на полях и в посёлках — ни одного.
       const chance = mk.forest > 0.4 ? 0.85 * mk.forest : mk.field > 0.3 || mk.town > 0.25 ? 0 : 0.035;
@@ -1003,21 +1077,22 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       }
       tweenTo(to);
     },
-    churchAt: (px, py) => {
-      let best: (typeof churches)[number] | undefined;
+    labelAt: (px, py) => {
+      const spots = [...churches.map((c) => ({ name: c.name, x: c.x, y: c.y, z: CHURCH_TOP })), { name: OLYMPUS.name, x: summit.x, y: summit.y, z: CAT_TOP }];
+      let best: (typeof spots)[number] | undefined;
       let bestD = Infinity;
-      for (const c of churches) {
-        const top = project(c.x, c.y, CHURCH_TOP);
+      for (const c of spots) {
+        const top = project(c.x, c.y, c.z);
         if (!top.visible) continue;
         // Купол на экране бывает и крошечным: ловим не меньше чем в 12 px от него.
-        const side = project(c.x + 3, c.y, CHURCH_TOP);
+        const side = project(c.x + 3, c.y, c.z);
         const d = Math.hypot(top.x - px, top.y - py);
         if (d < Math.max(12, Math.hypot(side.x - top.x, side.y - top.y)) && d < bestD) {
           bestD = d;
           best = c;
         }
       }
-      return best && { name: best.name, x: best.x, y: best.y, z: CHURCH_TOP };
+      return best;
     },
     onFrame: (cb) => {
       frameCb = cb;
@@ -1036,7 +1111,7 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
       host.removeEventListener('click', onClickCapture, true);
       host.removeEventListener('wheel', onWheel);
       scene.traverse((o) => {
-        if (o instanceof THREE.Mesh || o instanceof THREE.Points) {
+        if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
           o.geometry.dispose();
           const mat = o.material as THREE.Material & { map?: THREE.Texture | null; normalMap?: THREE.Texture | null };
           mat.map?.dispose();

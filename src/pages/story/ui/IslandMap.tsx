@@ -4,7 +4,7 @@ import { SpeakButton } from '@/features/pronounce';
 import { speak } from '@/shared/lib/speech';
 import { Medallion } from '@/shared/ui/ornament';
 import { CatIcon } from './CatIcon';
-import { airportPoint, AIRPORT, SETTLEMENTS, type Settlement } from '../lib/cyprus';
+import { airportPoint, AIRPORT, OLYMPUS, SETTLEMENTS } from '../lib/cyprus';
 import type { IslandScene } from '../lib/island-scene';
 import styles from './IslandMap.module.css';
 import type { PlaceState } from './StoryMap';
@@ -83,12 +83,22 @@ function spread(points: Screen[]) {
     }
   }
 }
-/** Церковь (центр города) под точкой экрана — только над самой картой, не над медальонами и котами. */
-function churchUnder(host: HTMLElement | null, scene: IslandScene | undefined, e: { target: EventTarget | null; clientX: number; clientY: number }) {
+/** Что подписано на карте: города (над церковью) и Олимп (над котом). */
+interface MapLabel {
+  name: string;
+  greek: string;
+  x: number;
+  y: number;
+  note?: string;
+}
+const LABELS: readonly MapLabel[] = [...SETTLEMENTS, OLYMPUS];
+
+/** Подпись под точкой экрана (церковь, кот на Олимпе) — только над самой картой, не над медальонами и котами. */
+function labelUnder(host: HTMLElement | null, scene: IslandScene | undefined, e: { target: EventTarget | null; clientX: number; clientY: number }) {
   if (!host || !scene || !(e.target instanceof HTMLCanvasElement)) return undefined;
   const r = host.getBoundingClientRect();
-  const hit = scene.churchAt(e.clientX - r.left, e.clientY - r.top);
-  const found = hit && SETTLEMENTS.find((t) => t.name === hit.name);
+  const hit = scene.labelAt(e.clientX - r.left, e.clientY - r.top);
+  const found = hit && LABELS.find((t) => t.name === hit.name);
   return found && { place: found, z: hit.z };
 }
 const kicker = (p: StoryPlace) => (p.chapter === PROLOGUE ? 'Пролог' : `Глава ${p.chapter}`);
@@ -148,7 +158,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
   const planeRef = useRef<HTMLLIElement>(null);
   /** Название города над церковью: под курсором или закреплённое кликом (тапом). */
   const townRef = useRef<HTMLDivElement>(null);
-  const [town, setTown] = useState<{ place: Settlement; z: number; pinned: boolean }>();
+  const [town, setTown] = useState<{ place: MapLabel; z: number; pinned: boolean }>();
   const townAt = useRef<{ x: number; y: number; z: number } | undefined>(undefined);
   const townHide = useRef(0);
   const projectRef = useRef<((x: number, y: number, z?: number) => Screen) | undefined>(undefined);
@@ -256,7 +266,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
     if (!host) return;
     const onClick = (e: globalThis.MouseEvent) => {
       if (townRef.current?.contains(e.target as Node)) return;
-      const hit = churchUnder(host, sceneRef.current, e);
+      const hit = labelUnder(host, sceneRef.current, e);
       setTown(hit && { ...hit, pinned: true });
       if (hit) void speak(hit.place.greek);
     };
@@ -268,7 +278,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
   const hoverTown = (e: PointerEvent) => {
     if (e.pointerType === 'touch' || e.buttons) return;
     if (townRef.current?.contains(e.target as Node)) return clearTimeout(townHide.current);
-    const hit = churchUnder(hostRef.current, sceneRef.current, e);
+    const hit = labelUnder(hostRef.current, sceneRef.current, e);
     if (hit) {
       clearTimeout(townHide.current);
       if (hit.place !== town?.place) setTown({ ...hit, pinned: false });
@@ -299,6 +309,7 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
               </span>
               <SpeakButton text={town.place.greek} />
               <span className={styles.townName}>{town.place.name}</span>
+              {town.place.note && <span className={styles.townNote}>{town.place.note}</span>}
             </div>
           )}
         </div>
