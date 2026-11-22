@@ -33,18 +33,19 @@
 }
 .nav a.active { color: var(--brand); }
 .tools { margin-left: auto; }
+/* «Профиль» — только на телефоне (на компьютере тема — кнопкой в шапке). */
+.profile { display: none; }
 @media (max-width: 600px) {
   .header { padding: 0 16px; gap: 1rem; }
 }
 
 
-/* Планшет и телефон: разделы — нижняя панель под большим пальцем (иконка над короткой подписью),
-   наверху — только знак с названием и тема. Высота панели — --tabbar (global.css). */
+/* Планшет и телефон: разделы — нижняя панель под большим пальцем, только значки. Активный раздел плавно
+   раздвигается в «пилюлю» со значком и подписью, соседние сжимаются. Высота панели — --tabbar (global.css). */
 @media (max-width: 720px) {
-  /* Шапки нет — экран под содержимое; тема — кнопкой в правом верхнем углу, поверх страницы. */
+  /* Шапки нет — экран под содержимое; тема — в шторке «Профиль». */
   .header { height: 0; margin: 0; padding: 0; z-index: 30; }
-  .logo, .meander { display: none; }
-  .tools { position: absolute; top: calc(10px + var(--safe-top)); right: 12px; }
+  .logo, .meander, .tools { display: none; }
   .nav {
     position: fixed;
     left: 0;
@@ -52,16 +53,52 @@
     bottom: 0;
     z-index: 60;
     height: var(--tabbar);
-    /* Скруглённые углы экрана Android не сообщают safe-area — отступ с запасом, чтобы крайние подписи не срезало. */
-    padding: 0 max(14px, env(safe-area-inset-right)) var(--tabbar-bottom) max(14px, env(safe-area-inset-left));
-    justify-content: space-around;
-    gap: 0;
+    /* Скруглённые углы экрана Android не сообщают safe-area — отступ с запасом, чтобы крайние значки не срезало. */
+    padding: 0 max(12px, env(safe-area-inset-right)) var(--tabbar-bottom) max(12px, env(safe-area-inset-left));
+    align-items: center;
+    gap: 4px;
     background: var(--bg);
     border-top: 1px solid var(--border);
   }
-  .nav a { flex: 1; flex-direction: column; justify-content: center; gap: 3px; font-size: 0.72rem; line-height: 1.1; color: var(--text-muted); }
-  .nav a.active { color: var(--brand); font-weight: 600; }
-  .navIcon { width: 1.5rem; height: 1.5rem; }
+  .nav a, .profile {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    height: 44px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      flex-grow 0.38s cubic-bezier(0.2, 0.8, 0.2, 1),
+      gap 0.38s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.25s,
+      color 0.25s;
+  }
+  .nav a.active, .profile.active { flex-grow: 3.9; gap: 6px; background: var(--brand-soft); color: var(--brand); }
+  /* Подпись: у неактивных свёрнута в ноль, у активного раскрывается вслед за «пилюлей». */
+  .label {
+    max-width: 0;
+    overflow: hidden;
+    opacity: 0;
+    white-space: nowrap;
+    transition:
+      max-width 0.38s cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 0.2s;
+  }
+  .active .label { max-width: 7.5em; opacity: 1; transition-delay: 0s, 0.12s; }
+  .navIcon { width: 1.45rem; height: 1.45rem; }
+}
+@media (max-width: 720px) and (prefers-reduced-motion: reduce) {
+  .nav a, .profile, .label { transition: none; }
 }
 @media (max-width: 400px) {
   .header { padding: 0 12px; }

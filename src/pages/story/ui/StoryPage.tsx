@@ -297,7 +297,7 @@ function Finds({ finds, planned }: { finds: readonly StoryChapter[]; planned: nu
         {finds.map((c) => (
           <FindItem key={c.id} find={c.find!} chapter={c.id} />
         ))}
-        {Array.from({ length: Math.min(3, planned - finds.length) }, (_, i) => (
+        {Array.from({ length: planned - finds.length }, (_, i) => (
           <li key={`empty-${i}`} className={styles.findEmpty} aria-hidden="true">
             ?
           </li>

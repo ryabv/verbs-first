@@ -457,11 +457,6 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   .stepNav > * { white-space: nowrap; }
   .stepNav > :last-child { padding-inline: 16px; }
 }
-/* Телефон: справа вверху — кнопка темы (шапки нет), «Свернуть» — слева. */
-@media (max-width: 720px) {
-  .collapse { right: auto; left: 14px; }
-}
-
 @media (max-width: 600px) {
   .page, .mapPage { padding: 0 16px 32px; }
   .split { padding-top: 12px; }

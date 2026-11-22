@@ -70,7 +70,7 @@ src/
     alphabet-quiz/        ChoiceQuiz (в т.ч. «услышь и выбери»), SyllableGrid, WordLadder, BuildWord, TextReader, AlphabetOrder
     lesson-progress/      прогресс по шагам (localStorage)
     pronounce/            кнопка озвучки SpeakButton
-    theme-switcher/       светлая/тёмная тема
+    theme-switcher/       тема: как в системе / светлая / тёмная (кнопка в шапке, выбор в шторке «Профиль»)
     daily/                ежедневные: календарь, прогресс дней (daily_days), рецепт дня — словарь сайта передаёт страница
   entities/
     verb/                 модель глагола, данные, сборка фраз, анализатор текста, VerbTable

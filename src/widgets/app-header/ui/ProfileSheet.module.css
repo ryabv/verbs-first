@@ -1,0 +1,52 @@
+/* Шторка над нижней панелью разделов: панель остаётся видна, страница под шторкой чуть затемнена. */
+.layer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: var(--tabbar);
+  z-index: 55;
+}
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: rgb(0 0 0 / 0.28);
+  cursor: default;
+  animation: fadeIn 0.22s ease-out both;
+}
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 10px 20px 22px;
+  border: 0;
+  border-radius: 18px 18px 0 0;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 -6px 24px rgb(0 0 0 / 0.18);
+  touch-action: none;
+  /* backwards, не both: после выезда анимация отпускает translate — свайп двигает шторку. */
+  animation: slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  transition: translate 0.2s ease-out;
+}
+.closing .backdrop { animation: fadeOut 0.22s ease-in both; }
+.closing .sheet { animation: slideDown 0.22s ease-in both; }
+.handle { display: block; width: 40px; height: 4px; margin: 0 auto 12px; border-radius: 2px; background: var(--border-strong); }
+.title { margin: 0 0 14px; font-size: 1.25rem; }
+.label { margin: 0 0 8px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); }
+
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; } }
+@keyframes slideUp { from { translate: 0 100%; } }
+@keyframes slideDown { to { translate: 0 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop, .sheet, .closing .backdrop, .closing .sheet { animation: none; }
+}
