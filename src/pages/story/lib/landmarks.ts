@@ -170,7 +170,7 @@ export function buildLandmarks(scene: THREE.Scene, terrain: Terrain, list: reado
           wall(a[0], a[1], b[0], b[1], 3.2, 1.4);
           if (l.round) tower(a[0], a[1], 1.7, 4.6);
         });
-        // Донжон: у замка Лимасола он главный — крупнее.
+        // Донжон: у замка Лимассола он главный — крупнее.
         const k = l.round ? 0.38 : 0.62;
         box(l.x, l.y, l.size * k, l.size * k * 0.8, l.round ? 4.6 : 5.6, l.rot);
         if (!l.round) for (const [u, v] of corners(l.size * k, l.size * k * 0.8)) tower(...local(l, u, v), 0.9, 6.4);
