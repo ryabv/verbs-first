@@ -65,15 +65,27 @@ export interface Schema {
   };
   /** id — день занятий `2026-11-21` (серия дней подряд, календарь). */
   activity_days: Record<never, never>;
+  /**
+   * Ежедневные: id — дата дня `2026-11-22`. Набор заданий фиксируется при первом открытии дня.
+   * При слиянии: `tasks` — первая запись, `solved` и `revealed` объединяются.
+   */
+  daily_days: {
+    /** Ключи заданий дня по порядку (`p:3:eidan`, `w:3:s:4:listen`…) — см. features/daily. */
+    tasks: string[];
+    /** Решены сами. */
+    solved: string[];
+    /** Решены с «Показать ответ»: день закрыт, но не «чисто». */
+    revealed: string[];
+  };
   /** id — игра: `alphabet-order`. Личный рекорд; поля — свои у игры. */
   records: { mistakes?: number; ms?: number; points?: number };
   /** Журнал ответов, только дописывается. Без текста ответа — только итог. */
   attempts: {
     /** Когда, ISO. */
     at: string;
-    /** Откуда: `story-practice`, позже `daily`, `event`. */
+    /** Откуда: `story-practice`, `daily`, позже `event`. */
     source: string;
-    /** Задание: `глава:id` для закрепления. */
+    /** Задание: `глава:id` для закрепления, ключ задания дня для ежедневных. */
     item: string;
     /** Тип задания (gap, listen…). */
     kind: string;
@@ -97,6 +109,7 @@ export const TABLE_INFO = {
   decks: 'наборы карточек',
   cards: 'карточки слов с прогрессом повторения',
   activity_days: 'дни занятий',
+  daily_days: 'ежедневные: задания дня и что решено',
   records: 'личные рекорды мини-игр',
   attempts: 'журнал ответов — источник ежедневных «сначала ошибки» и метрик',
 } as const satisfies Record<TableName, string>;
@@ -104,14 +117,17 @@ export const TABLE_INFO = {
 export const TABLES = Object.keys(TABLE_INFO) as TableName[];
 
 /** Версия схемы = версия базы IndexedDB. */
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 /**
  * Миграции: шаг N переводит базу из версии N−1 в N. Сервер повторяет те же шаги.
- * Версия 1 — все таблицы с ключом `id`.
+ * Версия 1 — все таблицы с ключом `id`. Версия 2 — `daily_days` (ежедневные).
  */
 export const MIGRATIONS: Record<number, (db: IDBDatabase) => void> = {
   1: (db) => {
-    for (const name of TABLES) db.createObjectStore(name, { keyPath: 'id' });
+    for (const name of TABLES) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
+  },
+  2: (db) => {
+    if (!db.objectStoreNames.contains('daily_days')) db.createObjectStore('daily_days', { keyPath: 'id' });
   },
 };

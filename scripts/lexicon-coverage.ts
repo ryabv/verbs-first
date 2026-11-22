@@ -10,6 +10,7 @@ import { GRAMMAR_TOPICS } from '@/entities/grammar';
 import { STORY_CHAPTERS, STORY_PRAISE, WEEK_MATERIAL } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 import { OLYMPUS, SETTLEMENTS } from '@/pages/story/lib/cyprus';
+import { VESSELS } from '@/entities/vessel/data/catalog';
 
 const texts: string[] = [];
 const lessons = getLessonCatalog()
@@ -29,6 +30,7 @@ for (const l of lessons) {
 for (const w of WEEK_MATERIAL) [...w.texts.flatMap((t) => t.sentences), ...w.sentences].forEach((s) => texts.push(s.greek));
 // Карта «Истории»: названия городов над церквями.
 SETTLEMENTS.forEach((t) => texts.push(t.greek));
+VESSELS.forEach((v) => texts.push(v.greek));
 texts.push(OLYMPUS.greek, ...(OLYMPUS.note.match(/[\p{Script=Greek}]+/gu) ?? []));
 // Раздел «Тексты».
 LIBRARY_TEXTS.forEach((t) => t.sentences.forEach((s) => texts.push(s.greek)));

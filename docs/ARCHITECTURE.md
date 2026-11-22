@@ -51,12 +51,14 @@ src/
     alphabet/             «Урок 0»: карта курса чтения, шаги (?step=), справочник (?mode=reference)
     texts/                «Тексты»: список по уровням (/texts) и чтение (/texts/:id), «знакомо N% слов»
     story/                «История»: главы (/story), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end), рассказ кота (/story/:id/cat/:branch)
+    daily/                «Сегодня»: календарь месяца и кубки (/today), день — задания по рецепту (/today/:date)
   widgets/
     app-header, app-footer
     audio-player/         плеер слева снизу: пауза/продолжить, прогресс — кольцо вокруг кнопки
     lesson-map/           карта урока: этапы на дорожке, медальоны, финал урока
     lesson-path/          шаги этапа: сайдбар со списком шагов этапа, контент шага, prev/next
     verb-algorithm/       список глаголов + таблица 3×3 / все лица выбранного глагола
+    practice-task/        задание закрепления (gap, tap, choose, listen, translate) и переключатель уровня — История и Ежедневные
   features/
     conjugation-drill/    тренажёр «таблицы умножения» (одна форма глагола)
     sentence-trainer/     фразы целиком: translate / dictation / oral
@@ -69,6 +71,7 @@ src/
     lesson-progress/      прогресс по шагам (localStorage)
     pronounce/            кнопка озвучки SpeakButton
     theme-switcher/       светлая/тёмная тема
+    daily/                ежедневные: календарь, прогресс дней (daily_days), рецепт дня — словарь сайта передаёт страница
   entities/
     verb/                 модель глагола, данные, сборка фраз, анализатор текста, VerbTable
     lesson/               модель урока, контент уроков, api getLesson/getLessonCatalog
@@ -325,6 +328,26 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   у `ReadingView`; «Новые слова текста — в карточки» — набор «Из текстов».
 - «Прочитано» — `verbs-first:texts:read`. Новые тексты входят в `pnpm lexicon:check` и `pnpm audio`.
 
+### Музей ежедневных — `entities/vessel` + `pages/daily`
+
+- Сосуд месяца — `vesselOfMonth`: у каждого сосуда в `VESSELS` свой `month`; месяцы вне каталога — по кругу.
+  Профиль тела вращения и ручки (`lib/shapes.ts`), роспись кодом на холсте-развёртке (`lib/paint.ts`, состаривание —
+  `lib/age.ts`), 3D — `lib/scene.ts` (three.js, грузится лениво: `VesselStage`, `ShardReveal`, `ShardThumb`).
+  Полка и табличка — без 3D: `VesselPicture` (портрет с росписью или силуэт, залитый по найденным черепкам).
+- **Выпечка** (`lib/bake.ts`, `pnpm museum:bake`): роспись (WebP) и черепки на число дней месяца сосуда
+  (`<сосуд>-<дней>.bin`: сжатые вершины и край скола), портрет и силуэт для полки лежат в `public/museum/` — страница только скачивает,
+  толщину черепка (изнанка, торец) достраивает сама за миллисекунды. Рисовать и резать на странице — секунды
+  на телефоне, поэтому это лишь запасной путь (нет файла: демо, сосуд перепривязан к месяцу другой длины).
+  Правите роспись, формы, резку или месяцы каталога → `pnpm museum:bake` и закоммитить `public/museum/`.
+- Экспонат (`VesselView`): `dig` — стол реставратора, `found` — номера закрытых дней месяца (`shardOfDay`): у дня свой черепок и своя клетка лотка; `vessel` — собранный сосуд.
+  Черепки — ячейки Вороного на поверхности сосуда (по одной на день месяца), ручки приклеены к ближайшим.
+  Собрать можно, когда закрыты все дни (`MonthSummary.complete`); «собран» — настройка `museum:<месяц>`
+  (`useAssembledMonths`, `assemble`).
+- Сцена — галерея во дворике (`lib/courtyard.ts`): экспонаты месяцев вдоль стены через `BAY`, камера переходит между ними.
+  Рисует только по изменениям (переход, сборка, вращение, тема), в покое — ни одного кадра; витрина за экраном — тоже.
+- Демо в разработке: `/today?demo=on` — старт с августа и панель «Демо» (закрыто дней, разобрать).
+- Цвета росписи и дворика — пигменты и материалы (контент, не тема сайта).
+
 ### История — `entities/story` + `pages/story`
 
 - Сериал по главам (сюжет и формат — `docs/story/`): `StoryChapter` = текст (`sentences`), шаги, конспект, крючок.
@@ -496,6 +519,7 @@ public/audio/manifest.json  { "нормализованный текст": "фа
 | `exam_results` | `features/exam/model/result.ts` |
 | `texts_read` | `entities/library/model/read.ts` |
 | `decks`, `cards`, `activity_days` | `entities/card/model/store.ts` |
+| `daily_days` | `features/daily/model/progress.ts` |
 | `records` | `features/alphabet-quiz` |
 | `attempts` | `logAttempt()` в `shared/lib/db` |
 

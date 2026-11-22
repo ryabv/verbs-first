@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "audio": "tsx scripts/generate-audio.ts",
     "map:heights": "tsx scripts/build-heightmap.ts",
+    "museum:bake": "tsx scripts/museum-bake.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "prepare": "simple-git-hooks",
@@ -23,6 +24,7 @@
     "three": "^0.187.0"
   },
   "devDependencies": {
+    "@napi-rs/canvas": "^1.2.0",
     "@rspack/cli": "^2.3.1",
     "@rspack/core": "^2.3.1",
     "@rspack/dev-server": "^2.2.2",

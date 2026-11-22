@@ -1,0 +1,6 @@
+.picture { display: block; object-fit: contain; }
+/* Силуэт: маска формы; снизу залито найденное, выше — пустое. */
+.silhouette {
+  mask: var(--mask) center / contain no-repeat;
+  background: linear-gradient(to top, var(--brand) var(--fill), var(--text-muted) var(--fill));
+}

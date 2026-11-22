@@ -1,0 +1,96 @@
+/* Праздник «Найден черепок»: на весь экран, тёплая тьма, лучи, черепок в сиянии (3D), текст появляется после прилёта. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 38%, var(--reveal-bg) 0%, var(--reveal-bg-edge) 75%);
+  color: var(--reveal-text);
+  animation: fade 0.4s ease-out both;
+}
+.rays {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 180vmax;
+  height: 180vmax;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, var(--reveal-ray) 0deg 5deg, transparent 5deg 15deg);
+  mask-image: radial-gradient(circle, black 0%, transparent 45%);
+  animation:
+    spin 60s linear infinite,
+    raysIn 1.6s ease-out both;
+}
+.scene { position: relative; width: 100%; height: 100%; min-height: 0; }
+.text {
+  position: relative;
+  max-width: 560px;
+  padding: 0 20px 40px;
+  text-align: center;
+  animation: rise 0.7s 1.25s ease-out both;
+}
+.kicker { margin: 0; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--reveal-muted); }
+.praise { margin: 6px 0 0; font-family: var(--font-display); font-size: 1.1rem; font-style: italic; color: var(--reveal-glow); }
+.title { margin: 2px 0 12px; font-family: var(--font-display); font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.1; color: var(--reveal-text); }
+.count { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.pieces { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 420px; }
+.piece, .slot { width: 10px; height: 14px; border-radius: 3px 5px 2px 4px; }
+.piece { background: var(--reveal-glow); opacity: 0.85; }
+.slot { border: 1px solid var(--reveal-muted); opacity: 0.4; }
+.fresh { opacity: 1; box-shadow: 0 0 10px 2px var(--reveal-glow); animation: pop 0.6s 1.6s ease-out both, breathe 1.8s 2.2s ease-in-out infinite; }
+.countText { font-size: 0.95rem; font-weight: 600; color: var(--reveal-text); }
+.sub { margin: 12px 0 20px; color: var(--reveal-muted); line-height: 1.5; }
+.actions { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: center; }
+.link { background: none; border: 0; padding: 0; font: inherit; color: var(--reveal-muted); text-decoration: underline; cursor: pointer; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes spin { to { rotate: 360deg; } }
+@keyframes raysIn { from { opacity: 0; scale: 0.6; } }
+@keyframes rise { from { opacity: 0; translate: 0 16px; } }
+@keyframes pop { 0% { scale: 0.2; } 60% { scale: 1.6; } 100% { scale: 1; } }
+@keyframes breathe { 50% { box-shadow: 0 0 16px 4px var(--reveal-glow); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .rays, .text, .fresh { animation: none; }
+}
+/* Своя кнопка — золотая, в цвет сияния (общая кнопка сайта здесь выпадает из картинки). */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--reveal-glow);
+  color: var(--reveal-bg);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 0 24px var(--reveal-ray);
+}
+.cta:hover { filter: brightness(1.08); }
+.cta:focus-visible { outline: 2px solid var(--reveal-text); outline-offset: 3px; }
+.scene canvas { touch-action: none; }
+.hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 16px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--reveal-muted);
+  pointer-events: none;
+  animation: rise 0.7s 2s ease-out both;
+}

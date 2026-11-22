@@ -76,6 +76,28 @@ export function LighthouseIcon(props: IconProps) {
   );
 }
 
+/** Листок календаря — раздел «Сегодня» (ежедневные задания). */
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect x="4" y="5.5" width="16" height="15" rx="2" fill="currentColor" fillOpacity={0.12} />
+      <path d="M4 10h16M8.5 3.5v4M15.5 3.5v4" />
+      <path d="M8 14h2M14 14h2M8 17h2" />
+    </Svg>
+  );
+}
+
+/** Кубок месяца ежедневных: контур — ещё не получен, `filled` — получен. */
+export function CupIcon({ filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <Svg {...props}>
+      <path d="M7.5 4h9v5a4.5 4.5 0 0 1-9 0V4z" fill="currentColor" fillOpacity={filled ? 0.85 : 0.12} />
+      <path d="M7.5 6H5a2.5 2.5 0 0 0 2.6 3.4M16.5 6H19a2.5 2.5 0 0 1-2.6 3.4" />
+      <path d="M12 13.5V17M8.5 20h7M10 17h4l.6 3H9.4z" />
+    </Svg>
+  );
+}
+
 /** Раскрытая книга — раздел «Тексты». */
 export function BookIcon(props: IconProps) {
   return (

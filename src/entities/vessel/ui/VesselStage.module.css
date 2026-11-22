@@ -1,0 +1,30 @@
+/* Витрина: 3D-дворик рисует сцена; фон — пока она грузится. */
+.stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--parchment);
+  cursor: grab;
+}
+.stage:active { cursor: grabbing; }
+.host { position: absolute; inset: 0; }
+.status {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+/* Подпись для чтения с экрана, когда сцена готова. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,7 +1,7 @@
 import { useId } from 'react';
 import { levelRank, setStoryLevel, STORY_LEVEL_LABELS, STORY_LEVELS, useStoryLevel, type LevelRank } from '@/entities/story';
 import { Laurel } from '@/shared/ui/ornament';
-import styles from './Story.module.css';
+import styles from './LevelSwitch.module.css';
 
 const HINTS = {
   light: 'выбираете ответ из вариантов',
@@ -10,7 +10,7 @@ const HINTS = {
 } as const;
 
 /**
- * Уровень истории — один на все главы, запоминается. passed — уровень, на котором глава уже пройдена:
+ * Уровень — один на всё приложение (главы, ежедневные), запоминается. passed — уровень, на котором глава (день) уже пройдена:
  * у этого уровня и всех полегче — венок (сложный засчитывает и лёгкий).
  */
 export function LevelSwitch({ passed = 0, className }: { passed?: LevelRank; className?: string }) {

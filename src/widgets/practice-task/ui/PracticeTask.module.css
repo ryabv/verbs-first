@@ -1,0 +1,95 @@
+/* Задание закрепления: общий вид для Истории и Ежедневных. */
+.gap {
+  display: inline-block;
+  min-width: 3.2em;
+  padding: 0 6px;
+  border-bottom: 2px dashed var(--brand);
+  color: var(--brand);
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.tapWord {
+  font: inherit;
+  padding: 0 2px;
+  margin: 0 -2px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  /* Подчёркивание, а не рамка: кнопка не выше строки — кусок не меняет высоту, текст не скачет между шагами. */
+  line-height: inherit;
+  vertical-align: baseline;
+  text-decoration: underline dotted var(--text-subtle);
+  text-underline-offset: 0.2em;
+}
+@media (hover: hover) {
+  .tapWord:hover { background: var(--surface-muted); }
+}
+.tapPicked, .tapPicked:hover { background: var(--accent-soft); color: var(--accent-strong); text-decoration: underline solid var(--accent); }
+.tapRight { background: var(--success-soft); color: var(--success); border-radius: 4px; }
+.tapWrong { background: var(--danger-soft); color: var(--danger); border-radius: 4px; }
+.taskPrompt { margin: 0 0 12px; line-height: 1.5; }
+.taskActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+.gapField { display: flex; flex-direction: column; gap: 4px; }
+.gapHint { font-size: 0.9rem; color: var(--text-muted); }
+.input {
+  font: inherit;
+  font-size: 1.1rem;
+  max-width: 16rem;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+}
+.input:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.inputWrong { border-color: var(--danger); }
+.inputWide { max-width: 100%; width: 100%; box-sizing: border-box; }
+.options { display: flex; flex-wrap: wrap; gap: 8px; }
+.option {
+  font: inherit;
+  padding: 8px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+.option:hover:not(:disabled) { border-color: var(--accent); }
+.option:disabled { cursor: default; }
+.optionRight { border-color: var(--success); background: var(--success-soft); color: var(--success); }
+.optionWrong { border-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+.solved { margin: 12px 0 0; color: var(--success); }
+.hintWrong { margin: 8px 0 0; font-size: 0.9rem; color: var(--danger); }
+.linkBtn { font: inherit; background: none; border: none; padding: 0; color: var(--text-subtle); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.linkBtn:hover { color: var(--brand); }
+.practiceSentence { margin: 0 0 14px; font-family: var(--font-display); font-size: 1.2rem; line-height: 1.55; }
+.practiceLine { margin: 0 0 6px; }
+.practiceSentence .gap { min-width: 4em; }
+.tileLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0 0 12px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--border-strong);
+}
+.tile {
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.tile:hover:not(:disabled) { border-color: var(--accent); }
+.tile:disabled { opacity: 0.35; cursor: default; }
+.translation { margin: -8px 0 14px; font-size: 0.95rem; font-style: italic; color: var(--text-muted); }

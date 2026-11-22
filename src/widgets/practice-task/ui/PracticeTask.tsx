@@ -1,26 +1,33 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import type { PracticeTask as Task, StoryChapter, StoryLevel } from '@/entities/story';
+import type { PracticeTask as Task, StoryLevel, StorySentence } from '@/entities/story';
 import { analyzePhrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
 import { Button } from '@/shared/ui/button';
 import { Check } from '@/shared/ui/ornament';
 import { shuffle, tapCorrect, tilesOf } from '../lib/task';
-import styles from './Story.module.css';
+import styles from './PracticeTask.module.css';
 
 interface Props {
-  chapter: StoryChapter;
+  /** Текст, на который ссылаются номера предложений задания (`gap`, `tap`, `choose`): глава или текст материала недели. */
+  sentences: readonly StorySentence[];
   task: Task;
   /** Уровень: то же задание, разная форма (матрица в docs/product/tasks.md). */
   level: StoryLevel;
   /** Решено (или показан ответ): поля только для чтения, верный ответ виден. */
   solved: boolean;
   onSolved: () => void;
+  /**
+   * Показать перевод предложения под пропуском: у отдельных фраз (ежедневные) иначе не понять, какое лицо и время нужно.
+   * В главе контекст даёт сюжет — перевод не показываем.
+   */
+  withTranslation?: boolean;
 }
 
 /**
- * Задание закрепления главы. Упражнение: слова без перевода — не подсказываем ответ.
- * Ошибиться можно сколько угодно; «Показать ответ» — у карточки задания (PracticePage).
+ * Задание закрепления (типы — PRACTICE_KINDS в entities/story): закрепление главы и ежедневные.
+ * Упражнение: слова без перевода — не подсказываем ответ. Ошибиться можно сколько угодно;
+ * «Показать ответ» и «Дальше» — у страницы, которая ведёт задания.
  */
 export function PracticeTask(props: Props) {
   const { task } = props;
@@ -168,12 +175,14 @@ function Write({
 }
 
 /** Пропуск: лёгкий — выбрать, средний — вписать с подсказкой «начальная форма, лицо», сложный — со значением по-русски. */
-function GapPractice({ chapter, task, level, solved, onSolved }: Of<'gap'>) {
-  const greek = chapter.sentences[task.sentence - 1]?.greek ?? '';
+function GapPractice({ sentences, task, level, solved, onSolved, withTranslation }: Of<'gap'>) {
+  const sentence = sentences[task.sentence - 1];
+  const greek = sentence?.greek ?? '';
   return (
     <>
       <p className={styles.taskPrompt}>{level === 'light' ? 'Выберите слово для пропуска:' : 'Впишите слово в пропуск:'}</p>
       <GapSentence greek={greek} word={task.word} fill={solved ? task.word : '…'} />
+      {withTranslation && sentence && <p className={styles.translation}>{sentence.russian}</p>}
       {level === 'light' ? (
         <Options options={task.options} answer={task.options.indexOf(task.word)} solved={solved} onSolved={onSolved} greek />
       ) : (
@@ -190,7 +199,7 @@ function GapPractice({ chapter, task, level, solved, onSolved }: Of<'gap'>) {
 }
 
 /** Нажать слова в куске главы. Лёгкий — сказано, сколько слов нужно. */
-function TapPractice({ chapter, task, level, solved, onSolved }: Of<'tap'>) {
+function TapPractice({ sentences: source, task, level, solved, onSolved }: Of<'tap'>) {
   const [picked, setPicked] = useState<ReadonlyMap<string, string>>(() => new Map());
   const [checked, setChecked] = useState(false);
   const answer = new Set(task.answer);
@@ -208,7 +217,7 @@ function TapPractice({ chapter, task, level, solved, onSolved }: Of<'tap'>) {
     setChecked(true);
     if (tapCorrect([...picked.values()], task.answer)) onSolved();
   };
-  const sentences = chapter.sentences.slice(task.sentences[0] - 1, task.sentences[1]);
+  const sentences = source.slice(task.sentences[0] - 1, task.sentences[1]);
   return (
     <>
       <p className={styles.taskPrompt}>
@@ -266,8 +275,8 @@ function TapPractice({ chapter, task, level, solved, onSolved }: Of<'tap'>) {
 }
 
 /** Вопрос по тексту. Кусок главы перед глазами — только по-гречески: перевод выдал бы ответ. */
-function ChoosePractice({ chapter, task, solved, onSolved }: Of<'choose'>) {
-  const part = task.sentences && chapter.sentences.slice(task.sentences[0] - 1, task.sentences[1]);
+function ChoosePractice({ sentences, task, solved, onSolved }: Of<'choose'>) {
+  const part = task.sentences && sentences.slice(task.sentences[0] - 1, task.sentences[1]);
   return (
     <>
       {part && (

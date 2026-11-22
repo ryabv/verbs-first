@@ -21,9 +21,8 @@ import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
+import { LevelSwitch, PracticeTask } from '@/widgets/practice-task';
 import { Celebration } from './Celebration';
-import { LevelSwitch } from './LevelSwitch';
-import { PracticeTask } from './PracticeTask';
 import styles from './Story.module.css';
 
 /** /story/:id/practice — закрепление главы: задания одно за другим на выбранном уровне. */
@@ -129,7 +128,7 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
               </button>
             )}
           </div>
-          <PracticeTask key={task.id} chapter={chapter} task={task} level={level} solved={solved} onSolved={solve} />
+          <PracticeTask key={task.id} sentences={chapter.sentences} task={task} level={level} solved={solved} onSolved={solve} />
           {revealed.has(task.id) && <p className={styles.gapHint}>Ответ показан — это задание вернётся в следующий круг.</p>}
           <div className={styles.stepNav}>
             {solved ? (

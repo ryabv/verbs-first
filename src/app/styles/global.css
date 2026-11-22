@@ -98,6 +98,16 @@
   /* Картуш с заголовком поверх карты — как надпись на старинной карте. */
   --parchment: #fbf6ea;
   --parchment-edge: #d6c39f;
+  /* Ежедневные: чернофигурная амфора — лак и необожжённая глина; тень кнопки. */
+  --daily-shadow: rgb(0 0 0 / 0.16);
+  /* Праздник «Найден черепок»: тёплая тьма, золотое сияние, лучи. Цвета сияния читает и 3D-сцена. */
+  --reveal-bg: #2a1a12;
+  --reveal-bg-edge: #120a06;
+  --reveal-ray: rgb(255 210 140 / 0.1);
+  --reveal-glow: #ffcf7a;
+  --reveal-dust: #ffd98f;
+  --reveal-text: #fbefd9;
+  --reveal-muted: #d9bf97;
 }
 
 /* Смена темы — старая страница растворяется в новой за полсекунды (theme-switcher, View Transitions). */
@@ -143,6 +153,14 @@
   --danger-soft: #441b1b;
   --parchment: #2c2a26;
   --parchment-edge: #554b3b;
+  --daily-shadow: rgb(0 0 0 / 0.4);
+  --reveal-bg: #1d130d;
+  --reveal-bg-edge: #0a0604;
+  --reveal-ray: rgb(255 200 120 / 0.08);
+  --reveal-glow: #ffc566;
+  --reveal-dust: #ffd27a;
+  --reveal-text: #f6e8d0;
+  --reveal-muted: #c9ad85;
   color-scheme: dark;
 }
 

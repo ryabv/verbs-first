@@ -15,6 +15,9 @@ export const routes = {
   text: (id: string) => `/texts/${encodeURIComponent(id)}`,
   /** Справочник: тема и (по желанию) правило — #якорь. */
   grammar: (topic?: string, rule?: string) => (topic ? `/grammar/${topic}${rule ? `#${rule}` : ''}` : '/grammar'),
+  /** Ежедневные: календарь месяца (`month` — ГГГГ-ММ, по умолчанию текущий) и день (`date` — ГГГГ-ММ-ДД). */
+  today: (month?: string) => (month ? `/today?month=${month}` : '/today'),
+  day: (date: string) => `/today/${date}`,
   /** История: главы; шаг — номер с 1 или end (конец главы: конспект и «Закрепить»). */
   story: () => '/',
   storyChapter: (id: number) => `/story/${id}`,

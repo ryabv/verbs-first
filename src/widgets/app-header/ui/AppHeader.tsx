@@ -1,7 +1,7 @@
 import { Link, NavLink, useMatch } from 'react-router';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
-import { CardsIcon, ColumnIcon, LighthouseIcon } from '@/shared/ui/icon';
+import { CalendarIcon, CardsIcon, ColumnIcon, LighthouseIcon } from '@/shared/ui/icon';
 import { Laurel, Meander } from '@/shared/ui/ornament';
 import styles from './AppHeader.module.css';
 
@@ -23,6 +23,10 @@ export function AppHeader() {
         <NavLink to={routes.home()} end className={({ isActive }) => (isActive || inStory ? styles.active : undefined)}>
           <LighthouseIcon className={styles.navIcon} />
           История
+        </NavLink>
+        <NavLink to={routes.today()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
+          <CalendarIcon className={styles.navIcon} />
+          Сегодня
         </NavLink>
         <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <CardsIcon className={styles.navIcon} />

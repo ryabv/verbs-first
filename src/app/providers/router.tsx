@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate, Outlet, RouterProvider, ScrollRestoration, useMatch } from 'react-router';
 import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
+import { DayRoute, TodayPage } from '@/pages/daily';
 import { HomePage } from '@/pages/home';
 import { LessonPage } from '@/pages/lesson';
 import { GrammarPage, GrammarTopicPage } from '@/pages/grammar';
@@ -36,6 +37,8 @@ const router = createBrowserRouter([
       { path: '/lessons', element: <HomePage /> },
       { path: '/lesson/:lessonId', element: <LessonPage /> },
       { path: '/cards', element: <CardsPage /> },
+      { path: '/today', element: <TodayPage /> },
+      { path: '/today/:date', element: <DayRoute /> },
       { path: '/alphabet', element: <AlphabetPage /> },
       { path: '/texts', element: <TextsPage /> },
       { path: '/texts/:textId', element: <TextPage /> },
