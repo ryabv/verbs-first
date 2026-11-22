@@ -26,7 +26,7 @@ export function AppHeader() {
         </NavLink>
         <NavLink to={routes.today()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <CalendarIcon className={styles.navIcon} />
-          Сегодня
+          Ежедневные
         </NavLink>
         <NavLink to={routes.cards()} className={({ isActive }) => (isActive ? styles.active : undefined)}>
           <CardsIcon className={styles.navIcon} />

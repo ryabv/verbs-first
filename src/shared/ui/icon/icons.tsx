@@ -76,7 +76,7 @@ export function LighthouseIcon(props: IconProps) {
   );
 }
 
-/** Листок календаря — раздел «Сегодня» (ежедневные задания). */
+/** Листок календаря — раздел «Ежедневные». */
 export function CalendarIcon(props: IconProps) {
   return (
     <Svg {...props}>

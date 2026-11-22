@@ -33,7 +33,8 @@ export interface IslandScene {
    * Плавно навести камеру на точку карты. at — где на холсте должна оказаться точка (пиксели):
    * например, в свободной от карточки части; без него — в центре.
    */
-  focus(x: number, y: number, at?: { x: number; y: number }): void;
+  /** Перевести камеру к точке карты; z — высота над землёй (самолёт пролога). at — где точка должна оказаться на экране. */
+  focus(x: number, y: number, at?: { x: number; y: number }, z?: number): void;
   /** Вызывается после каждого кадра: перевод точки карты в пиксели холста. */
   onFrame(cb: (project: (x: number, y: number, z?: number) => ScreenPoint) => void): void;
   /** Церковь (центр города) под пикселем холста: название и точка над куполом (z — над землёй). */
@@ -53,7 +54,7 @@ const CAT_TOP = 3.3 * CAT_SCALE;
 const FOV = 32;
 /** Где можно держать центр камеры (координаты карты). */
 // Снизу — с запасом: на телефоне место у южного берега поднимается над карточкой.
-const BOUNDS = { x0: 80, x1: MAP_W - 80, y0: 80, y1: MAP_H + 120 };
+const BOUNDS = { x0: 80, x1: MAP_W - 80, y0: 80, y1: MAP_H + 400 };
 
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const clamp01 = (v: number) => clamp(v, 0, 1);
@@ -1061,19 +1062,25 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
 
   return {
     update,
-    focus: (x, y, at) => {
+    focus: (x, y, at, z = 0) => {
       const to = { x, y, dist: view.dist };
       if (at) {
-        // Смотрим из конечной позиции, какая точка земли попадёт в at, и сдвигаем камеру на разницу.
+        // Метка стоит на рельефе (и выше — у самолёта), а не на уровне моря: из конечной позиции камеры
+        // проецируем саму метку на экран и сдвигаем камеру, пока она не встанет в at (2–3 шага хватает).
         const saved = { ...view };
-        Object.assign(view, to);
-        const g = groundAt(at.x, at.y);
+        for (let i = 0; i < 3; i++) {
+          Object.assign(view, to);
+          placeCamera();
+          camera.updateMatrixWorld();
+          const p = project(x, y, z);
+          const from = groundAt(p.x, p.y);
+          const target = groundAt(at.x, at.y);
+          if (!from || !target) break;
+          to.x += from.x - target.x;
+          to.y += from.y - target.y;
+        }
         Object.assign(view, saved);
         placeCamera();
-        if (g) {
-          to.x += x - g.x;
-          to.y += y - g.y;
-        }
       }
       tweenTo(to);
     },

@@ -151,6 +151,8 @@ function routeOf(states: readonly PlaceState[]) {
  */
 export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect, branches = NO_BRANCHES, selectedBranch, onSelectBranch, intro, panel, fallback }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<IslandScene | undefined>(undefined);
   const markers = useRef(new Map<number, HTMLLIElement>());
   // Метки рассказов кота: координаты — в data-x/data-y, чтобы цикл кадра не зависел от React.
@@ -232,18 +234,33 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
   }, [status, stateKey]);
 
   /** Точка — в свободной от карточки части экрана. */
-  const focus = (x: number, y: number) => {
+  const focus = (x: number, y: number, z?: number, el?: HTMLElement) => {
     const host = hostRef.current;
     if (!host) return;
-    // Место — в свободной от карточки части: на телефоне карточка снизу, на широком экране — слева.
     const w = host.clientWidth;
-    const h = host.clientHeight;
-    const at = w <= 760 ? { x: w / 2, y: h * 0.18 } : { x: 432 + (w - 432) / 2, y: h / 2 };
-    sceneRef.current?.focus(x, y, at);
+    if (w > 760) {
+      // Широкий экран: карточка слева — место посередине справа от неё.
+      sceneRef.current?.focus(x, y, { x: 432 + (w - 432) / 2, y: host.clientHeight / 2 }, z);
+      return;
+    }
+    // Телефон: табличка сверху, карточка снизу — место посередине между ними. Карточка появляется
+    // после выбора, поэтому меряем на следующем кадре (её высота у глав разная).
+    requestAnimationFrame(() => {
+      const box = host.getBoundingClientRect();
+      const top = introRef.current?.getBoundingClientRect().bottom ?? box.top;
+      const bottom = panelRef.current?.getBoundingClientRect().top ?? box.bottom;
+      // Соседние метки раздвинуты (spread) — метка стоит не ровно в своей точке. Сдвиг в пикселях
+      // при том же приближении не меняется: ставим в центр саму метку, а не точку под ней.
+      const raw = projectRef.current?.(x, y, z);
+      const shown = el?.getBoundingClientRect();
+      const dx = raw && shown ? shown.left - box.left - raw.x : 0;
+      const dy = raw && shown ? shown.top - box.top - raw.y : 0;
+      sceneRef.current?.focus(x, y, { x: w / 2 - dx, y: (top + bottom) / 2 - box.top - dy }, z);
+    });
   };
   const select = (p: StoryPlace) => {
     onSelect(p.chapter);
-    if (!p.offMap) focus(p.x, p.y);
+    if (!p.offMap) focus(p.x, p.y, p.altitude, markers.current.get(p.chapter));
   };
   const selectBranch = (b: MapBranch) => {
     onSelectBranch?.(b.key);
@@ -409,8 +426,14 @@ export function IslandMap({ stateOf, partOf, levelOf, selected, start, onSelect,
         <p className={styles.hint}>Тащите карту, колесо или щипок — масштаб</p>
       </div>
       <div className={styles.side}>
-        <div className={styles.intro}>{intro}</div>
-        {panel && <div className={styles.panel}>{panel}</div>}
+        <div ref={introRef} className={styles.intro}>
+          {intro}
+        </div>
+        {panel && (
+          <div ref={panelRef} className={styles.panel}>
+            {panel}
+          </div>
+        )}
       </div>
     </div>
   );

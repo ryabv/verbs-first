@@ -2,7 +2,8 @@
 .player {
   position: fixed;
   left: 20px;
-  bottom: calc(20px + env(safe-area-inset-bottom));
+  /* Над нижней панелью разделов на телефоне. */
+  bottom: calc(20px + max(var(--tabbar), env(safe-area-inset-bottom)));
   z-index: 50;
   display: grid;
   place-items: center;
@@ -34,5 +35,9 @@
 
 /* Телефон: выше закреплённой навигации шагов внизу экрана. */
 @media (max-width: 900px) {
-  .player { left: 12px; bottom: calc(76px + env(safe-area-inset-bottom)); width: 40px; height: 40px; }
+  .player { left: 12px; bottom: calc(76px + max(var(--tabbar), env(safe-area-inset-bottom))); width: 40px; height: 40px; }
+}
+/* Телефон: в тишине кнопку не показываем — на маленьком экране она закрывает содержимое. */
+@media (max-width: 720px) {
+  .player:disabled { display: none; }
 }

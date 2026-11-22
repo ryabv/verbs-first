@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { initTheme } from '@/features/theme-switcher';
 import { initDb } from '@/shared/lib/db';
 import { AppRouter } from './providers/router';
+import { watchForUpdates } from './update';
 import './styles/global.css';
 
 initTheme();
@@ -14,6 +15,7 @@ if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
       /* без офлайна сайт всё равно работает */
     });
   });
+  watchForUpdates();
 }
 
 const root = document.getElementById('root');

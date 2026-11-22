@@ -94,28 +94,40 @@
   text-decoration: none;
 }
 .future { color: var(--text-subtle); }
-/* Медальон: диск с двойной каймой; лавр виден у закрытых дней. */
-.medal {
+/* День календаря: просто цифра. Доступный — тёмный, будущий — серый. Пройденный — в венке,
+   начатый — кольцо прогресса, выбранный — светло-синий круг (у пройденного — под венком). */
+.day {
   position: relative;
-  background: var(--surface-muted);
-  border: 1.5px solid var(--border-strong);
-  box-shadow: inset 0 0 0 3px var(--bg), inset 0 0 0 4px var(--border);
+  padding: 0;
+  border: none;
+  background: none;
   color: var(--text);
-  transition: transform 0.15s;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
-a.medal:hover { transform: scale(1.08); border-color: var(--brand); }
-.medalLaurel { position: absolute; inset: 2%; width: 96%; height: 96%; color: var(--meander); opacity: 0; }
-.medalNum { position: relative; }
-.clean .medalNum, .closed .medalNum { font-weight: 700; }
-.started { border-color: var(--brand); }
-/* Закрыт без подсказок — терракота, как краснофигурная ваза; с «Показать ответ» — олива. */
-.clean { background: var(--brand); border-color: var(--brand); box-shadow: inset 0 0 0 3px var(--brand), inset 0 0 0 4px var(--bg); color: var(--bg); }
-.closed { background: var(--olive-soft); border-color: var(--olive); box-shadow: inset 0 0 0 3px var(--olive-soft), inset 0 0 0 4px var(--olive); color: var(--olive); }
-.clean .medalLaurel { opacity: 0.45; color: var(--bg); }
-.closed .medalLaurel { opacity: 0.5; color: var(--olive); }
-.today { outline: 2.5px solid var(--text); outline-offset: 3px; }
-.legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 18px 4px 0; font-size: 0.8rem; color: var(--text-subtle); }
-.legendMedal { display: inline-block; width: 1.1rem; height: 1.1rem; border-radius: 50%; box-shadow: none; }
+.day:hover { background: var(--surface-hover); }
+.dayNum { position: relative; }
+.dayLaurel { position: absolute; inset: -12%; width: 124%; height: 124%; color: var(--olive); pointer-events: none; }
+.done .dayNum { font-weight: 700; }
+.started::after {
+  content: '';
+  position: absolute;
+  /* Ровно по кругу выбранного дня, не шире. */
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) calc(var(--part) * 1turn), var(--border-strong) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  pointer-events: none;
+}
+.picked { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.picked:hover { background: var(--accent-soft); }
+/* Выбранный пройденный — тот же светлый круг под венком, без обводки. */
+.picked.done { color: var(--accent); }
+.today .dayNum { font-weight: 700; }
+
 
 /* Большая кнопка дня */
 .play { max-width: 34rem; margin: 28px auto 0; text-align: center; }
@@ -124,8 +136,8 @@ a.medal:hover { transform: scale(1.08); border-color: var(--brand); }
   display: block;
   padding: 15px 24px;
   border-radius: 999px;
-  background: var(--brand);
-  color: var(--bg);
+  background: var(--accent);
+  color: var(--on-accent);
   font-size: 1.2rem;
   font-weight: 700;
   text-decoration: none;
@@ -151,18 +163,61 @@ a.medal:hover { transform: scale(1.08); border-color: var(--brand); }
 .summary h2 { margin: 0 0 10px; font-size: 1.3rem; }
 .finishRow { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 16px 0 0; }
 
+/* Подпись витрины — только на телефоне (там она вместо таблички). */
+.caption { display: none; }
+
 @media (max-width: 600px) {
   .page { padding: 0 16px 40px; }
   .title { font-size: 28px; }
-  .hero { margin-top: 12px; }
-  .stage { height: 360px; }
-  .heroArrow { width: 2.2rem; height: 2.2rem; margin-top: -1.1rem; }
+  /* Сегодня, как в приложениях: витрина во всю ширину с подписью на ней, под ней — календарь,
+     «Начать» прилипает к низу экрана над панелью разделов. Всё — на одном экране. */
+  /* Витрина уходит под «чёлку» — фоном; подпись и кнопки — ниже неё. */
+  .hero { margin: calc(-1 * var(--safe-top)) -16px 0; }
+  .stage { height: calc(min(85vw, 40svh) + var(--safe-top)); border-radius: 0; }
+  .caption {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 1;
+    padding: calc(10px + var(--safe-top)) 16px 28px;
+    text-align: center;
+    pointer-events: none;
+    background: linear-gradient(var(--museum-scrim), transparent);
+    color: var(--museum-caption);
+  }
+  .captionKicker { margin: 0; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
+  .captionTitle { margin: 2px 0 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+  /* По центру видимой части витрины (без «чёлки»). */
+  .heroArrow { width: 2.2rem; height: 2.2rem; margin-top: calc(var(--safe-top) / 2 - 1.1rem); }
   .heroPrev { left: 8px; }
   .heroNext { right: 8px; }
-  .plaque { margin: -20px 8px 0; padding: 14px 16px; }
-  .plaqueTitle { font-size: 1.3rem; }
+  /* Табличка — только когда в ней действие («Собрать сосуд»). */
+  .plaque { display: none; }
+  .plaque.plaqueAction { display: block; margin: -18px 12px 0; padding: 12px 14px; }
+  .plaqueTitle { font-size: 1.15rem; }
+  /* Всё — на один экран без прокрутки: страница ровно в высоту экрана, кнопка прижата к низу
+     (свободное место — между календарём и кнопкой). Не влезло — страница просто прокручивается. */
+  .todayPage {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100svh - var(--tabbar) - var(--safe-top));
+    padding-bottom: 12px;
+  }
+  .todayPage .month, .todayPage .play { width: 100%; }
+  .todayPage .month { order: 1; margin-top: 14px; }
+  .todayPage .play { order: 2; position: sticky; bottom: calc(var(--tabbar) + 10px); z-index: 2; margin-top: auto; padding-top: 12px; }
+  /* Полки месяцев нет — месяцы листают стрелки на витрине. */
+  .todayPage .shelf { display: none; }
+  .todayPage .demo { order: 4; }
+  .todayPage .playNote { display: none; }
+  .playBtn { padding: 9px 18px; font-size: 1rem; box-shadow: 0 4px 12px var(--daily-shadow); }
+  .monthHead { margin-bottom: 8px; }
+  .monthTitle { font-size: 1.15rem; }
+  .counter { font-size: 1.05rem; }
   .grid { gap: 8px 4px; }
-  .cell { font-size: 0.95rem; }
+  .cell { max-width: 1.75rem; font-size: 0.78rem; }
 }
 
 /* Только в разработке: панель демо музея. */

@@ -80,6 +80,16 @@ function skin(vessel: Vessel): Skin {
   return skinFrom(vessel.id, paintSkin(vessel.id, vessel.shape));
 }
 
+/** Высота «чёлки» над холстом: CSS-переменная --safe-top (на телефоне — env(safe-area-inset-top)), в пикселях. */
+function safeTop(host: HTMLElement): number {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:absolute;visibility:hidden;height:var(--safe-top,0px)';
+  host.append(probe);
+  const h = probe.offsetHeight;
+  probe.remove();
+  return h;
+}
+
 /** Холст с готовыми пикселями. */
 function pixelCanvas(data: Uint8ClampedArray<ArrayBuffer>): HTMLCanvasElement {
   const c = document.createElement('canvas');
@@ -516,11 +526,20 @@ export function createVesselStage(host: HTMLElement): VesselStage {
     const { width, height } = host.getBoundingClientRect();
     if (!width || !height) return;
     renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    // На узком экране отодвигаем камеру — сосуд целиком.
+    // Телефон с «чёлкой»: витрина уходит под неё (--safe-top). Кадр строим по видимой части ниже «чёлки»,
+    // а полоса под «чёлкой» лишь дорисовывает сцену вверх (стена, фонари) — стол не съезжает вниз под подпись.
+    const inset = Math.min(safeTop(host), height / 3);
+    const below = height - inset;
+    camera.aspect = width / below;
+    // Компьютер — как раньше (видны и соседние экспонаты). Телефон — экспонат (стол ~3,3 × 2,8) во весь кадр:
+    // отодвигаем ровно настолько, чтобы влез и по высоте, и по ширине.
     const off = camera.position.clone().sub(target);
-    off.setLength(width < 600 || width / height < 0.9 ? 10 : 8);
+    const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const fit = Math.max(1.5 / half, 2 / (half * camera.aspect));
+    off.setLength(width < 600 ? fit : width / below < 0.9 ? 10 : 8);
     camera.position.copy(target).add(off);
+    if (inset > 0) camera.setViewOffset(width, below, 0, -inset, width, height);
+    else camera.clearViewOffset();
     camera.updateProjectionMatrix();
     invalidate();
   };

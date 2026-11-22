@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { markStoryStep, practiceKey, PRACTICE_KINDS, TASK_SKILL_LABELS, useStoryLevel } from '@/entities/story';
 import type { DeckRef } from '@/entities/card';
@@ -89,9 +89,7 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set());
   // День был закрыт ещё до этого захода — черепок за него уже найден раньше.
   const [closedBefore] = useState(() => isClosed(dayState(day)));
-  // День закрыли в этот заход — праздник с найденным черепком (один раз).
-  const [celebrated, setCelebrated] = useState(false);
-  const endCelebration = useCallback(() => setCelebrated(true), []);
+  // День закрыли в этот заход — праздник с найденным черепком; «Закрыть» уводит на стол реставратора.
   const item = queue[index];
 
   const log = (result: 'right' | 'revealed' | 'skipped') =>
@@ -132,7 +130,7 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'Сегодня', to: routes.today(date.slice(0, 7)) }, { label: dayTitle(date) }]} />
+        <Breadcrumbs items={[{ label: 'Ежедневные', to: routes.today(date.slice(0, 7)) }, { label: dayTitle(date) }]} />
         <p className={styles.kicker}>
           {date === todayKey() ? 'Задания на сегодня' : `Задания на ${dayTitle(date)}`}
         </p>
@@ -201,7 +199,7 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
       ) : (
         <Finish date={date} day={day} tasks={tasks} onAgain={again} fresh={!closedBefore} />
       )}
-      {!item && !closedBefore && !celebrated && isClosed(dayState(day)) && <FoundShard date={date} onClose={endCelebration} />}
+      {!item && !closedBefore && isClosed(dayState(day)) && <FoundShard date={date} />}
     </div>
   );
 }

@@ -19,6 +19,24 @@ function storedTheme(): Theme | null {
 
 function applyTheme(theme: Theme) {
   document.documentElement.dataset.theme = theme;
+  paintSystemBars();
+}
+
+/**
+ * Полосы системы (строка состояния, на Android — и панель навигации в установленном приложении) красятся
+ * в theme-color. В index.html он задан по теме системы — а тема сайта может быть другой (тёмный сайт
+ * при светлой системе давал белые полосы). Ставим один theme-color — фон текущей темы (--bg).
+ */
+function paintSystemBars() {
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if (!bg) return;
+  const metas = document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+  metas.forEach((m, i) => {
+    if (i > 0) m.remove();
+  });
+  const meta = metas[0] ?? document.head.appendChild(Object.assign(document.createElement('meta'), { name: 'theme-color' }));
+  meta.removeAttribute('media');
+  meta.content = bg;
 }
 
 /**

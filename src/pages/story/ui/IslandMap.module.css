@@ -1,5 +1,10 @@
 /* Карта — фон страницы: весь экран под шапкой (8px — меандр шапки), без прокрутки. */
-.band { position: relative; height: calc(100svh - var(--header-height) - 8px); min-height: 420px; }
+.band { position: relative; height: calc(100svh - var(--header-height) - 8px - var(--tabbar)); min-height: 420px; }
+/* Телефон: шапки (и её отступа 8px) нет — карта ровно до нижней панели разделов. */
+@media (max-width: 720px) {
+  /* Карта — до самого верха экрана, под «чёлку»; табличка и кнопки сдвинуты на --safe-top. */
+  .band { height: calc(100svh - var(--tabbar)); margin-top: calc(-1 * var(--safe-top)); }
+}
 .host {
   position: relative;
   height: 100%;
@@ -195,7 +200,7 @@
   .hint { display: none; }
   /* Телефон: картуш сверху (обычно свёрнут в табличку), карточка снизу во всю ширину
      и не выше двух третей карты. */
-  .side { left: 10px; right: 10px; top: 10px; bottom: 10px; width: auto; }
+  .side { left: 10px; right: 10px; top: calc(10px + var(--safe-top, 0px)); bottom: 10px; width: auto; }
   .panel { max-height: 68%; }
 }
 

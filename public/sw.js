@@ -1,11 +1,13 @@
 /*
  * Service worker Verbs First: приложение открывается и без сети.
  * - Страницы, скрипты, стили, манифест озвучки — сначала сеть, без сети — из кэша
- *   (имена main.js/main.css без хэша, поэтому кэш только на случай офлайна).
+ *   (имена main.js/main.css без хэша, поэтому кэш только на случай офлайна). В сеть — мимо HTTP-кэша
+ *   браузера (cache: 'no-cache' — сверка по ETag), иначе GitHub Pages до 10 минут отдаёт старые файлы.
+ * - version.json (номер сборки, src/app/update.ts) — только из сети.
  * - mp3 озвучки — сначала кэш: имя файла — хэш текста, файл не меняется.
  * - Шрифт с Google Fonts — тоже кэшируется, чтобы заголовки офлайн не падали на запасной шрифт.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `verbs-first-${VERSION}`;
 const SCOPE = new URL(self.registration.scope);
 const SHELL = new URL('index.html', SCOPE).href;
@@ -27,7 +29,8 @@ const isFont = (url) => url.hostname === 'fonts.googleapis.com' || url.hostname 
 async function networkFirst(request, fallbackKey) {
   const cache = await caches.open(CACHE);
   try {
-    const response = await fetch(request);
+    // Страницу (mode: navigate) с параметрами не перезапросить — запрашиваем её адрес заново.
+    const response = await (request.mode === 'navigate' ? fetch(request.url, { cache: 'no-cache', credentials: 'same-origin' }) : fetch(request, { cache: 'no-cache' }));
     // GitHub Pages отдаёт страницы уроков как 404.html со статусом 404 — это всё равно наше приложение.
     if (response.ok || (request.mode === 'navigate' && response.status === 404)) {
       cache.put(fallbackKey ?? request, response.clone());
@@ -64,6 +67,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   if (!url.href.startsWith(SCOPE.href)) return;
+  if (url.pathname.endsWith('/version.json')) return;
   if (url.pathname.endsWith('.mp3')) {
     event.respondWith(cacheFirst(request));
     return;

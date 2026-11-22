@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { streakOf, useCards } from '@/entities/card';
 import { vesselOfMonth, VesselPicture, VesselStage, type VesselView } from '@/entities/vessel';
@@ -32,6 +32,11 @@ import styles from './Daily.module.css';
 const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 const STATE_LABELS: Record<DayState, string> = { empty: 'не начат', started: 'начат', closed: 'закрыт', clean: 'закрыт чисто' };
 const ACTION: Record<DayState, string> = { empty: 'Начать', started: 'Продолжить', closed: 'Повторить', clean: 'Повторить' };
+/** Доля заданий дня, на которые уже ответили (решено или «Показать ответ»). */
+function partOf(day: DailyDayRecord | undefined): number {
+  if (!day?.tasks.length) return 0;
+  return Math.min(1, new Set([...day.solved, ...day.revealed]).size / day.tasks.length);
+}
 const MUSEUM_DECK = { id: 'museum', title: 'Музей сосудов' };
 const days = (n: number) => `${n} ${plural(n, ['день', 'дня', 'дней'])}`;
 
@@ -54,8 +59,10 @@ export function TodayPage() {
   const { days: activity } = useCards();
   const streak = streakOf(activity);
   const summary = monthSummary(month, all, today);
-  const todayState = dayState(dailyDay(today));
-  const todayDone = todayState === 'closed' || todayState === 'clean';
+  // Выбранный в календаре день — его открывает кнопка; по умолчанию сегодня.
+  const [picked, setPicked] = useState(today);
+  const pickedState = dayState(dailyDay(picked));
+  const pickedDone = pickedState === 'closed' || pickedState === 'clean';
   const go = (m: string) => setParams(m === last ? {} : { month: m });
   // Только в разработке: `?demo=on` / `?demo=off` — демо музея за несколько месяцев (запуск сдвигается, нужна перезагрузка).
   const demo = process.env.NODE_ENV !== 'production' ? params.get('demo') : null;
@@ -69,12 +76,14 @@ export function TodayPage() {
 
   const months: string[] = [];
   for (let m = first; m <= last; m = shiftMonth(m, 1)) months.push(m);
+  const [built = false] = useAssembledMonths([month]);
   const dates = daysOfMonth(month);
   const blanks = weekdayOf(dates[0]!);
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.todayPage}`}>
       <Museum month={month} months={months} all={all} today={today} go={go} />
+      {DAILY_DEMO && <DemoPanel month={month} open={summary.open.length} total={summary.total} closed={summary.closed} built={built} />}
 
       {months.length > 1 && (
         <nav className={styles.shelf} aria-label="Полка: сосуды по месяцам">
@@ -112,29 +121,43 @@ export function TodayPage() {
                 </span>
               );
             }
-            const state = dayState(all.find((x) => x.id === d));
-            const cls = [styles.cell, styles.medal, styles[state], d === today && styles.today].filter(Boolean).join(' ');
+            const record = all.find((x) => x.id === d);
+            const state = dayState(record);
+            const done = state === 'closed' || state === 'clean';
+            const cls = [styles.cell, styles.day, done && styles.done, state === 'started' && styles.started, d === picked && styles.picked, d === today && styles.today]
+              .filter(Boolean)
+              .join(' ');
+            const label = `${dayTitle(d)}: ${STATE_LABELS[state]}`;
             return (
-              <Link key={d} to={routes.day(d)} className={cls} aria-label={`${dayTitle(d)}: ${STATE_LABELS[state]}`} title={`${dayTitle(d)}: ${STATE_LABELS[state]}`}>
-                <Laurel className={styles.medalLaurel} size="100%" />
-                <span className={styles.medalNum}>{n}</span>
-              </Link>
+              <button
+                key={d}
+                type="button"
+                className={cls}
+                style={{ '--part': partOf(record) } as CSSProperties}
+                onClick={() => setPicked(d)}
+                aria-pressed={d === picked}
+                aria-label={label}
+                title={label}
+              >
+                {done && <Laurel className={styles.dayLaurel} size="100%" />}
+                <span className={styles.dayNum}>{n}</span>
+              </button>
             );
           })}
         </div>
-        <p className={styles.legend}>
-          <span className={`${styles.medal} ${styles.clean} ${styles.legendMedal}`} /> закрыт без подсказок ·{' '}
-          <span className={`${styles.medal} ${styles.closed} ${styles.legendMedal}`} /> с «Показать ответ» · прошлые дни можно догнать
-        </p>
       </section>
 
       <div className={styles.play}>
         <p className={styles.playNote}>
-          {todayDone ? 'Сегодня закрыто — можно догнать прошлые дни' : `Сегодня, ${dayTitle(today)}: 8 заданий на 5–10 минут`}
+          {picked !== today
+            ? `${dayTitle(picked)}${pickedDone ? ': закрыт' : ''}`
+            : pickedDone
+              ? 'Сегодня закрыто — можно догнать прошлые дни'
+              : `Сегодня, ${dayTitle(today)}: 8 заданий на 5–10 минут`}
           {streak > 0 && ` · серия ${days(streak)}`}
         </p>
-        <Link to={routes.day(today)} className={styles.playBtn}>
-          {ACTION[todayState]}
+        <Link to={routes.day(picked)} className={styles.playBtn}>
+          {ACTION[pickedState]}
         </Link>
       </div>
     </div>
@@ -145,7 +168,6 @@ export function TodayPage() {
 function Museum({ month, months, all, today, go }: { month: string; months: readonly string[]; all: readonly DailyDayRecord[]; today: string; go: (m: string) => void }) {
   const builtAll = useAssembledMonths(months);
   const focus = months.indexOf(month);
-  const built = builtAll[focus] ?? false;
   const first = months[0]!;
   const last = months.at(-1)!;
   // Все месяцы — одна галерея: при смене месяца камера идёт вдоль стены к его экспонату.
@@ -162,6 +184,11 @@ function Museum({ month, months, all, today, go }: { month: string; months: read
     <section className={styles.hero} aria-labelledby="museum-title">
       <div className={styles.stageWrap}>
         <VesselStage exhibits={exhibits} focus={focus} reveal={view.kind === 'vessel' && assembling.has(month)} onRevealed={() => assembling.delete(month)} label={label} className={styles.stage} />
+        {/* Телефон: заголовок витрины — прямо на ней, без таблички (кроме «Собрать сосуд»). */}
+        <div className={styles.caption} aria-hidden="true">
+          <p className={styles.captionKicker}>Музей · {monthTitle(month)}</p>
+          <p className={styles.captionTitle}>{view.kind === 'vessel' ? vessel.title : summary.complete ? 'Все черепки найдены' : `Найдено ${summary.closed} из ${shards(summary.total)}`}</p>
+        </div>
         <button type="button" className={`${styles.heroArrow} ${styles.heroPrev}`} disabled={month <= first} onClick={() => go(shiftMonth(month, -1))} aria-label="Прошлый месяц">
           <Arrow direction="left" />
         </button>
@@ -170,7 +197,7 @@ function Museum({ month, months, all, today, go }: { month: string; months: read
         </button>
       </div>
 
-      <div className={styles.plaque}>
+      <div className={`${styles.plaque} ${view.kind === 'dig' && summary.complete ? styles.plaqueAction : ''}`}>
         <p className={styles.plaqueKicker}>Музей · {monthTitle(month)}</p>
         {view.kind === 'vessel' ? (
           <>
@@ -215,7 +242,6 @@ function Museum({ month, months, all, today, go }: { month: string; months: read
           </div>
         )}
       </div>
-      {DAILY_DEMO && <DemoPanel month={month} open={summary.open.length} total={summary.total} closed={summary.closed} built={built} />}
     </section>
   );
 }

@@ -35,19 +35,33 @@
 }
 
 
-/* Планшет и телефон: четыре раздела — иконка над короткой подписью, вместо надписи — только знак ρ в венке.
-   Название остаётся для экранных чтецов. */
+/* Планшет и телефон: разделы — нижняя панель под большим пальцем (иконка над короткой подписью),
+   наверху — только знак с названием и тема. Высота панели — --tabbar (global.css). */
 @media (max-width: 720px) {
-  .header { gap: 0.75rem; }
-  .wordmark { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .nav { flex: 1; justify-content: space-around; gap: 0.25rem; }
-  .nav a { flex-direction: column; gap: 2px; font-size: 0.7rem; line-height: 1.1; padding: 4px 2px; }
-  .navIcon { width: 1.45rem; height: 1.45rem; }
-  .tools { margin-left: 0; }
+  /* Шапки нет — экран под содержимое; тема — кнопкой в правом верхнем углу, поверх страницы. */
+  .header { height: 0; margin: 0; padding: 0; z-index: 30; }
+  .logo, .meander { display: none; }
+  .tools { position: absolute; top: calc(10px + var(--safe-top)); right: 12px; }
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    height: var(--tabbar);
+    padding: 0 4px env(safe-area-inset-bottom);
+    justify-content: space-around;
+    gap: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 14px var(--daily-shadow);
+  }
+  .nav a { flex: 1; flex-direction: column; justify-content: center; gap: 3px; font-size: 0.72rem; line-height: 1.1; color: var(--text-muted); }
+  .nav a.active { color: var(--brand); font-weight: 600; }
+  .navIcon { width: 1.5rem; height: 1.5rem; }
 }
 @media (max-width: 400px) {
-  .header { padding: 0 10px; gap: 0.4rem; }
+  .header { padding: 0 12px; }
   .logo { font-size: 1.2rem; }
   .mark { width: 2.2rem; height: 2.2rem; }
-  .nav a { font-size: 0.66rem; }
 }

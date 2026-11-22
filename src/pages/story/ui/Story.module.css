@@ -445,9 +445,10 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   .stepTitle { font-size: 1.4rem; }
   .stepNav {
     position: sticky;
-    bottom: 0;
+    /* Над нижней панелью разделов; «домашняя полоска» iPhone уже в её высоте. */
+    bottom: var(--tabbar);
     margin: 20px -16px 0;
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    padding: 12px 16px calc(12px + max(0px, env(safe-area-inset-bottom) - var(--tabbar)));
     background: var(--bg);
     border-top: 1px solid var(--border);
   }
@@ -456,6 +457,11 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
   .stepNav > * { white-space: nowrap; }
   .stepNav > :last-child { padding-inline: 16px; }
 }
+/* Телефон: справа вверху — кнопка темы (шапки нет), «Свернуть» — слева. */
+@media (max-width: 720px) {
+  .collapse { right: auto; left: 14px; }
+}
+
 @media (max-width: 600px) {
   .page, .mapPage { padding: 0 16px 32px; }
   .split { padding-top: 12px; }

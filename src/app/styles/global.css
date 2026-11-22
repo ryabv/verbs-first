@@ -108,6 +108,9 @@
   --reveal-dust: #ffd98f;
   --reveal-text: #fbefd9;
   --reveal-muted: #d9bf97;
+  /* Подпись на витрине музея (телефон): затемнение сверху и светлый текст — поверх 3D-дворика. */
+  --museum-scrim: rgb(40 26 16 / 0.55);
+  --museum-caption: #fbf3e4;
 }
 
 /* Смена темы — старая страница растворяется в новой за полсекунды (theme-switcher, View Transitions). */
@@ -161,6 +164,8 @@
   --reveal-dust: #ffd27a;
   --reveal-text: #f6e8d0;
   --reveal-muted: #c9ad85;
+  --museum-scrim: rgb(10 6 4 / 0.6);
+  --museum-caption: #f6e8d0;
   color-scheme: dark;
 }
 
@@ -198,3 +203,17 @@ h1, h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: 0.0
 code { font-family: var(--font-mono); }
 
 #root { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Нижняя панель разделов на телефоне (шапка — widgets/app-header): высота с «домашней полоской» iPhone.
+   На компьютере её нет — 0. Всё прикреплённое к низу экрана поднимается на неё. */
+:root { --tabbar: 0px; }
+@media (max-width: 720px) {
+  :root { --tabbar: calc(60px + env(safe-area-inset-bottom)); --header-height: 0px; }
+  /* Шапки на телефоне нет. Содержимое — ниже «чёлки» (отступ у main); фоновые картинки (карта, витрина музея)
+     уходят под неё отрицательным отступом, а кнопки и текст поверх них сдвинуты на --safe-top. */
+  :root { --safe-top: env(safe-area-inset-top, 0px); }
+  body { padding-bottom: var(--tabbar); }
+  #root > main { padding-top: var(--safe-top); }
+  /* Без лишней прокрутки: экран минус панель разделов. */
+  #root { min-height: calc(100svh - var(--tabbar)); }
+}
