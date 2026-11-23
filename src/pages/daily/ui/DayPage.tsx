@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { markStoryStep, practiceKey, useStoryLevel } from '@/entities/story';
-import type { DeckRef } from '@/entities/card';
+import { addCards, ensureDeck, isDueAny, useCards, type DeckRef } from '@/entities/card';
 import { ShardThumb, vesselOfMonth } from '@/entities/vessel';
-import { AddWords, analyzePhrase, lookupToken } from '@/features/card-add';
+import { analyzePhrase, lookupToken } from '@/features/card-add';
 import {
   buildDay,
   DAY_PARTS,
@@ -40,7 +40,16 @@ import styles from './Daily.module.css';
 
 /** Слова из ошибок дня — в свой набор карточек. */
 const DAILY_DECK: DeckRef = { id: 'daily', title: 'Из ежедневных' };
-const dailyDeck = () => DAILY_DECK;
+
+/** Слова задания — словарными формами, без служебных слов (для карточек из ошибок). */
+function wordsOf(t: DailyTask) {
+  const out = new Map<string, { greek: string; russian: string }>();
+  for (const token of analyzePhrase(t.phrase.greek)) {
+    const e = token.isWord ? lookupToken(token) : undefined;
+    if (e && !/артикль|предлог|частица|союз/.test(e.russian) && !out.has(e.greek)) out.set(e.greek, { greek: e.greek, russian: e.russian });
+  }
+  return [...out.values()];
+}
 
 /** /today/:date — день: задания одно за другим. */
 export function DayRoute() {
@@ -112,6 +121,9 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
     log('revealed');
     markDailyTask(date, item.key, 'revealed');
     setRevealed((r) => new Set(r).add(item.key));
+    // Показали ответ — слова задания сами идут в карточки (docs/product/home.md).
+    ensureDeck(DAILY_DECK);
+    addCards(DAILY_DECK.id, wordsOf(item));
   };
   const next = () => {
     setSolved(false);
@@ -243,6 +255,7 @@ function Overview({ tasks, isDone, onStart }: { tasks: readonly DailyTask[]; isD
             <span className={styles.partCount}>{done > 0 && done < total ? `${done}/${total}` : total}</span>
           </li>
         ))}
+        <CardsRow />
       </ol>
       <Button onClick={onStart} className={styles.overviewStart}>
         {begun ? 'Продолжить' : left.length === 0 ? 'Повторить' : 'Начать'} <Arrow />
@@ -251,21 +264,30 @@ function Overview({ tasks, isDone, onStart }: { tasks: readonly DailyTask[]; isD
   );
 }
 
+/** Последняя строка оглавления: карточки на повторение — бонус, на закрытие дня не влияет. */
+function CardsRow() {
+  const { cards } = useCards();
+  const due = cards.filter((c) => isDueAny(c)).length;
+  if (due === 0) return null;
+  return (
+    <li className={`${styles.part} ${styles.partBonus}`}>
+      <span className={styles.partNum}>+</span>
+      <span className={styles.partText}>
+        <b>Карточки</b>
+        <span>по желанию: на день не влияет</span>
+      </span>
+      <Link to={routes.cards()} className={styles.partLink}>
+        Повторить {due} <Arrow />
+      </Link>
+    </li>
+  );
+}
+
 function Finish({ date, day, tasks, onAgain, fresh }: { date: string; day: DailyDayRecord; tasks: readonly DailyTask[]; onAgain: () => void; fresh: boolean }) {
   const state = dayState(day);
   const left = tasks.filter((t) => !day.solved.includes(t.key) && !day.revealed.includes(t.key)).length;
-  // Слова из заданий с показанным ответом — словарными формами, без служебных слов.
-  const words = useMemo(() => {
-    const out = new Map<string, { greek: string; russian: string; kind: 'verb' | 'word' }>();
-    for (const t of tasks) {
-      if (!day.revealed.includes(t.key)) continue;
-      for (const token of analyzePhrase(t.phrase.greek)) {
-        const e = token.isWord ? lookupToken(token) : undefined;
-        if (e && !/артикль|предлог|частица|союз/.test(e.russian) && !out.has(e.greek)) out.set(e.greek, e);
-      }
-    }
-    return [...out.values()];
-  }, [tasks, day.revealed]);
+  // Слова из заданий с показанным ответом уже в карточках — добавлены при «Показать ответ».
+  const words = useMemo(() => new Set(tasks.filter((t) => day.revealed.includes(t.key)).flatMap((t) => wordsOf(t).map((w) => w.greek))).size, [tasks, day.revealed]);
   const today = todayKey();
   return (
     <section className={styles.summary}>
@@ -280,9 +302,9 @@ function Finish({ date, day, tasks, onAgain, fresh }: { date: string; day: Daily
         </>
       )}
       {isClosed(state) && <Find date={date} fresh={fresh} />}
-      {words.length > 0 && (
-        <p>
-          <AddWords words={words} deckFor={dailyDeck} label="Слова из ошибок — в карточки" />
+      {words > 0 && (
+        <p className={styles.note}>
+          <Check /> Слова из ошибок ({words}) добавлены в карточки — <Link to={routes.cards()}>повторять</Link>
         </p>
       )}
       <div className={styles.finishRow}>

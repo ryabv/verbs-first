@@ -412,6 +412,7 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .summary h2 { margin: 0 0 10px; font-size: 1.3rem; }
 .summary ul { margin: 0; padding-left: 1.2rem; line-height: 1.65; }
 .finish { margin: 28px 0 0; padding-top: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+.addedWords { margin: 0; color: var(--success); }
 .teaser { margin: 0; font-family: var(--font-display); font-size: 1.2rem; font-style: italic; }
 .finishRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; width: 100%; }
 

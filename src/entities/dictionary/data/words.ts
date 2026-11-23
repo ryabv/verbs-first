@@ -1,6 +1,7 @@
 import type { DictEntry } from '../model/types';
 import { ACC_M, ADJ_F, ADJ_F_PL, ADJ_M_PL, ADJ_N, ADJ_N_PL, GEN_F, IND_F, IND_M, IND_N, PL_A } from './notes';
 import { LIBRARY_WORDS } from './library-words';
+import { PROVERB_WORDS } from './proverb-words';
 import { STORY_WORDS } from './story-words';
 
 /**
@@ -74,7 +75,9 @@ export const DICTIONARY: DictEntry[] = [
   { greek: 'γεια', russian: 'привет; пока (букв. «здоровья»)' },
   { greek: 'μην', russian: 'не (в запретах: «не делайте»)' },
   { greek: 'μαζί', russian: 'вместе (μαζί σας — с собой)' },
+  { greek: 'καλημέρα', russian: 'доброе утро; добрый день' },
   { greek: 'καλησπέρα', russian: 'добрый вечер' },
+  { greek: 'καληνύχτα', russian: 'спокойной ночи' },
   { greek: 'το πρωί', russian: 'утро; утром' },
   { greek: 'οκτώ', russian: 'восемь' },
   { greek: 'εφτά', russian: 'семь' },
@@ -173,4 +176,5 @@ export const DICTIONARY: DictEntry[] = [
   // Раздел «Тексты»
   ...LIBRARY_WORDS,
   ...STORY_WORDS,
+  ...PROVERB_WORDS,
 ];

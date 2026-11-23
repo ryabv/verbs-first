@@ -11,6 +11,8 @@ import { STORY_CHAPTERS, STORY_PRAISE, WEEK_MATERIAL } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add/lib/lexicon';
 import { OLYMPUS, SETTLEMENTS } from '@/pages/story/lib/cyprus';
 import { VESSELS } from '@/entities/vessel/data/catalog';
+import { GREETINGS } from '@/pages/main/lib/greeting';
+import { PROVERBS } from '@/entities/proverb';
 
 const texts: string[] = [];
 const lessons = getLessonCatalog()
@@ -38,6 +40,8 @@ LIBRARY_TEXTS.forEach((t) => t.sentences.forEach((s) => texts.push(s.greek)));
 const GREEK_RUN = /[\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*/gu;
 const greekIn = (s: string) => s.replace(/`[^`]+`/g, ' ').match(GREEK_RUN) ?? [];
 texts.push(STORY_PRAISE.greek);
+GREETINGS.forEach((g) => texts.push(g.greek));
+PROVERBS.forEach((p) => texts.push(p.greek, ...(p.meaning.match(/[\p{Script=Greek}]+/gu) ?? [])));
 for (const c of STORY_CHAPTERS) {
   c.sentences.forEach((s) => texts.push(s.greek));
   [c.title, c.teaser, c.find?.text ?? '', ...c.summary, ...c.steps.flatMap((s) => s.body)].forEach((s) => texts.push(...greekIn(s)));

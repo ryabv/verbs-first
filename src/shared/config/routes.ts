@@ -1,6 +1,8 @@
 export const routes = {
-  /** Главная — карта «Истории»: основной путь обучения. */
+  /** Главная — прогресс по зонам учёбы (docs/product/home.md). */
   home: () => '/',
+  /** Профиль: тема, уровень заданий. */
+  profile: () => '/profile',
   /** Список уроков: из шапки убран, страницы уроков — по прямым ссылкам. */
   lessons: () => '/lessons',
   lesson: (id: number | string) => `/lesson/${id}`,
@@ -19,7 +21,8 @@ export const routes = {
   today: (month?: string) => (month ? `/today?month=${month}` : '/today'),
   day: (date: string) => `/today/${date}`,
   /** История: главы; шаг — номер с 1 или end (конец главы: конспект и «Закрепить»). */
-  story: () => '/',
+  /** Карта «Истории» (не /story и не /map: там папки public/story и public/map — сервер отдал бы их). */
+  story: () => '/island',
   storyChapter: (id: number) => `/story/${id}`,
   storyStep: (id: number, step: number | 'end') => `/story/${id}/${step}`,
   /** Закрепление главы: задания по уровням. */

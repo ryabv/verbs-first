@@ -1,15 +1,16 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
+import { addCards, ensureDeck } from '@/entities/card';
 import { getLesson, knownVerbIds, type ReadingText } from '@/entities/lesson';
 import { getChapter, markStoryStep, STORY_END, type StoryChapter } from '@/entities/story';
 import { getVerbs } from '@/entities/verb';
-import { AddWords, TokenCard } from '@/features/card-add';
+import { TokenCard } from '@/features/card-add';
 import { ReadingView } from '@/features/text-reading';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
-import { Arrow } from '@/shared/ui/ornament';
-import { storyDeck } from '../lib/deck';
+import { Arrow, Check } from '@/shared/ui/ornament';
+import { STORY_DECK, storyDeck } from '../lib/deck';
 import { chapterWords } from '../lib/words';
 import { ChapterTitle } from './ChapterTitle';
 import { Manuscript } from './Manuscript';
@@ -29,6 +30,11 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
     return getVerbs(lesson ? knownVerbIds(lesson) : []);
   }, [chapter.lesson]);
   const words = useMemo(() => chapterWords(chapter), [chapter]);
+  // Дочитал главу — её слова сами попадают в карточки (docs/product/home.md): повторы не задваиваются.
+  useEffect(() => {
+    ensureDeck(STORY_DECK);
+    addCards(STORY_DECK.id, words);
+  }, [words]);
   const total = chapter.steps.length;
   const next = getChapter(chapter.id + 1);
 
@@ -68,7 +74,9 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
       </section>
 
       <footer className={styles.finish}>
-        <AddWords words={words} deckFor={storyDeck} label="Слова главы — в карточки" doneLabel="Слова главы уже в карточках" />
+        <p className={styles.addedWords}>
+          <Check /> Слова главы добавлены в карточки — <Link to={routes.cards()}>повторять</Link>
+        </p>
         <p className={styles.teaser}>
           <Rich text={chapter.teaser} wordDeck={storyDeck} />
         </p>

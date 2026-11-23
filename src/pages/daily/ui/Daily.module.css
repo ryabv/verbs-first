@@ -184,6 +184,8 @@
 .partText span { font-size: 0.85rem; color: var(--text-muted); }
 .partDone .partText b { color: var(--text-muted); }
 .partCount { flex: none; font-size: 0.9rem; color: var(--text-subtle); font-variant-numeric: tabular-nums; }
+.partBonus .partNum { background: var(--brand-soft); color: var(--brand); }
+.partLink { flex: none; font-size: 0.9rem; font-weight: 600; }
 .overviewStart { margin-top: 18px; min-width: 60%; padding: 13px 40px; }
 @media (max-width: 600px) {
   .overview { display: flex; flex-direction: column; }

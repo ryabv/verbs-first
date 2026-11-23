@@ -1,19 +1,23 @@
-import { createBrowserRouter, Navigate, Outlet, RouterProvider, ScrollRestoration, useMatch } from 'react-router';
+import { createBrowserRouter, Outlet, RouterProvider, ScrollRestoration, useLocation } from 'react-router';
 import { AlphabetPage } from '@/pages/alphabet';
 import { CardsPage } from '@/pages/cards';
 import { DayRoute, TodayPage } from '@/pages/daily';
 import { HomePage } from '@/pages/home';
 import { LessonPage } from '@/pages/lesson';
+import { MainPage } from '@/pages/main';
+import { ProfilePage } from '@/pages/profile';
 import { GrammarPage, GrammarTopicPage } from '@/pages/grammar';
 import { ChapterRoute, StoryPage } from '@/pages/story';
 import { TextPage, TextsPage } from '@/pages/texts';
 import { AppFooter } from '@/widgets/app-footer';
 import { AppHeader } from '@/widgets/app-header';
 import { AudioPlayer } from '@/widgets/audio-player';
+import { routes } from '@/shared/config/routes';
 
 function Layout() {
-  // Карта «Истории» (главная) занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
-  const fullScreen = useMatch('/');
+  const { pathname } = useLocation();
+  // Карта «Истории» занимает весь экран под шапкой — подвал там не нужен (иначе появится прокрутка).
+  const fullScreen = pathname === routes.story();
   return (
     <>
       <AppHeader />
@@ -32,8 +36,10 @@ const router = createBrowserRouter([
   {
     element: <Layout />,
     children: [
-      // Главная — карта «Истории». Уроки и тексты из шапки убраны, но открываются по прямым ссылкам.
-      { path: '/', element: <StoryPage /> },
+      // Главная — прогресс по зонам; карта «Истории» — /story. Уроки и тексты открываются по прямым ссылкам.
+      { path: '/', element: <MainPage /> },
+      { path: '/island', element: <StoryPage /> },
+      { path: '/profile', element: <ProfilePage /> },
       { path: '/lessons', element: <HomePage /> },
       { path: '/lesson/:lessonId', element: <LessonPage /> },
       { path: '/cards', element: <CardsPage /> },
@@ -44,7 +50,6 @@ const router = createBrowserRouter([
       { path: '/texts/:textId', element: <TextPage /> },
       { path: '/grammar', element: <GrammarPage /> },
       { path: '/grammar/:topicId', element: <GrammarTopicPage /> },
-      { path: '/story', element: <Navigate to="/" replace /> },
       { path: '/story/:chapterId', element: <ChapterRoute /> },
       { path: '/story/:chapterId/:step', element: <ChapterRoute /> },
       { path: '/story/:chapterId/cat/:branch', element: <ChapterRoute /> },

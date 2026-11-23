@@ -1,22 +1,45 @@
-import { useState } from 'react';
-import { Link, NavLink, useMatch } from 'react-router';
+import { useCallback, useEffect, useState, type MouseEvent } from 'react';
+import { Link, NavLink, useLocation } from 'react-router';
 import { ThemeSwitcher } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
-import { CalendarIcon, CardsIcon, ColumnIcon, LighthouseIcon, ProfileIcon } from '@/shared/ui/icon';
+import { lastStudySection, rememberStudySection, STUDY_SECTIONS, studySectionOf } from '@/shared/config/study';
+import { HomeIcon, ProfileIcon, STUDY_ICONS, StudyIcon } from '@/shared/ui/icon';
 import { Laurel, Meander } from '@/shared/ui/ornament';
-import { ProfileSheet } from './ProfileSheet';
+import { StudyFan } from './StudyFan';
 import styles from './AppHeader.module.css';
 
+const cls = (on: boolean) => (on ? styles.active : undefined);
+/** Сколько втягивается веер при закрытии (как в StudyFan.module.css). */
+const FAN_CLOSE = 320;
+
 /**
- * Шапка. На компьютере — знак, разделы с подписями, тема. На телефоне — нижняя панель из значков:
- * подпись только у активного раздела (он плавно раздвигается в «пилюлю»), «Профиль» открывает шторку с темой.
+ * Шапка: Главная · Учёба · Профиль (docs/product/home.md). На компьютере — знак, разделы с подписями, тема.
+ * На телефоне — нижняя панель: три пункта, значок с подписью под ним; активный — цветом раздела.
+ * «Учёба» на компьютере открывает зону, где ученик был последним, а по наведению — меню из четырёх зон;
+ * на телефоне — раскрывает веер разделов (StudyFan).
  */
 export function AppHeader() {
-  // «История» — и карта на главной, и главы (/story/…).
-  const inStory = useMatch('/story/*');
-  const [profile, setProfile] = useState(false);
-  // Пока открыта шторка профиля — выделен «Профиль», а не раздел страницы.
-  const active = ({ isActive }: { isActive: boolean }) => (isActive && !profile ? styles.active : undefined);
+  const { pathname } = useLocation();
+  const section = studySectionOf(pathname);
+  const inStudy = section !== undefined;
+  // Запоминаем зону, где ученик был последним: «Учёба» откроет её.
+  useEffect(() => {
+    if (section) rememberStudySection(section.id);
+  }, [section]);
+  // Веер: открыт → закрывается (втягивается, FAN_CLOSE мс) → закрыт.
+  const [fan, setFan] = useState<'closed' | 'open' | 'closing'>('closed');
+  const fanOpen = fan === 'open';
+  const closeFan = useCallback(() => {
+    setFan((f) => (f === 'open' ? 'closing' : f));
+    setTimeout(() => setFan((f) => (f === 'closing' ? 'closed' : f)), FAN_CLOSE);
+  }, []);
+  // На телефоне «Учёба» раскрывает веер разделов, на компьютере — ведёт в последнюю зону.
+  const onStudy = (e: MouseEvent) => {
+    if (!matchMedia('(max-width: 720px)').matches) return;
+    e.preventDefault();
+    if (fanOpen) closeFan();
+    else setFan('open');
+  };
   return (
     <header className={styles.header}>
       <Link to={routes.home()} className={styles.logo}>
@@ -29,38 +52,56 @@ export function AppHeader() {
         </span>
       </Link>
       <nav className={styles.nav}>
-        <NavLink to={routes.home()} end className={({ isActive }) => active({ isActive: isActive || !!inStory })}>
-          <LighthouseIcon className={styles.navIcon} />
-          <span className={styles.label}>История</span>
+        <NavLink to={routes.home()} end className={({ isActive }) => cls(isActive && !fanOpen)} onClick={closeFan}>
+          <HomeIcon className={styles.navIcon} />
+          <span className={styles.label}>Главная</span>
         </NavLink>
-        <NavLink to={routes.today()} className={active}>
-          <CalendarIcon className={styles.navIcon} />
-          <span className={styles.label}>Ежедневные</span>
-        </NavLink>
-        <NavLink to={routes.cards()} className={active}>
-          <CardsIcon className={styles.navIcon} />
-          <span className={styles.label}>Карточки</span>
-        </NavLink>
-        <NavLink to={routes.grammar()} className={active}>
-          <ColumnIcon className={styles.navIcon} />
-          <span className={styles.label}>Справочник</span>
-        </NavLink>
-        <button
-          type="button"
-          className={profile ? `${styles.profile} ${styles.active}` : styles.profile}
-          onClick={() => setProfile((v) => !v)}
-          aria-expanded={profile}
-          aria-label="Профиль"
-        >
+        <div className={styles.study}>
+          <Link
+            to={lastStudySection().to}
+            className={[cls(inStudy || fanOpen), fanOpen && styles.fanOpen].filter(Boolean).join(' ')}
+            aria-current={inStudy ? 'page' : undefined}
+            aria-expanded={fanOpen}
+            onClick={onStudy}
+          >
+            <span className={styles.studyIcon}>
+              <StudyIcon className={styles.navIcon} />
+              <span className={styles.studyClose} aria-hidden="true" />
+            </span>
+            <span className={styles.label}>Учёба</span>
+          </Link>
+          {/* Компьютер: зоны «Учёбы» — по наведению (и с клавиатуры — по фокусу). */}
+          <div className={styles.menu}>
+            <ul className={styles.menuList}>
+              {STUDY_SECTIONS.map((z) => {
+                const Icon = STUDY_ICONS[z.id];
+                return (
+                  <li key={z.id}>
+                    <Link
+                      to={z.to}
+                      className={z.id === section?.id ? `${styles.menuItem} ${styles.menuOn}` : styles.menuItem}
+                      // Снять фокус, иначе меню остаётся открытым (:focus-within) после перехода.
+                      onClick={(e) => e.currentTarget.blur()}
+                    >
+                      <Icon className={styles.menuIcon} />
+                      {z.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+        <NavLink to={routes.profile()} className={({ isActive }) => cls(isActive && !fanOpen)} onClick={closeFan}>
           <ProfileIcon className={styles.navIcon} />
           <span className={styles.label}>Профиль</span>
-        </button>
+        </NavLink>
       </nav>
       <div className={styles.tools}>
         <ThemeSwitcher />
       </div>
       <Meander className={styles.meander} />
-      {profile && <ProfileSheet onClose={() => setProfile(false)} />}
+      {fan !== 'closed' && <StudyFan current={section?.id} closing={fan === 'closing'} onClose={closeFan} />}
     </header>
   );
 }

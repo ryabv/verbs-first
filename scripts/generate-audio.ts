@@ -29,6 +29,8 @@ import { GRAMMAR_TOPICS } from '@/entities/grammar/data/topics';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
 import { WEEK_MATERIAL } from '@/entities/story/data/week-material';
 import { STORY_PRAISE } from '@/entities/story/model/types';
+import { PROVERBS } from '@/entities/proverb/data/proverbs';
+import { GREETINGS } from '@/pages/main/lib/greeting';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
 import { getVerbs } from '@/entities/verb/lib/getVerbs';
 import { PERSONS, SENTENCE_FORMS, TENSES } from '@/entities/verb/model/types';
@@ -106,6 +108,9 @@ function collectTexts(): Set<string> {
   // Справочник: примеры к правилам.
   for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
   add(STORY_PRAISE.greek);
+  // Главная: приветствие по времени суток и пословица дня.
+  GREETINGS.forEach((g) => add(g.greek));
+  PROVERBS.forEach((p) => add(p.greek));
   // Материал недели глав: предложения (диктант, плитки) и тексты целиком (слушание).
   for (const w of WEEK_MATERIAL) {
     w.sentences.forEach((p) => add(p.greek));

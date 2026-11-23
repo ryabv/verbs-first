@@ -18,7 +18,14 @@
 .word:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .popover {
-  /* Окно может открыться из заголовка — не наследуем его шрифт (Alegreya) и жирность. */
+  /* Окно не наследует оформление текста, где стоит слово: шрифт заголовка, курсив, тень и размер (пословица на картинке). */
+  font-size: 1rem;
+  font-style: normal;
+  line-height: 1.5;
+  text-shadow: none;
+  text-align: left;
+  text-transform: none;
+  color: var(--text);
   font-family: var(--font);
   font-weight: 400;
   letter-spacing: normal;

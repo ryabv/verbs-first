@@ -171,3 +171,24 @@ export function ProfileIcon(props: IconProps) {
     </Svg>
   );
 }
+
+/** Главная: дом. */
+export function HomeIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 10.5 12 4l8 6.5" />
+      <path d="M6 9v10.5h12V9" />
+      <path d="M10 19.5v-5h4v5" />
+    </Svg>
+  );
+}
+
+/** Учёба: открытая книга со стопкой. */
+export function StudyIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M12 7c-1.8-1.4-4.4-2-8-1.8v12.6c3.6-.2 6.2.4 8 1.8 1.8-1.4 4.4-2 8-1.8V5.2C16.4 5 13.8 5.6 12 7z" />
+      <path d="M12 7v12.6" />
+    </Svg>
+  );
+}

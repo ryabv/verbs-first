@@ -1,0 +1,347 @@
+/* Главная: место главы во весь экран сверху, пергамент главы наползает на него, ниже — «Сегодня» и фраза дня. */
+.page { width: 100%; padding-bottom: 40px; }
+
+/* ---------- герой: место главы и приветствие ---------- */
+.hero {
+  position: relative;
+  height: 340px;
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--parchment), var(--olive-soft));
+}
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 45%;
+  /* Медленное «дыхание» картинки — как камера в кино: место живое. */
+  animation: drift 24s ease-in-out infinite alternate;
+}
+/* Снизу картинка растворяется в фоне страницы — пергамент главы ложится на неё мягко. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgb(20 14 6 / 0.55), rgb(20 14 6 / 0.2) 30%, transparent 48%),
+    linear-gradient(to top, var(--bg) 0, transparent 45%);
+  pointer-events: none;
+}
+.heroTop {
+  position: relative;
+  /* Выше содержимого — чтобы всплывающий смысл пословицы лёг поверх карточек. */
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 26px 24px 0;
+  color: var(--museum-caption);
+  animation: rise 0.6s ease-out both;
+}
+.heroText { max-width: 640px; }
+.greeting { margin: 0; font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1; text-shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 2px 16px rgb(0 0 0 / 0.4); }
+.greeting :global(button) { color: inherit; text-shadow: inherit; text-decoration-color: rgb(255 255 255 / 0.3); }
+/* Пословица — на картинке, светлым: греческий курсивом, перевод мельче, смысл — по нажатию. */
+.proverb { position: relative; margin: 10px 0 0; text-shadow: 0 1px 3px rgb(0 0 0 / 0.55), 0 1px 12px rgb(0 0 0 / 0.35); }
+.proverbGreek { margin: 0; font-family: var(--font-display); font-size: 1.35rem; font-style: italic; line-height: 1.35; }
+.proverbGreek :global(button) { color: inherit; text-shadow: inherit; text-decoration-color: rgb(255 255 255 / 0.3); border-bottom-color: rgb(255 255 255 / 0.3); }
+.proverbSpeak { display: inline-block; margin: 0 4px 0 8px; vertical-align: middle; line-height: 1; }
+.proverbSpeak :global(button) { color: var(--museum-caption); background: rgb(0 0 0 / 0.28); border-color: transparent; }
+.proverbRu { margin: 4px 0 0; font-size: 0.92rem; line-height: 1.4; opacity: 0.95; }
+.proverbMore { margin-left: 4px; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.proverbMeaning {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 3;
+  max-width: 420px;
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgb(20 14 6 / 0.72);
+  backdrop-filter: blur(8px);
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-shadow: none;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+  animation: rise 0.25s ease-out both;
+}
+.streak {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.28);
+  backdrop-filter: blur(6px);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.streakLaurel { width: 1.4rem; height: 1.4rem; color: #d9e5a8; }
+
+/* ---------- содержимое ---------- */
+.content { position: relative; z-index: 1; max-width: 960px; margin: -170px auto 0; padding: 0 24px; }
+
+/* Пергамент главы: как табличка на странице главы, но с завязкой и большой кнопкой. */
+.story {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 14px 26px 16px;
+  border: 1px solid var(--parchment-edge);
+  border-radius: calc(var(--radius) * 2);
+  background: var(--parchment);
+  box-shadow: inset 0 0 0 5px var(--parchment), inset 0 0 0 6px var(--parchment-edge), 0 18px 40px rgb(0 0 0 / 0.22);
+  text-align: center;
+  animation: rise 0.6s 0.3s ease-out both;
+}
+.meander { width: 100%; height: 10px; margin: 4px 0; background: var(--brand); opacity: 0.45; }
+.kicker { margin: 8px 0 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
+.storyTitle { margin: 6px 0 0; font-size: 1.9rem; line-height: 1.15; }
+.storyRu { margin: 2px 0 0; color: var(--text-muted); }
+.storyIntro {
+  display: -webkit-box;
+  margin: 12px 0 0;
+  overflow: hidden;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.storyProgress { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; margin: 14px 0 0; font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; }
+.track { flex: 1; height: 6px; border-radius: 3px; background: var(--parchment-edge); overflow: hidden; }
+.fill { display: block; height: 100%; border-radius: 3px; background: var(--olive); transition: width 0.6s ease-out; }
+.storyAction { margin: 16px 0 0; padding: 13px 34px; font-size: 1.05rem; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
+.storyMeta { margin: 12px 0 4px; font-size: 0.85rem; color: var(--text-subtle); }
+
+/* ---------- Сегодня ---------- */
+.section { margin: 32px 0 12px; font-size: 1.35rem; }
+/* «Сегодня» стоит на картинке — светлым, с тенью. */
+.sectionRow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 32px 0 12px; }
+.sectionRow .section { margin: 0; }
+.sectionLink { font-size: 0.9rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.sectionLink:hover { text-decoration: underline; }
+/* Подпись раздела в карточке — ссылка в раздел: тот же вид, стрелка, при наведении — цвет ссылки. */
+.kickerLink { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+.kickerLink:hover { color: var(--accent); }
+.kickerLink svg { width: 0.9em; height: 0.9em; }
+.todayTitle { margin-top: 0; color: var(--museum-caption); text-shadow: 0 1px 3px rgb(0 0 0 / 0.5), 0 1px 12px rgb(0 0 0 / 0.4); }
+/* Ежедневные, пока день не закрыт, — главная карточка: терракотовая кромка сверху и тень. */
+.card.cardMain { border-top: 3px solid var(--brand); box-shadow: 0 14px 34px rgb(0 0 0 / 0.16); }
+
+.today { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  background: var(--surface);
+  animation: rise 0.6s 0.08s ease-out both;
+}
+.card + .card { animation-delay: 0.16s; }
+.cardKicker { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-subtle); }
+.cardTitle { margin: 2px 0 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; line-height: 1.2; }
+.cardSub { margin: 4px 0 0; font-size: 0.9rem; color: var(--text-muted); }
+
+/* Строка зоны: картинка · текст · круглая кнопка. */
+.tile { display: flex; align-items: center; gap: 14px; }
+.cardText { flex: 1; min-width: 0; }
+
+/* Сосуд месяца: силуэт, залитый снизу по найденным черепкам, на тёплом круге; слегка покачивается. */
+.vessel {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 60%, var(--brand-soft), transparent 72%);
+}
+.vesselPic { width: 58px; height: 58px; transform-origin: 50% 90%; animation: sway 4s ease-in-out infinite; }
+
+/* Неделя — кружки с буквой дня: закрыт — олива с галочкой, начат — кольцо прогресса, сегодня — в рамке. */
+.week { display: flex; gap: 5px; list-style: none; margin: 8px 0 0; padding: 0; }
+.weekDay {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--surface-muted);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.weekDay[style]::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: conic-gradient(var(--olive) calc(var(--part) * 360deg), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 62%, black 64%);
+  mask: radial-gradient(circle, transparent 62%, black 64%);
+}
+.weekDone { background: var(--olive); color: #fff; }
+.weekDone svg { width: 13px; height: 13px; }
+.weekToday { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--brand); color: var(--brand); }
+.weekToday.weekDone { color: #fff; }
+.weekFuture { opacity: 0.45; }
+.kickerLink { white-space: nowrap; }
+
+/* Круглая кнопка зоны: диск с ▶ (или числом), вокруг — кольцо прогресса; подпись — под ней. */
+.go { flex: none; display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: var(--text-muted); }
+.goDisc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform 0.15s ease;
+}
+.goDisc svg { width: 22px; height: 22px; }
+.goDisc::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  background: conic-gradient(var(--olive) calc(var(--part, 0) * 360deg), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 66%, black 68%);
+  mask: radial-gradient(circle, transparent 66%, black 68%);
+}
+.go:hover .goDisc { transform: scale(1.06); }
+.goLabel { font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.goCount { font-size: 1.2rem; }
+.goDone .goDisc { background: var(--olive-soft); color: var(--olive); box-shadow: none; }
+.goLaurel { width: 30px; height: 30px; }
+/* Пока день не начат — мягкая волна вокруг кнопки: зовёт начать. */
+.goPulse .goDisc::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulse 2.2s ease-out infinite;
+}
+
+/* Стопка карточек: две подложки веером и верхняя — со словом, которое ждёт первым. */
+.deck { position: relative; flex: none; width: 70px; height: 64px; }
+.deckCard {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 58px;
+  height: 48px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.1);
+}
+.deckCard:nth-child(1) { transform: rotate(-12deg) translate(-6px, 4px); }
+.deckCard:nth-child(2) { transform: rotate(-5deg) translate(-2px, 2px); }
+.deckTop {
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+  transform: rotate(4deg);
+  border-color: var(--brand);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--brand);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.learn { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+.learnTrack { flex: 1; max-width: 140px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.learnFill { display: block; height: 100%; border-radius: 3px; background: var(--olive); }
+
+@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes pulse { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.5); opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+@keyframes drift { from { transform: scale(1.02); } to { transform: scale(1.1) translate(-1.5%, 1%); } }
+@media (prefers-reduced-motion: reduce) {
+  .heroImage, .heroTop, .story, .card, .vesselPic, .goPulse .goDisc::before { animation: none; }
+}
+
+/* ---------- телефон ---------- */
+@media (max-width: 720px) {
+  /* Картинка — под вырез экрана, приветствие — ниже него. */
+  .hero { height: calc(360px + var(--safe-top, 0px)); margin-top: calc(-1 * var(--safe-top, 0px)); }
+  .heroTop { padding: calc(18px + var(--safe-top, 0px)) 16px 0; }
+  .greeting { font-size: 2rem; }
+  .proverbGreek { font-size: 1.15rem; }
+  .content { margin-top: -150px; padding: 0 16px; }
+  .story { padding: 12px 18px 14px; }
+  .storyTitle { font-size: 1.55rem; }
+  .storyAction { align-self: stretch; text-align: center; }
+  .section { margin-top: 26px; }
+  .sectionRow { margin-top: 26px; }
+  .today { grid-template-columns: 1fr; gap: 12px; }
+  .card { padding: 14px; }
+  .tile { gap: 10px; }
+  .vessel { width: 50px; height: 50px; }
+  .vesselPic { width: 46px; height: 46px; }
+  .deck { width: 56px; height: 52px; }
+  .deckCard { left: 4px; width: 48px; height: 40px; }
+  .deckTop { font-size: 0.85rem; }
+  .week { gap: 3px; }
+  .weekDay { width: 22px; height: 22px; font-size: 0.66rem; }
+  .goDisc { width: 50px; height: 50px; }
+  .cardKicker { letter-spacing: 0.04em; }
+  .cardTitle { font-size: 1.1rem; }
+}
+
+/* ---------- компьютер: всё в один экран ----------
+ * Картинка места — фоном на весь экран под шапкой; слева приветствие, глава и фраза дня, справа «Сегодня». */
+@media (min-width: 721px) {
+  .page { position: relative; min-height: calc(100dvh - var(--header-height)); padding-bottom: 24px; }
+  .hero { position: absolute; inset: 0; height: auto; }
+  .hero::after {
+    background:
+      linear-gradient(to bottom, rgb(20 14 6 / 0.5), rgb(20 14 6 / 0.15) 22%, transparent 40%),
+      linear-gradient(to top, var(--bg) 0, color-mix(in srgb, var(--bg) 70%, transparent) 35%, transparent 70%);
+  }
+  .heroTop { max-width: 1120px; padding: 22px 32px 0; }
+  .content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    grid-template-areas: 'todayTitle storyTitle' 'today story';
+    align-items: start;
+    column-gap: 24px;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 196px 32px 0;
+  }
+  .todayTitle { grid-area: todayTitle; margin: 0 0 10px; }
+  .storyTitleRow { grid-area: storyTitle; margin: 0 0 10px; color: var(--museum-caption); text-shadow: 0 1px 3px rgb(0 0 0 / 0.5), 0 1px 12px rgb(0 0 0 / 0.4); }
+  .storyTitleRow .sectionLink { color: inherit; }
+  .story { grid-area: story; max-width: none; margin: 0; padding: 8px 22px 10px; }
+  .storyTitle { font-size: 1.6rem; }
+  .storyIntro { -webkit-line-clamp: 2; margin-top: 8px; }
+  .storyProgress { margin-top: 10px; }
+  .storyAction { margin-top: 12px; padding: 11px 30px; }
+  .storyMeta { margin-top: 8px; }
+  .today { grid-area: today; grid-template-columns: 1fr; gap: 12px; }
+  .card { padding: 16px 18px; box-shadow: 0 10px 28px rgb(0 0 0 / 0.14); }
+  .card.cardMain { box-shadow: 0 14px 34px rgb(0 0 0 / 0.2); }
+}

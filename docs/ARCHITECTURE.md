@@ -45,15 +45,17 @@ jsx-a11y, import, unicorn, oxc; `correctness` — ошибка, `suspicious`/`pe
 src/
   app/                    точка входа, роутер, глобальные стили и токены темы
   pages/
+    main/                 Главная (/): прогресс по зонам — История, Ежедневные, Карточки (docs/product/home.md)
+    profile/              Профиль (/profile): тема и уровень заданий
     home/                 оглавление курса (16 уроков, прогресс урока и ДЗ)
     lesson/               страница урока: один путь (урок → ДЗ → экзамен) + ?mode=reference
     cards/                карточки: наборы, тренировка, добавление своих слов
     alphabet/             «Урок 0»: карта курса чтения, шаги (?step=), справочник (?mode=reference)
     texts/                «Тексты»: список по уровням (/texts) и чтение (/texts/:id), «знакомо N% слов»
-    story/                «История»: главы (/story), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end), рассказ кота (/story/:id/cat/:branch)
+    story/                «История»: карта острова (/island), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end), рассказ кота (/story/:id/cat/:branch)
     daily/                «Ежедневные»: календарь месяца и кубки (/today), день — задания по рецепту (/today/:date)
   widgets/
-    app-header, app-footer
+    app-header, app-footer   шапка: Главная · Учёба · Профиль; «Учёба» — меню зон по наведению (компьютер) или веер StudyFan (телефон); зоны — shared/config/study.ts
     audio-player/         плеер слева снизу: пауза/продолжить, прогресс — кольцо вокруг кнопки
     lesson-map/           карта урока: этапы на дорожке, медальоны, финал урока
     lesson-path/          шаги этапа: сайдбар со списком шагов этапа, контент шага, prev/next
@@ -70,13 +72,14 @@ src/
     alphabet-quiz/        ChoiceQuiz (в т.ч. «услышь и выбери»), SyllableGrid, WordLadder, BuildWord, TextReader, AlphabetOrder
     lesson-progress/      прогресс по шагам (localStorage)
     pronounce/            кнопка озвучки SpeakButton
-    theme-switcher/       тема: как в системе / светлая / тёмная (кнопка в шапке, выбор в шторке «Профиль»)
+    theme-switcher/       тема: как в системе / светлая / тёмная (кнопка в шапке, выбор на странице «Профиль»)
     daily/                ежедневные: календарь, прогресс дней (daily_days), рецепт дня — словарь сайта передаёт страница
   entities/
     verb/                 модель глагола, данные, сборка фраз, анализатор текста, VerbTable
     lesson/               модель урока, контент уроков, api getLesson/getLessonCatalog
     card/                 карточки и наборы: хранилище (localStorage), прогресс по словам, проверка ответов
     alphabet/             буквы, сочетания, тренажёры, курс чтения READING_COURSE + LetterGrid, LetterIntroList, CombinationList
+    proverb/              пословицы дня для Главной PROVERBS (перевод слово в слово + смысл); слова — dictionary/data/proverb-words.ts
     library/              тексты для чтения LIBRARY_TEXTS (уровень, жанр, о чём) и отметки «прочитано»
     story/                история-сериал STORY_CHAPTERS (глава = урок: текст, шаги с задачами, конспект) и прогресс шагов
   shared/
@@ -380,8 +383,8 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   в пояснение и ссылку «Справочник: <правило>». Источник — `LexEntry.why` из `lookupToken`: глагол — `verbWhy` по разбору
   (время, лица; только если форма не словарная), остальное — `DictEntry.why[форма]` (`FormNote { note, rule }`).
   Греческое в пояснении выделяется, но не нажимается (окно уже открыто).
-- `/` (главная) — 3D-карта острова на весь экран; пролог — место `PROLOGUE` (0) «Паром: алфавит» → `/alphabet`,
-  прогресс — курса чтения (`progressKey.reading`), необязателен. Карта под шапкой, без прокрутки и без подвала (`useMatch` в `Layout`) (`pages/story/ui/IslandMap`, сцена — `lib/island-scene.ts` на three.js,
+- `/island` — 3D-карта острова на весь экран (не `/story` и не `/map`: это папки в `public/`, сервер отдал бы их); пролог — место `PROLOGUE` (0) «Паром: алфавит» → `/alphabet`,
+  прогресс — курса чтения (`progressKey.reading`), необязателен. Карта под шапкой, без прокрутки и без подвала (`Layout`) (`pages/story/ui/IslandMap`, сцена — `lib/island-scene.ts` на three.js,
   грузится отдельным чанком только здесь). Карта — настоящий Кипр, 2000×1280 единиц (≈114 м на единицу),
   проекция долгота/широта → карта — `geo()` в `lib/cyprus.ts` (там же контур берега для плоской карты, озёра, города
   `SETTLEMENTS`, дороги `ROADS`). Рельеф — `lib/terrain.ts` по настоящим высотам: `public/map/cyprus-heights.bin`

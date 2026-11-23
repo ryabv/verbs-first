@@ -46,7 +46,7 @@ export function CardsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'История', to: routes.home() }, { label: 'Карточки' }]} back={false} />
+        <Breadcrumbs items={[{ label: 'Главная', to: routes.home() }, { label: 'Карточки' }]} back={false} />
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Карточки</h1>
           {!training && (
@@ -77,10 +77,9 @@ export function CardsPage() {
       {cards.length === 0 ? (
         <Callout title="Пока пусто">
           <p>
-            Слова появляются здесь, когда вы добавляете их из уроков: нажмите на любое греческое слово — и «в
-            карточки». Начать можно со <Link to={routes.alphabet()}>слов урока 0</Link> или с{' '}
-            <Link to={`${routes.lesson(1)}?mode=reference&tab=words`}>слов урока 1</Link>. Или впишите своё слово —
-            кнопка «Добавить слово» выше.
+            Слова глав попадают сюда сами, когда вы дочитываете главу <Link to={routes.story()}>Истории</Link>, а слова из ошибок —
+            когда в ежедневных показываете ответ. Любое греческое слово можно добавить и вручную: нажмите на него — и «в
+            карточки». Или впишите своё — кнопка «Добавить слово» выше.
           </p>
         </Callout>
       ) : (
