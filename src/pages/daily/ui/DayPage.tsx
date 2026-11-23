@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { markStoryStep, practiceKey, PRACTICE_KINDS, TASK_SKILL_LABELS, useStoryLevel } from '@/entities/story';
+import { markStoryStep, practiceKey, useStoryLevel } from '@/entities/story';
 import type { DeckRef } from '@/entities/card';
 import { ShardThumb, vesselOfMonth } from '@/entities/vessel';
 import { AddWords, analyzePhrase, lookupToken } from '@/features/card-add';
 import {
   buildDay,
+  DAY_PARTS,
   dayOpen,
   dayState,
   dayTitle,
@@ -16,6 +17,7 @@ import {
   monthTitle,
   openDay,
   parseDate,
+  partOf,
   recentMistakes,
   todayKey,
   useAssembledMonths,
@@ -85,6 +87,8 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
     return left.length > 0 ? left : tasks;
   });
   const [index, setIndex] = useState(0);
+  // Сначала — оглавление дня; «Начать» / «Продолжить» ведёт к заданиям.
+  const [started, setStarted] = useState(false);
   const [solved, setSolved] = useState(false);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(() => new Set());
   // День был закрыт ещё до этого захода — черепок за него уже найден раньше.
@@ -154,12 +158,14 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
         )}
       </header>
 
-      {item ? (
+      {!started && item ? (
+        <Overview tasks={tasks} isDone={isDone} onStart={() => setStarted(true)} />
+      ) : item ? (
         <section className={styles.task}>
           <div className={styles.taskHead}>
             <h2 className={styles.taskTitle}>
-              {TASK_SKILL_LABELS[PRACTICE_KINDS[item.task.kind].skill]} · {index + 1} из {queue.length}
-              <span className={styles.source}> · {item.source}</span>
+              {partOf(item).title} · {placeInPart(tasks, item)}
+              <span className={styles.source}>{item.source}</span>
             </h2>
             {!solved && (
               <button type="button" className={styles.linkBtn} onClick={reveal}>
@@ -201,6 +207,47 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
       )}
       {!item && !closedBefore && isClosed(dayState(day)) && <FoundShard date={date} />}
     </div>
+  );
+}
+
+/** «3 из 6» — место задания в его части дня. */
+function placeInPart(tasks: readonly DailyTask[], item: DailyTask) {
+  const part = partOf(item);
+  const same = tasks.filter((t) => partOf(t) === part);
+  return `${same.indexOf(item) + 1} из ${same.length}`;
+}
+
+/** Оглавление дня: части по порядку, сколько в каждой и примерно сколько минут осталось. */
+function Overview({ tasks, isDone, onStart }: { tasks: readonly DailyTask[]; isDone: (t: DailyTask) => boolean; onStart: () => void }) {
+  const parts = DAY_PARTS.map((part) => {
+    const own = tasks.filter((t) => partOf(t) === part);
+    return { part, total: own.length, done: own.filter(isDone).length };
+  }).filter((p) => p.total > 0);
+  const left = tasks.filter((t) => !isDone(t));
+  const seconds = (left.length ? left : tasks).reduce((n, t) => n + partOf(t).seconds, 0);
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  const begun = left.length < tasks.length && left.length > 0;
+  return (
+    <section className={styles.overview}>
+      <h2 className={styles.overviewTitle}>
+        {begun ? 'Продолжим' : 'Что сегодня'} <span className={styles.overviewTime}>≈ {minutes} мин</span>
+      </h2>
+      <ol className={styles.parts}>
+        {parts.map(({ part, total, done }, i) => (
+          <li key={part.id} className={done === total ? `${styles.part} ${styles.partDone}` : styles.part}>
+            <span className={styles.partNum}>{done === total ? <Check /> : i + 1}</span>
+            <span className={styles.partText}>
+              <b>{part.title}</b>
+              <span>{part.note}</span>
+            </span>
+            <span className={styles.partCount}>{done > 0 && done < total ? `${done}/${total}` : total}</span>
+          </li>
+        ))}
+      </ol>
+      <Button onClick={onStart} className={styles.overviewStart}>
+        {begun ? 'Продолжить' : left.length === 0 ? 'Повторить' : 'Начать'} <Arrow />
+      </Button>
+    </section>
   );
 }
 

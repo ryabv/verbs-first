@@ -34,7 +34,10 @@ export {
 export {
   buildDay,
   buildPool,
+  DAY_PARTS,
   DAY_SIZE,
+  partOf,
+  type DailyPart,
   type DailyGroup,
   type DailyLexicon,
   type DailyTask,

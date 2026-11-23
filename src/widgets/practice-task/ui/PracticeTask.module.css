@@ -31,6 +31,10 @@
 .tapRight { background: var(--success-soft); color: var(--success); border-radius: 4px; }
 .tapWrong { background: var(--danger-soft); color: var(--danger); border-radius: 4px; }
 .taskPrompt { margin: 0 0 12px; line-height: 1.5; }
+/* «На слух»: звук — главное в задании, крупная круглая кнопка отдельной строкой, а не значок в конце фразы. */
+.listenPlay { margin: 0 0 14px; }
+.listenPlay button,
+.listenPlay button:hover { width: 3.4rem; height: 3.4rem; font-size: 1.5rem; background: var(--accent-soft); color: var(--accent); }
 .taskActions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
 .gapField { display: flex; flex-direction: column; gap: 4px; }
 .gapHint { font-size: 0.9rem; color: var(--text-muted); }

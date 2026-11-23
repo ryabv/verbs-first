@@ -36,8 +36,31 @@ export interface DailyTask {
   source: string;
 }
 
-/** Заданий в дне. */
-export const DAY_SIZE = 8;
+/**
+ * Части дня — по нарастающей: от узнавания к сборке фраз. На входе в день — оглавление из частей.
+ * `size` — сколько заданий части, `seconds` — примерно на одно задание (для «≈ N мин» в оглавлении).
+ * Вместе — около 24 заданий, минут на пять.
+ */
+export interface DailyPart {
+  id: string;
+  title: string;
+  note: string;
+  groups: readonly DailyGroup[];
+  size: number;
+  seconds: number;
+}
+export const DAY_PARTS: readonly DailyPart[] = [
+  { id: 'word', title: 'Слова', note: 'что значит слово', groups: ['word'], size: 6, seconds: 6 },
+  { id: 'listen', title: 'На слух', note: 'услышать и узнать', groups: ['listen'], size: 5, seconds: 10 },
+  { id: 'form', title: 'Формы', note: 'глагол в нужной форме', groups: ['form'], size: 5, seconds: 15 },
+  { id: 'translate', title: 'Перевод', note: 'собрать фразу из слов', groups: ['translate'], size: 4, seconds: 25 },
+  { id: 'chapter', title: 'Текст и глава', note: 'вопросы к текстам и закрепление глав', groups: ['text', 'practice'], size: 4, seconds: 20 },
+];
+/** Часть дня, к которой относится задание. */
+export const partOf = (t: Pick<DailyTask, 'group'>): DailyPart => DAY_PARTS.find((p) => p.groups.includes(t.group)) ?? DAY_PARTS[0]!;
+
+/** Заданий в дне (сумма частей). */
+export const DAY_SIZE = DAY_PARTS.reduce((n, p) => n + p.size, 0);
 
 // ---------- случайность по ключу ----------
 
@@ -294,18 +317,23 @@ export interface DayInput {
   usedThisWeek: ReadonlySet<string>;
 }
 
-/** Собрать день: ключи заданий по порядку. Одна дата и тот же прогресс — тот же набор. */
+/**
+ * Собрать день: ключи заданий по частям (DAY_PARTS). Одна дата и тот же прогресс — тот же набор.
+ * Каждая часть набирается до своего размера; не хватило материала в одной — добирают другие, чтобы день не худел.
+ */
 export function buildDay({ date, pool, current, unpracticed, mistakes, usedThisWeek }: DayInput): string[] {
-  const picked: string[] = [];
-  const take = (keys: readonly string[], n: number) => {
-    let left = n;
-    for (const k of keys) {
-      if (left <= 0 || picked.length >= DAY_SIZE) return;
-      if (pool.has(k) && !picked.includes(k)) {
-        picked.push(k);
-        left--;
-      }
-    }
+  const picked = new Map<string, string[]>(DAY_PARTS.map((p) => [p.id, []]));
+  const has = (k: string) => [...picked.values()].some((ks) => ks.includes(k));
+  const total = () => [...picked.values()].reduce((n, ks) => n + ks.length, 0);
+  /** Взять задание в его часть; `force` — сверх размера части (добор). */
+  const take = (k: string, force = false) => {
+    const t = pool.get(k);
+    if (!t || has(k) || total() >= DAY_SIZE) return false;
+    const part = partOf(t);
+    const keys = picked.get(part.id)!;
+    if (!force && keys.length >= part.size) return false;
+    keys.push(k);
+    return true;
   };
   // Задания новичка (глава 0) — только пока не прочитана ни одна глава.
   const all = [...pool.values()].filter((t) => current === undefined || t.chapter !== 0);
@@ -331,22 +359,30 @@ export function buildDay({ date, pool, current, unpracticed, mistakes, usedThisW
     return [...weave(fresh), ...weave(used)].map((t) => t.key);
   };
 
-  // Дни равны друг другу: незакреплённое, пара ошибок недели, остальное — поровну из всех групп.
-  take(unpracticed, 3);
-  take(shuffled(mistakes, `${date}:mistakes`), 2);
-  // Остальное — по кругу из групп: на слух, перевод, формы, слова, текст.
-  const groups: DailyGroup[] = ['listen', 'translate', 'form', 'word', 'text'];
-  const queues = groups.map((g) =>
-    ordered(
-      all.filter((t) => t.group === g),
-      `${date}:mix:${g}`,
-    ),
+  // Сначала незакреплённое (в части «Текст и глава») и ошибки недели — в свои части.
+  unpracticed.slice(0, 3).forEach((k) => take(k));
+  shuffled(mistakes, `${date}:mistakes`)
+    .slice(0, 3)
+    .forEach((k) => take(k));
+  // Остальное — каждая часть из своих групп.
+  const queues = new Map(
+    DAY_PARTS.map((p) => [
+      p.id,
+      ordered(
+        all.filter((t) => p.groups.includes(t.group) && t.group !== 'practice'),
+        `${date}:mix:${p.id}`,
+      ),
+    ]),
   );
-  const start = Math.floor(seeded(`${date}:start`)() * groups.length);
-  for (let round = 0; picked.length < DAY_SIZE && queues.some((q) => q.length); round++) {
-    const q = queues[(start + round) % queues.length]!;
-    const next = q.shift();
-    if (next) take([next], 1);
+  for (const p of DAY_PARTS) {
+    for (const k of queues.get(p.id)!) if (picked.get(p.id)!.length < p.size) take(k);
   }
-  return picked;
+  // Добор: где материала не хватило, день добирают части с запасом — по одному по кругу.
+  const start = Math.floor(seeded(`${date}:start`)() * DAY_PARTS.length);
+  for (let round = 0; total() < DAY_SIZE && [...queues.values()].some((q) => q.some((k) => !has(k))); round++) {
+    const q = queues.get(DAY_PARTS[(start + round) % DAY_PARTS.length]!.id)!;
+    const k = q.find((x) => !has(x));
+    if (k) take(k, true);
+  }
+  return DAY_PARTS.flatMap((p) => picked.get(p.id)!);
 }

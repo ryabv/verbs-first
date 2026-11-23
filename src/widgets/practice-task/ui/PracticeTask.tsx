@@ -302,8 +302,10 @@ function ListenPractice({ task, level, solved, onSolved }: Of<'listen'>) {
         {level === 'light' && 'Прослушайте и выберите, что сказали.'}
         {level === 'medium' && 'Прослушайте и выберите, что это значит.'}
         {level === 'hard' && 'Прослушайте и запишите по-гречески, что сказали.'}
-        <SpeakButton text={task.audio} />
       </p>
+      <div className={styles.listenPlay}>
+        <SpeakButton text={task.audio} />
+      </div>
       {level === 'light' && <Options options={task.options} answer={task.answer} solved={solved} onSolved={onSolved} greek />}
       {level === 'medium' && <Options options={task.meanings} answer={task.answer} solved={solved} onSolved={onSolved} />}
       {level === 'hard' && <Write accepted={[task.audio]} label="Что сказали" wide solved={solved} onSolved={onSolved} />}
