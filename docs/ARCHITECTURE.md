@@ -415,6 +415,14 @@ docs/curriculum.md                 план всех 16 уроков (глаго
   на карте, `body`, `examples`). Страница — `/story/:id/cat/:branch` (`BranchPage`), прочитан — `cat:<id>` в прогрессе
   главы (`branchKey`, `branchRead`). Доступны сразу, как открыта глава: метки-коты у мест открытых глав (`IslandMap`, `branches`),
   плашка `CatTales` под заданием шага `after` и список на странице главы. На уровень и открытие глав не влияют.
+- **Коллекция в Профиле** ([collection.md](product/collection.md)): `pages/profile/ui/Collection.tsx` — только читает
+  готовый прогресс (главы, месяцы ежедневных, этапы уроков), своих данных нет.
+- **Находки в 3D** ([finds.md](product/finds.md)): `StoryFind.icon` выбирает предмет; модели собираются кодом в
+  `entities/story/lib/find-models.ts` (текстуры бумаги, кожи, камня — на canvas, надписи — шрифтом сайта),
+  сцена и миниатюры — `lib/find-stage.ts` (three.js грузится лениво). Наружу — `FindViewer` (вертеть рукой,
+  `reveal` — появление с волной) и `FindThumb` (PNG-снимок, кэш); пока грузится или без WebGL — `FindIcon`.
+  Полка — `FindShelf` (карта «Истории» и «Коллекция» Профиля; текст находки — через слот `renderText`).
+  Новый предмет — значение в `icon`, строитель в `BUILDERS` и значок в `FindIcon`.
 
 ### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import {
   branchRead,
   chapterOpen,
@@ -9,6 +9,7 @@ import {
   getChapter,
   PROLOGUE,
   STORY_CHAPTERS,
+  FindShelf,
   STORY_LEVEL_LABELS,
   STORY_LEVELS,
   STORY_PLACES,
@@ -16,7 +17,6 @@ import {
   type LevelRank,
   type StoryBranch,
   type StoryChapter,
-  type StoryFind,
 } from '@/entities/story';
 import { READING_COURSE } from '@/entities/alphabet';
 import { progressKey, readProgress } from '@/features/lesson-progress';
@@ -26,7 +26,6 @@ import { Arrow, Check, Meander } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
 import { storyDeck } from '../lib/deck';
 import { lockReason } from '../lib/lock';
-import { FindIcon } from './FindIcon';
 import { Rich } from './Rich';
 import { CatIcon } from './CatIcon';
 import { IslandMap, type MapBranch } from './IslandMap';
@@ -76,8 +75,12 @@ export function StoryPage() {
     rememberIntroSeen();
   };
   const chapter = getChapter(selected);
-  const finds = STORY_CHAPTERS.filter((c) => c.find && finished(c.id));
-  const findsPlanned = STORY_PLACES.filter((p) => p.chapter !== PROLOGUE).length;
+  // Только локально: ?preview — на полке все находки, даже ненайденные.
+  const [params] = useSearchParams();
+  const preview = process.env.NODE_ENV !== 'production' && params.has('preview');
+  const finds = STORY_CHAPTERS.filter((c) => c.find && (preview || finished(c.id)));
+  // «из N» — главы, у которых есть находка (docs/product/finds.md).
+  const findsPlanned = STORY_CHAPTERS.filter((c) => c.find).length;
 
   useEffect(() => {
     if (!sheet) return;
@@ -132,7 +135,16 @@ export function StoryPage() {
       <b>Глава {selected}</b>. Что здесь случится — пока секрет: место откроется, когда появится глава.
     </p>
   );
-  const findsList = <Finds finds={finds} planned={findsPlanned} />;
+  const findsList = (
+    <div className={styles.findsWrap}>
+      <FindShelf
+        finds={finds.map((c) => ({ chapter: c.id, find: c.find! }))}
+        planned={findsPlanned}
+        renderText={(text) => <Rich text={text} wordDeck={storyDeck} />}
+        listClassName={styles.mapShelf}
+      />
+    </div>
+  );
 
   const findsBtn = (
     <button
@@ -287,27 +299,6 @@ function Chevron({ up = false }: { up?: boolean }) {
   );
 }
 
-function Finds({ finds, planned }: { finds: readonly StoryChapter[]; planned: number }) {
-  return (
-    <div className={styles.findsBody}>
-      <h2 className={styles.findsTitle}>
-        Находки <span className={styles.findsCount}>{finds.length} из {planned}</span>
-      </h2>
-      <ul className={styles.findList}>
-        {finds.map((c) => (
-          <FindItem key={c.id} find={c.find!} chapter={c.id} />
-        ))}
-        {Array.from({ length: planned - finds.length }, (_, i) => (
-          <li key={`empty-${i}`} className={styles.findEmpty} aria-hidden="true">
-            ?
-          </li>
-        ))}
-      </ul>
-      {finds.length === 0 && <p className={styles.findsHint}>Дочитайте главу — её находка появится здесь.</p>}
-    </div>
-  );
-}
-
 /** Карточка места на карте — коротко: что за глава и вход в неё. Уровень, шаги и прогресс — на странице главы. */
 function ChapterCard({ chapter, rank }: { chapter: StoryChapter; rank: LevelRank }) {
   const passed = rank > 0 ? STORY_LEVEL_LABELS[STORY_LEVELS[rank - 1]!].toLowerCase() : undefined;
@@ -356,18 +347,3 @@ function BranchCard({ chapter, branch }: { chapter: StoryChapter; branch: StoryB
   );
 }
 
-function FindItem({ find, chapter }: { find: StoryFind; chapter: number }) {
-  return (
-    <li className={styles.find}>
-      <FindIcon icon={find.icon} className={styles.findIcon} />
-      <span className={styles.findText}>
-        <span>
-          <b>{find.title}</b> <span className={styles.findChapter}>· глава {chapter}</span>
-        </span>
-        <span className={styles.findDesc}>
-          <Rich text={find.text} wordDeck={storyDeck} />
-        </span>
-      </span>
-    </li>
-  );
-}

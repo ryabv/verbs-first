@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import {
   branchRead,
   chapterOpen,
@@ -32,7 +32,11 @@ export function ChapterRoute() {
   const { chapterId = '', step, branch } = useParams();
   const chapter = getChapter(Number(chapterId));
   const progress = useStoryProgress();
+  // Только локально: ?preview — конец любой главы без замка и без отметок в прогрессе (посмотреть находку).
+  const [params] = useSearchParams();
+  const preview = process.env.NODE_ENV !== 'production' && params.has('preview');
   if (!chapter) return <NotFound />;
+  if (preview && step === 'end') return <ChapterEnd chapter={chapter} preview />;
   // Внутри эпохи — следующая глава после чтения прошлой; новая эпоха — после закрепления всей прошлой.
   if (!chapterOpen(chapter, STORY_CHAPTERS, progress)) return <Locked chapter={chapter} progress={progress} />;
   if (branch !== undefined) {

@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router';
 import { addCards, ensureDeck } from '@/entities/card';
 import { getLesson, knownVerbIds, type ReadingText } from '@/entities/lesson';
-import { getChapter, markStoryStep, STORY_END, type StoryChapter } from '@/entities/story';
+import { FindViewer, getChapter, markStoryStep, STORY_END, type StoryChapter } from '@/entities/story';
 import { getVerbs } from '@/entities/verb';
 import { TokenCard } from '@/features/card-add';
 import { ReadingView } from '@/features/text-reading';
@@ -17,9 +17,12 @@ import { Manuscript } from './Manuscript';
 import { Rich } from './Rich';
 import styles from './Story.module.css';
 
-/** Конец главы: вся глава, конспект, слова в карточки, крючок и «Закрепить главу» (по умолчанию; можно пропустить). */
-export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
-  useEffect(() => markStoryStep(chapter.id, STORY_END), [chapter.id]);
+/** Конец главы: находка, вся глава, конспект, слова в карточки, крючок и «Закрепить главу» (по умолчанию; можно пропустить). */
+export function ChapterEnd({ chapter, preview = false }: { chapter: StoryChapter; preview?: boolean }) {
+  // `preview` (только локально) — посмотреть, ничего не отмечая в прогрессе и карточках.
+  useEffect(() => {
+    if (!preview) markStoryStep(chapter.id, STORY_END);
+  }, [chapter.id, preview]);
 
   const reading = useMemo<ReadingText>(
     () => ({ id: `story-${chapter.id}`, title: chapter.title, sentences: chapter.sentences, glossary: {}, questions: [] }),
@@ -32,9 +35,10 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
   const words = useMemo(() => chapterWords(chapter), [chapter]);
   // Дочитал главу — её слова сами попадают в карточки (docs/product/home.md): повторы не задваиваются.
   useEffect(() => {
+    if (preview) return;
     ensureDeck(STORY_DECK);
     addCards(STORY_DECK.id, words);
-  }, [words]);
+  }, [words, preview]);
   const total = chapter.steps.length;
   const next = getChapter(chapter.id + 1);
 
@@ -49,8 +53,24 @@ export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
           ]}
         />
         <p className={styles.kicker}>Глава {chapter.id} прочитана</p>
-        <p className={styles.lead}>Вот она целиком. Непонятное слово — нажмите на него.</p>
       </header>
+
+      {/* Находка главы — первым: момент, когда предмет появляется (docs/product/finds.md). */}
+      {chapter.find && (
+        <section className={styles.endFind}>
+          <FindViewer icon={chapter.find.icon} reveal className={styles.endFindStage} />
+          <div className={styles.endFindText}>
+            <p className={styles.endFindKicker}>Находка главы</p>
+            <h2 className={styles.endFindTitle}>{chapter.find.title}</h2>
+            <p className={styles.findDesc}>
+              <Rich text={chapter.find.text} wordDeck={storyDeck} />
+            </p>
+            <p className={styles.findsHint}>Покрутите её — она теперь на полке «Находки» на карте.</p>
+          </div>
+        </section>
+      )}
+
+      <p className={styles.lead}>Вот глава целиком. Непонятное слово — нажмите на него.</p>
 
       <Manuscript chapter={chapter} className={styles.endText} label="Вся глава">
         <ReadingView

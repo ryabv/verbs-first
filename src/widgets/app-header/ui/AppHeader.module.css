@@ -27,6 +27,8 @@
 .nav a { white-space: nowrap; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); font-size: 0.95rem; }
 /* Иконка — в цвет ссылки (активная — терракотовая). */
 .navIcon { flex: none; width: 1.15em; height: 1.15em; vertical-align: 0; }
+/* Обёртка значка «Учёбы» (крестик веера на телефоне) — по центру строки, как у соседних значков. */
+.studyIcon { display: inline-flex; }
 /* Только мышь: на телефоне :hover «залипает» после касания — подсвечивались два раздела сразу. */
 @media (hover: hover) {
   .nav a:hover { color: var(--brand); }

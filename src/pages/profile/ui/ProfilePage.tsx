@@ -1,12 +1,15 @@
 import { ThemeChoice } from '@/features/theme-switcher';
 import { LevelSwitch } from '@/widgets/practice-task';
+import { Collection } from './Collection';
 import styles from './ProfilePage.module.css';
 
-/** /profile — настройки ученика: тема и уровень заданий. Дальше — серия, данные, синхронизация. */
+/** /profile — коллекция собранного (docs/product/collection.md), под ней настройки: тема и уровень заданий. */
 export function ProfilePage() {
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Профиль</h1>
+      <Collection />
+      <h2 className={styles.settings}>Настройки</h2>
       <section className={styles.block}>
         <h2 className={styles.label}>Тема</h2>
         <ThemeChoice />

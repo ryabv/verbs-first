@@ -1,6 +1,6 @@
-import type { StoryFind } from '@/entities/story';
+import type { StoryFind } from '../model/types';
 
-/** Иконки находок: линейные, в цвет текста. */
+/** Значки находок: линейные, в цвет текста — пока грузится 3D или если его нет. */
 export function FindIcon({ icon, className }: { icon: StoryFind['icon']; className?: string }) {
   return (
     <svg className={className} viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -48,6 +48,13 @@ export function FindIcon({ icon, className }: { icon: StoryFind['icon']; classNa
         <>
           <circle cx="10" cy="16" r="5" fill="currentColor" fillOpacity={0.1} />
           <path d="M15 16h13M24 16v4M20 16v3" />
+        </>
+      )}
+      {icon === 'notebook' && (
+        <>
+          <rect x="8" y="4" width="18" height="24" rx="2" fill="currentColor" fillOpacity={0.1} />
+          <path d="M11 4v24M21 4v24" />
+          <path d="M14 11h4M14 15h4" />
         </>
       )}
     </svg>

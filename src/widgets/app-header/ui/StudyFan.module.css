@@ -6,15 +6,23 @@
 .arc {
   position: absolute;
   left: 50%;
-  bottom: calc(var(--tabbar) - 120px);
-  width: 420px;
-  height: 420px;
-  margin-left: -210px;
+  bottom: calc(var(--tabbar) - 170px);
+  width: 520px;
+  height: 520px;
+  margin-left: -260px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--brand-soft) 70%, transparent) 0, color-mix(in srgb, var(--bg) 60%, transparent) 50%, transparent 70%);
-  backdrop-filter: blur(8px);
-  -webkit-mask: radial-gradient(circle, black 52%, transparent 70%);
-  mask: radial-gradient(circle, black 52%, transparent 70%);
+  /* Края нет: и тон, и размытие гаснут к краю плавно, по многим ступеням (без кольца на тёмной карте). */
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--bg) 55%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 45%, transparent) 35%,
+    color-mix(in srgb, var(--bg) 25%, transparent) 60%,
+    color-mix(in srgb, var(--bg) 8%, transparent) 82%,
+    transparent 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-mask: radial-gradient(closest-side, #000 30%, rgb(0 0 0 / 0.75) 55%, rgb(0 0 0 / 0.35) 75%, rgb(0 0 0 / 0.1) 90%, transparent 100%);
+  mask: radial-gradient(closest-side, #000 30%, rgb(0 0 0 / 0.75) 55%, rgb(0 0 0 / 0.35) 75%, rgb(0 0 0 / 0.1) 90%, transparent 100%);
   animation: grow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   pointer-events: none;
 }

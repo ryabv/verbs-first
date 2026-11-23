@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { Line2 } from 'three/addons/lines/Line2.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { geo } from './cyprus';
 import { MAP_H, MAP_W, noise, rng } from './island';
 import { catModel } from './cat-model';
@@ -570,7 +571,8 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   }
   // Дерево = ствол + крона на нём: тень начинается от земли, кроны не «висят».
   const treeColor = color('--map-tree');
-  const all = [...pines.map((t) => [...t, 0.7] as const), ...broad.map((t) => [...t, 1.3] as const)];
+  // Сосна (на Кипре — калабрийская, Pinus brutia): высокий голый ствол, крона — зонтиком наверху.
+  const all = [...pines.map((t) => [...t, 2.4] as const), ...broad.map((t) => [...t, 1.3] as const)];
   const trunks = new THREE.InstancedMesh(
     new THREE.CylinderGeometry(0.16, 0.26, 1, 5).rotateX(Math.PI / 2).translate(0, 0, 0.5),
     new THREE.MeshStandardMaterial({ color: color('--map-trunk'), roughness: 1 }),
@@ -585,19 +587,24 @@ export function createIslandScene(host: HTMLElement, start: { x: number; y: numb
   scene.add(trunks);
 
   /** Кроны: center — высота центра кроны над землёй в долях размера, squash — приплюснутость. */
-  const crowns = (shape: THREE.BufferGeometry, list: [number, number, number][], center: number, squash: number) => {
+  const crowns = (shape: THREE.BufferGeometry, list: [number, number, number][], center: number, squash: number, shade = 1) => {
     const mesh = new THREE.InstancedMesh(shape, new THREE.MeshStandardMaterial({ roughness: 1, flatShading: true }), list.length);
     list.forEach(([x, y, s], i) => {
       q.setFromAxisAngle(up, noise(x * 3, y * 3) * 6);
       mesh.setMatrixAt(i, m.compose(pos.set(x, -y, terrain.heightAt(x, y) + s * center), q, scl.set(s, s, s * squash)));
-      mesh.setColorAt(i, tint.copy(treeColor).multiplyScalar(0.75 + noise(x * 0.7, y * 0.7) * 0.5));
+      mesh.setColorAt(i, tint.copy(treeColor).multiplyScalar(shade * (0.75 + noise(x * 0.7, y * 0.7) * 0.5)));
     });
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     scene.add(mesh);
   };
-  // Хвойные: конус высотой 3.4 начинается на высоте ствола (0.7).
-  crowns(new THREE.ConeGeometry(1, 3.4, 6).rotateX(Math.PI / 2), pines, 0.6 + 1.7, 1);
+  // Сосны: на Кипре почти нет елей — леса Троодоса и Пафоса сосновые. Крона — неровный приплюснутый «зонт»
+  // из двух ярусов (широкий снизу, поменьше и со сдвигом сверху) на верхушке ствола (2.4); темнее лиственных.
+  const pineCrown = mergeGeometries([
+    new THREE.DodecahedronGeometry(1.35, 0).scale(1, 1, 0.42),
+    new THREE.DodecahedronGeometry(0.9, 0).scale(1, 1, 0.45).translate(0.35, 0.15, 0.55),
+  ])!;
+  crowns(pineCrown, pines, 2.4 + 0.45, 1, 0.82);
   // Лиственные: шар чуть приплюснут, нижний край — на верхушке ствола (1.3).
   crowns(new THREE.IcosahedronGeometry(1.1, 1), broad, 1.2 + 1.1 * 0.82, 0.82);
 

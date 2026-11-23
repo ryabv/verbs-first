@@ -111,6 +111,22 @@
   /* Подпись на витрине музея (телефон): затемнение сверху и светлый текст — поверх 3D-дворика. */
   --museum-scrim: rgb(40 26 16 / 0.55);
   --museum-caption: #fbf3e4;
+  /* Коллекция в Профиле — музейный зал: тёплая тёмная стена, свет сверху, каменные подставки, латунные таблички, бархат. */
+  --hall-wall: #3a2a20;
+  --hall-wall-edge: #1f1510;
+  --hall-niche: #2a1d16;
+  --hall-light: rgb(255 222 170 / 0.32);
+  --hall-text: #f6ead6;
+  --hall-muted: #c7ae8c;
+  --hall-plinth-top: #e9dfcf;
+  --hall-plinth: #b9aa92;
+  --hall-plinth-shade: #8c7d68;
+  --hall-brass: #c9a25e;
+  --hall-brass-edge: #8a6a32;
+  --hall-brass-text: #2e2112;
+  --hall-velvet: #5a1f22;
+  --hall-velvet-edge: #2e0e10;
+  --hall-glass: rgb(255 255 255 / 0.06);
 }
 
 /* Смена темы — старая страница растворяется в новой за полсекунды (theme-switcher, View Transitions). */
@@ -166,6 +182,21 @@
   --reveal-muted: #c9ad85;
   --museum-scrim: rgb(10 6 4 / 0.6);
   --museum-caption: #f6e8d0;
+  --hall-wall: #2a1e17;
+  --hall-wall-edge: #120c09;
+  --hall-niche: #1d1410;
+  --hall-light: rgb(255 214 150 / 0.26);
+  --hall-text: #f3e5cc;
+  --hall-muted: #b89e7b;
+  --hall-plinth-top: #cfc4b2;
+  --hall-plinth: #9d907b;
+  --hall-plinth-shade: #6f6352;
+  --hall-brass: #b48f50;
+  --hall-brass-edge: #6e5226;
+  --hall-brass-text: #22180c;
+  --hall-velvet: #4a181b;
+  --hall-velvet-edge: #22090b;
+  --hall-glass: rgb(255 255 255 / 0.05);
   color-scheme: dark;
 }
 

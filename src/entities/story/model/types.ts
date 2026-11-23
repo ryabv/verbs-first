@@ -124,7 +124,8 @@ export interface StoryFind {
   title: string;
   /** Что это и почему важно — одна-две фразы. */
   text: string;
-  icon: 'letter' | 'photo' | 'map' | 'tape' | 'key' | 'figurine';
+  /** Какой 3D-предмет (docs/product/finds.md). */
+  icon: 'letter' | 'photo' | 'map' | 'tape' | 'key' | 'figurine' | 'notebook';
 }
 
 /**

@@ -24,7 +24,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to bottom, rgb(20 14 6 / 0.55), rgb(20 14 6 / 0.2) 30%, transparent 48%),
+    /* Сверху темнее — под приветствием и пословицей, чтобы текст читался на пёстрой картинке. */
+    linear-gradient(to bottom, rgb(20 14 6 / 0.72), rgb(20 14 6 / 0.55) 35%, rgb(20 14 6 / 0.15) 58%, transparent 70%),
     linear-gradient(to top, var(--bg) 0, transparent 45%);
   pointer-events: none;
 }
@@ -46,7 +47,7 @@
 .greeting { margin: 0; font-family: var(--font-display); font-size: 2.4rem; font-weight: 700; line-height: 1.1; text-shadow: 0 1px 3px rgb(0 0 0 / 0.4), 0 2px 16px rgb(0 0 0 / 0.4); }
 .greeting :global(button) { color: inherit; text-shadow: inherit; text-decoration-color: rgb(255 255 255 / 0.3); }
 /* Пословица — на картинке, светлым: греческий курсивом, перевод мельче, смысл — по нажатию. */
-.proverb { position: relative; margin: 10px 0 0; text-shadow: 0 1px 3px rgb(0 0 0 / 0.55), 0 1px 12px rgb(0 0 0 / 0.35); }
+.proverb { position: relative; margin: 10px 0 0; text-shadow: 0 1px 2px rgb(0 0 0 / 0.8), 0 0 14px rgb(0 0 0 / 0.5); }
 .proverbGreek { margin: 0; font-family: var(--font-display); font-size: 1.35rem; font-style: italic; line-height: 1.35; }
 .proverbGreek :global(button) { color: inherit; text-shadow: inherit; text-decoration-color: rgb(255 255 255 / 0.3); border-bottom-color: rgb(255 255 255 / 0.3); }
 .proverbSpeak { display: inline-block; margin: 0 4px 0 8px; vertical-align: middle; line-height: 1; }
@@ -293,7 +294,8 @@
   .content { margin-top: -150px; padding: 0 16px; }
   .story { padding: 12px 18px 14px; }
   .storyTitle { font-size: 1.55rem; }
-  .storyAction { align-self: stretch; text-align: center; }
+  /* Обычного размера, по центру — не во всю ширину. */
+  .storyAction { padding: 10px 24px; font-size: 1rem; box-shadow: 0 4px 12px rgb(0 0 0 / 0.14); }
   .section { margin-top: 26px; }
   .sectionRow { margin-top: 26px; }
   .today { grid-template-columns: 1fr; gap: 12px; }
@@ -318,7 +320,7 @@
   .hero { position: absolute; inset: 0; height: auto; }
   .hero::after {
     background:
-      linear-gradient(to bottom, rgb(20 14 6 / 0.5), rgb(20 14 6 / 0.15) 22%, transparent 40%),
+      linear-gradient(to bottom, rgb(20 14 6 / 0.68), rgb(20 14 6 / 0.45) 22%, rgb(20 14 6 / 0.1) 36%, transparent 46%),
       linear-gradient(to top, var(--bg) 0, color-mix(in srgb, var(--bg) 70%, transparent) 35%, transparent 70%);
   }
   .heroTop { max-width: 1120px; padding: 22px 32px 0; }

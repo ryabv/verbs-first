@@ -36,3 +36,6 @@ export {
   useStoryProgress,
   type LevelRank,
 } from './model/progress';
+export { FindIcon } from './ui/FindIcon';
+export { FindThumb, FindViewer } from './ui/FindModel';
+export { FindShelf, type ShelfFind } from './ui/FindShelf';
