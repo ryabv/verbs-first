@@ -217,8 +217,9 @@
 .dialogText { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--hall-muted); }
 
 @media (max-width: 600px) {
-  /* На телефоне зал — во всю ширину экрана, без скруглений (поля страницы — 16px). */
-  .hall { margin: -20px -16px 40px; padding: 26px 16px 4px; border-radius: 0; box-shadow: none; }
+  /* На телефоне зал — во всю ширину экрана, без скруглений (поля страницы — 16px), и стена уходит под «чёлку»:
+     отрицательный отступ на --safe-top, а содержимое опускается на столько же. */
+  .hall { margin: calc(-20px - var(--safe-top, 0px)) -16px 40px; padding: calc(26px + var(--safe-top, 0px)) 16px 4px; border-radius: 0; box-shadow: none; }
   .track { padding-inline: 16px; margin-inline: -16px; gap: 10px; scroll-padding-inline: 16px; }
   .track > * { width: 142px; }
   .sliderWide .track > * { width: 260px; }
