@@ -372,6 +372,7 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 }
 /* Реплика задания на слух — вместо текста подпись до ответа. */
 .hiddenLine { font-size: 0.9rem; font-style: italic; color: var(--text-subtle); }
+.hiddenListen { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 
 
 /* Задание */

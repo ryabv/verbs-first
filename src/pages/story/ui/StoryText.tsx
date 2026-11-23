@@ -73,9 +73,15 @@ export function StoryText({ chapter, step, done, answered }: Props) {
       return (
         <p key={n} className={`${styles.sentence} ${styles.hiddenLine}`}>
           {lead}
-          {inFragment(step, n)
-            ? 'Эту реплику сначала прослушайте — текст появится после ответа.'
-            : `Реплика спрятана до вопроса на слух (шаг ${hidden}).`}
+          {inFragment(step, n) ? (
+            // Реплика спрятана до ответа на вопрос на слух: на её месте — кнопка «Прослушать».
+            <span className={styles.hiddenListen}>
+              <SpeakButton text={s.greek} label="Прослушать реплику" />
+              <span>текст появится после ответа</span>
+            </span>
+          ) : (
+            `Реплика спрятана до вопроса на слух (шаг ${hidden}).`
+          )}
         </p>
       );
     }

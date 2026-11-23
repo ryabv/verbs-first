@@ -30,3 +30,22 @@
   .speak:hover { color: var(--text-subtle); background: none; }
   .speak:active, .speak[aria-busy='true'], .speak[aria-pressed='true'] { color: var(--brand); background: var(--brand-soft); }
 }
+
+/* С подписью: синяя «пилюля» — звук здесь и есть задание. */
+.labeled,
+.labeled:hover {
+  width: auto;
+  height: auto;
+  gap: 8px;
+  padding: 8px 18px 8px 14px;
+  border-radius: 999px;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-style: normal;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.labeled svg { width: 1.3em; height: 1.3em; }
+@media (pointer: coarse) {
+  .labeled, .labeled:hover { width: auto; height: auto; background: var(--accent-soft); color: var(--accent); }
+}
