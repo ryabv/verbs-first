@@ -47,6 +47,7 @@
 .track > * { flex: none; width: 168px; scroll-snap-align: center; }
 /* Футляры медальонов — шире ниш. */
 .sliderWide .track > * { width: 300px; }
+
 .sliderWide .arrow { top: 44px; }
 .arrow {
   position: absolute;
@@ -162,15 +163,14 @@
 .plaque span { font-size: 0.7rem; opacity: 0.8; }
 .nicheEmpty + .plaque { filter: saturate(0.4) brightness(0.8); }
 
-/* Медальоны: футляр на урок — бархат с медальонами, под ним табличка. */
+/* Медальоны: футляр на эпоху — бархат с медальонами глав, под ним табличка. */
 .tray { display: flex; flex-direction: column; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
 .trayVelvet {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  min-height: 7.5rem;
   align-content: center;
   padding: 14px 12px;
   border: 3px solid var(--hall-brass-edge);
@@ -179,8 +179,39 @@
   box-shadow: inset 0 4px 14px rgb(0 0 0 / 0.55);
   transition: border-color 0.2s;
 }
-.tray:hover .trayVelvet { border-color: var(--hall-brass); }
-.markDim { opacity: 0.35; filter: grayscale(1); }
+/* Медальон главы: металлический диск с ободком, венок и номер; блик сверху — металл, а не плоский цвет. */
+.medal {
+  --metal: var(--hall-niche);
+  --metal-edge: var(--hall-velvet-edge);
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgb(255 255 255 / 0.55), transparent 42%),
+    radial-gradient(circle, var(--metal) 55%, var(--metal-edge) 100%);
+  border: 2px solid var(--metal-edge);
+  box-shadow: 0 3px 6px rgb(0 0 0 / 0.5), inset 0 0 0 3px color-mix(in srgb, var(--metal) 70%, #fff);
+  color: var(--hall-medal-ink);
+}
+.medalLaurel { position: absolute; inset: 12%; width: 76%; height: 76%; color: var(--metal-edge); opacity: 0.75; }
+.medalNum { position: relative; font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1; }
+/* Подпись медальона — для экранного диктора. */
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.bronze { --metal: var(--hall-bronze); --metal-edge: var(--hall-bronze-edge); }
+.silver { --metal: var(--hall-silver); --metal-edge: var(--hall-silver-edge); }
+.gold { --metal: var(--hall-gold); --metal-edge: var(--hall-gold-edge); }
+/* Ещё не получен — пустое гнездо в бархате. */
+.medalEmpty {
+  background: none;
+  border: 2px solid color-mix(in srgb, var(--hall-velvet-edge) 60%, #000);
+  box-shadow: inset 0 3px 8px rgb(0 0 0 / 0.6);
+  color: var(--hall-muted);
+}
+.medalEmpty .medalLaurel { color: var(--hall-muted); opacity: 0.25; }
+.medalEmpty .medalNum { opacity: 0.6; }
 
 /* Экспонат крупно: тёмная витрина поверх страницы. */
 .dialog {
@@ -222,7 +253,9 @@
   .hall { margin: calc(-20px - var(--safe-top, 0px)) -16px 40px; padding: calc(26px + var(--safe-top, 0px)) 16px 4px; border-radius: 0; box-shadow: none; }
   .track { padding-inline: 16px; margin-inline: -16px; gap: 10px; scroll-padding-inline: 16px; }
   .track > * { width: 142px; }
-  .sliderWide .track > * { width: 260px; }
+  .sliderWide .track > * { width: 270px; }
+  .trayVelvet { flex-wrap: nowrap; gap: 8px; padding-inline: 8px; }
+  .tray .medal { width: 2.9rem; height: 2.9rem; }
   .niche { height: 150px; }
   .thumb { width: 92px; height: 92px; }
   .viewer { height: 240px; }

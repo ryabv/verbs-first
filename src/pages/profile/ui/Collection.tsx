@@ -1,16 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { READING_COURSE } from '@/entities/alphabet';
-import { getLesson, getLessonCatalog, lessonStages, type LessonStage } from '@/entities/lesson';
-import { chapterRead, FindThumb, FindViewer, STORY_CHAPTERS, useStoryProgress, type StoryChapter } from '@/entities/story';
+import { chapterRank, chapterRead, FindThumb, FindViewer, getChapter, STORY_CHAPTERS, STORY_LEVEL_LABELS, STORY_LEVELS, STORY_PLANNED, useStoryProgress, type LevelRank, type StoryChapter } from '@/entities/story';
 import { vesselOfMonth, VesselPicture } from '@/entities/vessel';
 import { GreekInline } from '@/features/card-add';
 import { DAILY_START, monthOf, monthSummary, monthTitle, shiftMonth, todayKey, useAssembledMonths, useDailyDays, type DailyDayRecord } from '@/features/daily';
-import { readExamResult } from '@/features/exam';
-import { doneWithExam, isStageDone, progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
-import { StageMark } from '@/shared/ui/ornament';
+import { Laurel } from '@/shared/ui/ornament';
 import styles from './Collection.module.css';
 
 /** Слова из текста находки — в тот же набор, что и на карте «Истории». */
@@ -28,8 +24,8 @@ export function Collection() {
   const today = todayKey();
   const months = dailyMonths(today);
   const built = useAssembledMonths(months).filter(Boolean).length;
-  const medals = medalRows();
-  const earned = medals.reduce((n, r) => n + r.earned.filter(Boolean).length, 0);
+  const epochs = medalEpochs(story);
+  const earned = epochs.flat().filter((m) => m.rank > 0).length;
   const total = found.length + built + earned;
   return (
     <section className={styles.hall} aria-labelledby="collection-title">
@@ -40,7 +36,7 @@ export function Collection() {
         </h2>
         <p className={styles.hallLead}>
           {total === 0
-            ? 'Залы пока пусты — каждая глава, месяц ежедневных и этап урока добавят сюда экспонат.'
+            ? 'Залы пока пусты — каждая глава и месяц ежедневных добавят сюда экспонат.'
             : `${total} ${plural(total, ['экспонат', 'экспоната', 'экспонатов'])}: всё, что вы нашли и заслужили.`}
         </p>
       </header>
@@ -55,21 +51,21 @@ export function Collection() {
           ))}
         </Slider>
       </Room>
-      <Room title="Медальоны" note="За этапы уроков, части ДЗ и экзамены" count={`${earned} из ${medals.reduce((n, r) => n + r.stages.length, 0)}`}>
-        {/* Уроков будет 16 — футляры лентой; сразу показан текущий: первый, где собраны не все. */}
-        <Slider start={Math.max(0, medals.findIndex((r) => r.earned.some((e) => !e)))} wide>
-          {medals.map((r) => (
-            <Link key={r.key} to={r.to} className={styles.tray}>
+      <Room title="Медальоны" note="За закрепление глав: бронза — лёгкий, серебро — средний, золото — сложный" count={`${earned} из ${STORY_PLANNED}`}>
+        {/* Футляр на эпоху (4 главы); сразу показана эпоха, где ещё не всё закреплено. */}
+        <Slider start={Math.max(0, epochs.findIndex((e) => e.some((m) => m.rank === 0)))} wide>
+          {epochs.map((medals, i) => (
+            <div key={i} className={styles.tray}>
               <span className={styles.trayVelvet}>
-                {r.stages.map((st, i) => (
-                  <StageMark key={st.id} kind={markKind(st)} num={st.num} earned={r.earned[i]!} size="2.1rem" compact className={r.earned[i] ? undefined : styles.markDim} />
+                {medals.map((m) => (
+                  <ChapterMedal key={m.chapter} {...m} />
                 ))}
               </span>
               <span className={styles.plaque}>
-                <b>{r.name}</b>
-                <span>{r.title}</span>
+                <b>Эпоха {i + 1}</b>
+                <span>главы {i * 4 + 1}–{i * 4 + 4}</span>
               </span>
-            </Link>
+            </div>
           ))}
         </Slider>
       </Room>
@@ -161,7 +157,7 @@ function FindNiches({ finds, found }: { finds: readonly StoryChapter[]; found: R
               <Niche object={<FindThumb icon={c.find!.icon} className={styles.thumb} />} title={c.find!.title} sub={`Глава ${c.id}`} />
             </button>
           ) : (
-            <Link key={c.id} to={routes.storyChapter(c.id)} className={styles.exhibit}>
+            <Link key={c.id} to={routes.story()} className={styles.exhibit}>
               <Niche object={<span className={styles.ghost}>?</span>} title={`Глава ${c.id}`} sub="Дочитайте главу" empty />
             </Link>
           ),
@@ -214,31 +210,41 @@ function VesselNiche({ month, today }: { month: string; today: string }) {
   );
 }
 
-const markKind = (st: LessonStage) => (st.section === 'homework' ? 'homework' : st.section === 'exam' ? 'exam' : 'lesson');
+/** Металл медальона по уровню закрепления главы. */
+const METAL = ['', 'bronze', 'silver', 'gold'] as const;
 
-interface MedalRow {
-  key: string;
-  to: string;
-  name: string;
-  title: string;
-  stages: LessonStage[];
-  earned: boolean[];
+interface ChapterMedalInfo {
+  chapter: number;
+  /** 0 — не закреплена, 1–3 — лёгкий, средний, сложный. */
+  rank: LevelRank;
+  /** Глава написана (иначе — место под будущую). */
+  written: boolean;
 }
 
-function medalRows(): MedalRow[] {
-  const readingStages = lessonStages(READING_COURSE);
-  const readingDone = new Set(readProgress(progressKey.reading).completed);
-  const readingIsDone = doneWithExam(readingStages, (id) => readingDone.has(id), Boolean(readExamResult('alphabet')?.passed));
-  const rows: MedalRow[] = [
-    { key: 'reading', to: routes.alphabet(), name: 'Урок 0', title: 'Алфавит и чтение', stages: readingStages, earned: readingStages.map((st) => isStageDone(st, readingIsDone)) },
-  ];
-  for (const item of getLessonCatalog()) {
-    const lesson = item.available ? getLesson(item.id) : undefined;
-    if (!lesson) continue;
-    const stages = lessonStages(lesson);
-    const completed = new Set(readProgress(progressKey.lesson(lesson.id)).completed);
-    const isDone = doneWithExam(stages, (id) => completed.has(id), Boolean(readExamResult(lesson.id)?.passed));
-    rows.push({ key: `lesson-${lesson.id}`, to: routes.lesson(lesson.id), name: `Урок ${lesson.id}`, title: item.title, stages, earned: stages.map((st) => isStageDone(st, isDone)) });
+/** Медальоны всех запланированных глав по эпохам (по 4). */
+function medalEpochs(story: ReturnType<typeof useStoryProgress>): ChapterMedalInfo[][] {
+  const epochs: ChapterMedalInfo[][] = [];
+  for (let id = 1; id <= STORY_PLANNED; id++) {
+    const c = getChapter(id);
+    const info = { chapter: id, rank: c ? chapterRank(c, story[id] ?? {}) : 0, written: Boolean(c) } as ChapterMedalInfo;
+    (epochs[Math.floor((id - 1) / 4)] ??= []).push(info);
   }
-  return rows;
+  return epochs;
+}
+
+/** Медальон главы: металлический диск в венке с номером главы; не получен — оттиск в бархате. */
+function ChapterMedal({ chapter, rank, written }: ChapterMedalInfo) {
+  const label = !written
+    ? `Глава ${chapter} — ещё не написана`
+    : rank
+      ? `Глава ${chapter} закреплена: ${STORY_LEVEL_LABELS[STORY_LEVELS[rank - 1]!].toLowerCase()}`
+      : `Глава ${chapter} — закрепите, чтобы получить медальон`;
+  const metal = METAL[rank];
+  return (
+    <span className={[styles.medal, metal ? styles[metal] : styles.medalEmpty].join(' ')} title={label}>
+      <Laurel className={styles.medalLaurel} size="100%" />
+      <span className={styles.medalNum} aria-hidden="true">{written ? chapter : '?'}</span>
+      <span className={styles.srOnly}>{label}</span>
+    </span>
+  );
 }

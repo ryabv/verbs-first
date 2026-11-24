@@ -127,6 +127,14 @@
   --hall-velvet: #5a1f22;
   --hall-velvet-edge: #2e0e10;
   --hall-glass: rgb(255 255 255 / 0.06);
+  /* Медальоны глав: металл по уровню закрепления — бронза (лёгкий), серебро (средний), золото (сложный). */
+  --hall-bronze: #b4703a;
+  --hall-bronze-edge: #6e3d18;
+  --hall-silver: #cfd3d6;
+  --hall-silver-edge: #7d8388;
+  --hall-gold: #e8bd4f;
+  --hall-gold-edge: #8f6a14;
+  --hall-medal-ink: #2a1a0c;
 }
 
 /* Смена темы — старая страница растворяется в новой за полсекунды (theme-switcher, View Transitions). */
@@ -197,6 +205,13 @@
   --hall-velvet: #4a181b;
   --hall-velvet-edge: #22090b;
   --hall-glass: rgb(255 255 255 / 0.05);
+  --hall-bronze: #a8693a;
+  --hall-bronze-edge: #5e3416;
+  --hall-silver: #c2c6c9;
+  --hall-silver-edge: #6c7277;
+  --hall-gold: #dcb145;
+  --hall-gold-edge: #7d5c10;
+  --hall-medal-ink: #22150a;
   color-scheme: dark;
 }
 
