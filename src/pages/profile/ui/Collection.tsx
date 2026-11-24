@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { chapterRank, chapterRead, FindThumb, FindViewer, getChapter, STORY_CHAPTERS, STORY_LEVEL_LABELS, STORY_LEVELS, STORY_PLANNED, useStoryProgress, type LevelRank, type StoryChapter } from '@/entities/story';
+import { ChapterMedal, chapterRank, chapterRead, FindThumb, FindViewer, getChapter, STORY_CHAPTERS, STORY_LEVEL_LABELS, STORY_LEVELS, STORY_PLANNED, useStoryProgress, type LevelRank, type StoryChapter } from '@/entities/story';
 import { vesselOfMonth, VesselPicture } from '@/entities/vessel';
 import { GreekInline } from '@/features/card-add';
 import { DAILY_START, monthOf, monthSummary, monthTitle, shiftMonth, todayKey, useAssembledMonths, useDailyDays, type DailyDayRecord } from '@/features/daily';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
-import { Laurel } from '@/shared/ui/ornament';
 import styles from './Collection.module.css';
 
 /** Слова из текста находки — в тот же набор, что и на карте «Истории». */
@@ -58,7 +57,7 @@ export function Collection() {
             <div key={i} className={styles.tray}>
               <span className={styles.trayVelvet}>
                 {medals.map((m) => (
-                  <ChapterMedal key={m.chapter} {...m} />
+                  <Medal key={m.chapter} {...m} />
                 ))}
               </span>
               <span className={styles.plaque}>
@@ -210,9 +209,6 @@ function VesselNiche({ month, today }: { month: string; today: string }) {
   );
 }
 
-/** Металл медальона по уровню закрепления главы. */
-const METAL = ['', 'bronze', 'silver', 'gold'] as const;
-
 interface ChapterMedalInfo {
   chapter: number;
   /** 0 — не закреплена, 1–3 — лёгкий, средний, сложный. */
@@ -232,19 +228,11 @@ function medalEpochs(story: ReturnType<typeof useStoryProgress>): ChapterMedalIn
   return epochs;
 }
 
-/** Медальон главы: металлический диск в венке с номером главы; не получен — оттиск в бархате. */
-function ChapterMedal({ chapter, rank, written }: ChapterMedalInfo) {
+function Medal({ chapter, rank, written }: ChapterMedalInfo) {
   const label = !written
     ? `Глава ${chapter} — ещё не написана`
     : rank
       ? `Глава ${chapter} закреплена: ${STORY_LEVEL_LABELS[STORY_LEVELS[rank - 1]!].toLowerCase()}`
       : `Глава ${chapter} — закрепите, чтобы получить медальон`;
-  const metal = METAL[rank];
-  return (
-    <span className={[styles.medal, metal ? styles[metal] : styles.medalEmpty].join(' ')} title={label}>
-      <Laurel className={styles.medalLaurel} size="100%" />
-      <span className={styles.medalNum} aria-hidden="true">{written ? chapter : '?'}</span>
-      <span className={styles.srOnly}>{label}</span>
-    </span>
-  );
+  return <ChapterMedal chapter={chapter} rank={rank} written={written} title={label} className={styles.medal} />;
 }

@@ -12,8 +12,10 @@ import {
   TASK_SKILL_LABELS,
   useStoryLevel,
   useStoryLevels,
+  type LevelRank,
   type PracticeTask as PracticeTaskData,
   type StoryChapter,
+  type StoryLevel,
 } from '@/entities/story';
 import { routes } from '@/shared/config/routes';
 import { logAttempt } from '@/shared/lib/db';
@@ -33,11 +35,17 @@ export function PracticePage({ chapter }: { chapter: StoryChapter }) {
   const preview = process.env.NODE_ENV !== 'production' ? STORY_LEVELS.find((l) => l === params.get('celebrate')) : undefined;
   return (
     <>
-      {preview && <Celebration chapter={chapter} level={preview} onClose={() => setParams({})} />}
+      {preview && <Celebration chapter={chapter} level={preview} fromRank={previewFrom(params.get('from'), preview)} onClose={() => setParams({})} />}
       {/* Смена уровня — новый круг заданий. */}
       <Practice key={level} chapter={chapter} />
     </>
   );
+}
+
+/** Только локально: ?celebrate=уровень&from=1…2 — перековка с этого металла; без from — первый медальон главы. */
+function previewFrom(from: string | null, level: StoryLevel): LevelRank {
+  const n = Number(from) || 0;
+  return (n > 0 && n < levelRank(level) ? n : 0) as LevelRank;
 }
 
 function Practice({ chapter }: { chapter: StoryChapter }) {
@@ -57,6 +65,8 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
   const task = queue[index];
   // Праздник — только в момент, когда уровень закрыт впервые; повторный круг его не вызывает.
   const [completeAtStart] = useState(() => chapter.practice.every(isDone));
+  // Уровень главы до закрепления — медальон «перековывается» с него (бронза → серебро → золото).
+  const [rankAtStart] = useState(() => chapterRank(chapter, levels));
   const [celebrate, setCelebrate] = useState(false);
   const closeCelebration = useCallback(() => setCelebrate(false), []);
 
@@ -93,7 +103,7 @@ function Practice({ chapter }: { chapter: StoryChapter }) {
 
   return (
     <div className={styles.page}>
-      {celebrate && <Celebration chapter={chapter} level={level} onClose={closeCelebration} />}
+      {celebrate && <Celebration chapter={chapter} level={level} fromRank={rankAtStart} onClose={closeCelebration} />}
       <header className={styles.head}>
         <Breadcrumbs
           items={[

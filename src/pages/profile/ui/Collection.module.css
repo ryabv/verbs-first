@@ -179,40 +179,6 @@
   box-shadow: inset 0 4px 14px rgb(0 0 0 / 0.55);
   transition: border-color 0.2s;
 }
-/* Медальон главы: металлический диск с ободком, венок и номер; блик сверху — металл, а не плоский цвет. */
-.medal {
-  --metal: var(--hall-niche);
-  --metal-edge: var(--hall-velvet-edge);
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 3.4rem;
-  height: 3.4rem;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 35% 28%, rgb(255 255 255 / 0.55), transparent 42%),
-    radial-gradient(circle, var(--metal) 55%, var(--metal-edge) 100%);
-  border: 2px solid var(--metal-edge);
-  box-shadow: 0 3px 6px rgb(0 0 0 / 0.5), inset 0 0 0 3px color-mix(in srgb, var(--metal) 70%, #fff);
-  color: var(--hall-medal-ink);
-}
-.medalLaurel { position: absolute; inset: 12%; width: 76%; height: 76%; color: var(--metal-edge); opacity: 0.75; }
-.medalNum { position: relative; font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1; }
-/* Подпись медальона — для экранного диктора. */
-.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.bronze { --metal: var(--hall-bronze); --metal-edge: var(--hall-bronze-edge); }
-.silver { --metal: var(--hall-silver); --metal-edge: var(--hall-silver-edge); }
-.gold { --metal: var(--hall-gold); --metal-edge: var(--hall-gold-edge); }
-/* Ещё не получен — пустое гнездо в бархате. */
-.medalEmpty {
-  background: none;
-  border: 2px solid color-mix(in srgb, var(--hall-velvet-edge) 60%, #000);
-  box-shadow: inset 0 3px 8px rgb(0 0 0 / 0.6);
-  color: var(--hall-muted);
-}
-.medalEmpty .medalLaurel { color: var(--hall-muted); opacity: 0.25; }
-.medalEmpty .medalNum { opacity: 0.6; }
-
 /* Экспонат крупно: тёмная витрина поверх страницы. */
 .dialog {
   width: min(520px, calc(100vw - 32px));
@@ -255,7 +221,7 @@
   .track > * { width: 142px; }
   .sliderWide .track > * { width: 270px; }
   .trayVelvet { flex-wrap: nowrap; gap: 8px; padding-inline: 8px; }
-  .tray .medal { width: 2.9rem; height: 2.9rem; }
+  .trayVelvet .medal { width: 2.9rem; height: 2.9rem; }
   .niche { height: 150px; }
   .thumb { width: 92px; height: 92px; }
   .viewer { height: 240px; }

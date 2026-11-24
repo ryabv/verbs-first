@@ -39,3 +39,4 @@ export {
 export { FindIcon } from './ui/FindIcon';
 export { FindThumb, FindViewer } from './ui/FindModel';
 export { FindShelf, type ShelfFind } from './ui/FindShelf';
+export { ChapterMedal, MEDAL_METALS } from './ui/ChapterMedal';

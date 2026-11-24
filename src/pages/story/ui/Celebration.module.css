@@ -1,3 +1,124 @@
+/* Получение медальона (docs/product/collection.md): во весь экран, тёплая тьма и лучи — как черепок у ежедневных. */
+.reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 38%, var(--reveal-bg) 0%, var(--reveal-bg-edge) 75%);
+  color: var(--reveal-text);
+  animation: dim 0.4s ease-out both;
+}
+.revealRays {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  width: 180vmax;
+  height: 180vmax;
+  translate: -50% -50%;
+  background: repeating-conic-gradient(from 0deg, var(--reveal-ray) 0deg 5deg, transparent 5deg 15deg);
+  mask-image: radial-gradient(circle, black 0%, transparent 45%);
+  animation: spin 60s linear infinite, rays-in 1.6s ease-out both;
+}
+.hard .revealRays { background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--hall-gold) 22%, transparent) 0deg 5deg, transparent 5deg 15deg); }
+/* Сцена: монета в сиянии, перспектива — для разворота. */
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 0;
+  perspective: 900px;
+}
+.stage::before {
+  content: '';
+  position: absolute;
+  width: min(90vw, 26rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--reveal-glow) 45%, transparent), transparent 65%);
+  animation: rays-in 1.2s ease-out 0.4s both;
+}
+.coin {
+  position: relative;
+  display: grid;
+  /* Поднимается снизу, крутится (2 оборота) и замедляется. */
+  animation: coin-in 1.6s cubic-bezier(0.15, 0.7, 0.25, 1) both;
+}
+.forge { display: grid; }
+.face { grid-area: 1 / 1; box-shadow: 0 18px 30px rgb(0 0 0 / 0.55); }
+/* Перековка: монета встаёт ребром, на ребре металл меняется, и она разворачивается обратно — новым. */
+.coinUpgrade .forge { animation: forge 0.7s ease-in-out 1.75s both; }
+.coinUpgrade .old { animation: swap-out 0.7s steps(1, end) 1.75s both; }
+.coinUpgrade .new { animation: swap-in 0.7s steps(1, end) 1.75s both; }
+.coinUpgrade + .flash { animation-delay: 2.1s; }
+/* Волна света, когда монета встала. */
+.flash {
+  position: absolute;
+  width: min(42vw, 11rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 3px solid var(--reveal-glow);
+  opacity: 0;
+  /* forwards, а не both: до вспышки кольца нет (иначе висит первым кадром, пока монета летит). */
+  animation: flash 1s ease-out 1.5s forwards;
+  pointer-events: none;
+}
+.revealText { position: relative; max-width: 560px; padding: 0 20px calc(40px + env(safe-area-inset-bottom, 0px)); text-align: center; animation: rise 0.7s ease-out 1.5s both; }
+.revealKicker { margin: 0; font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--reveal-muted); }
+.revealPraise { margin: 6px 0 0; font-family: var(--font-display); font-size: 1.3rem; font-style: italic; color: var(--reveal-glow); }
+.revealTitle { margin: 2px 0 8px; font-family: var(--font-display); font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.1; color: var(--reveal-text); }
+.revealMetal { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--reveal-text); }
+.revealEpoch { margin: 10px 0 0; font-weight: 600; color: var(--reveal-glow); }
+/* «Забрать» — общая кнопка наград (у черепка такая же): золотая, в цвет сияния. */
+.take {
+  margin-top: 20px;
+  padding: 12px 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--reveal-glow);
+  color: var(--reveal-bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 24px var(--reveal-ray);
+}
+.take:hover { filter: brightness(1.08); }
+.take:focus-visible { outline: 2px solid var(--reveal-text); outline-offset: 3px; }
+
+@keyframes coin-in {
+  from { transform: translateY(55vh) rotateY(0) scale(0.4); opacity: 0; }
+  15% { opacity: 1; }
+  to { transform: perspective(900px) rotateY(720deg); }
+}
+@keyframes forge {
+  50% { transform: scaleX(0.04); }
+}
+/* Смена металла — ровно на ребре (середина «перековки»). */
+@keyframes swap-out {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes swap-in {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 1; }
+}
+@keyframes flash {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+
 /* Праздник закрепления главы. Ступени по уровню: .light — скромно, .medium — празднично, .hard — помпезно, в золоте. */
 
 .overlay {
@@ -23,6 +144,8 @@
 }
 .light { background: color-mix(in srgb, var(--map-deep) 62%, transparent); }
 .hard { background: radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--map-deep) 70%, var(--gold)) 0%, color-mix(in srgb, var(--map-deep) 92%, transparent) 65%); }
+/* Получение медальона — всегда тёплая тьма, как у черепка; ступень видна по салюту и лучам. */
+.reveal.light, .reveal.medium, .reveal.hard { background: radial-gradient(ellipse at 50% 38%, var(--reveal-bg) 0%, var(--reveal-bg-edge) 75%); }
 
 .canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
@@ -80,52 +203,12 @@
 }
 .light .wreath { width: 96px; height: 96px; }
 .hard .wreath { width: 148px; height: 148px; color: var(--gold); filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gold) 70%, transparent)); }
-.laurel { position: absolute; inset: 0; }
-.medal {
-  position: absolute;
-  inset: 24%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: var(--olive-soft);
-  color: var(--olive);
-  animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.9s both;
-}
-.hard .medal {
-  background: linear-gradient(135deg, var(--gold), var(--warning) 55%, var(--gold));
-  background-size: 200% 200%;
-  color: var(--map-label);
-  animation: pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) 0.9s both, shine 2.4s ease-in-out 1.4s infinite;
-}
-.medalNum { font-family: var(--font-display); font-size: 30cqi; font-weight: 700; line-height: 1; }
 
-.praise {
-  margin: 4px 0 0;
-  font-family: var(--font-display);
-  font-size: 2.6rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--brand);
-  animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.05s both;
-}
-.light .praise { font-size: 2rem; }
-.hard .praise {
-  font-size: 3.2rem;
-  background: linear-gradient(90deg, var(--warning), var(--gold), var(--brand-hover), var(--gold), var(--warning));
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: pop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) 1.05s both, shimmer 2.5s linear 1.6s infinite;
-}
-.praiseRu { margin: 0 0 10px; font-size: 0.9rem; font-style: italic; color: var(--text-muted); animation: rise 0.5s ease-out 1.2s both; }
 .title { margin: 0; font-family: var(--font-display); font-size: 1.5rem; animation: rise 0.5s ease-out 1.25s both; }
 .summit { margin: 6px 0 0; font-size: 0.9rem; font-weight: 600; color: var(--warning); animation: rise 0.5s ease-out 1.35s both; }
 .level { margin: 6px 0 0; color: var(--text-muted); animation: rise 0.5s ease-out 1.35s both; }
 
-.epochOpen { margin: 14px 0 0; font-weight: 600; color: var(--success); animation: rise 0.5s ease-out 1.45s both; }
+.collection { margin: 10px 0 0; font-size: 0.9rem; color: var(--text-muted); animation: rise 0.5s ease-out 0.3s both; }
 
 .harder { margin: 16px 0 0; font-size: 0.9rem; line-height: 1.45; color: var(--text-muted); animation: rise 0.5s ease-out 1.5s both; }
 
@@ -148,8 +231,6 @@
   .wreath { width: 104px; height: 104px; }
   .light .wreath { width: 88px; height: 88px; }
   .hard .wreath { width: 124px; height: 124px; }
-  .praise { font-size: 2.2rem; }
-  .hard .praise { font-size: 2.6rem; }
   .title { font-size: 1.3rem; }
   .actions { flex-direction: column; align-items: stretch; }
   .actions > * { text-align: center; }
@@ -162,5 +243,6 @@
 /* «Уменьшить движение»: без салюта и полётов — просто карточка. */
 @media (prefers-reduced-motion: reduce) {
   .canvas { display: none; }
-  .overlay *, .overlay { animation: none !important; }
+  .overlay *, .overlay, .reveal *, .reveal { animation: none !important; }
+  .coinUpgrade .old { display: none; }
 }
