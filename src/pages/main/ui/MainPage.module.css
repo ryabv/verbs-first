@@ -289,6 +289,11 @@
   /* Картинка — под вырез экрана, приветствие — ниже него. */
   .hero { height: calc(360px + var(--safe-top, 0px)); margin-top: calc(-1 * var(--safe-top, 0px)); }
   .heroTop { padding: calc(18px + var(--safe-top, 0px)) 16px 0; }
+  /* Пословица — во всю ширину: серия не занимает свою колонку, а висит в углу на строке приветствия. */
+  .heroText { flex: 1 1 auto; min-width: 0; max-width: none; }
+  .streak { position: absolute; top: calc(22px + var(--safe-top, 0px)); right: 16px; padding: 4px 10px 4px 6px; font-size: 0.78rem; }
+  .streakLaurel { width: 1.15rem; height: 1.15rem; }
+  .greeting { padding-right: 128px; }
   .greeting { font-size: 2rem; }
   .proverbGreek { font-size: 1.15rem; }
   .content { margin-top: -150px; padding: 0 16px; }
