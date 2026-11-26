@@ -3,23 +3,8 @@
  * Контент начинается с DAILY_START — назад дальше не листается.
  */
 
-/**
- * Только в разработке: демо музея — запуск сдвигается на август, чтобы листать сосуды нескольких месяцев.
- * Включается `/today?demo=on`, выключается `/today?demo=off` (флаг — настройка устройства в localStorage).
- */
-export const DAILY_DEMO_KEY = 'daily:demo';
-export const DAILY_DEMO =
-  process.env.NODE_ENV !== 'production' &&
-  (() => {
-    try {
-      return localStorage.getItem(DAILY_DEMO_KEY) === 'on';
-    } catch {
-      return false;
-    }
-  })();
-
 /** Первый день с ежедневными заданиями — запуск режима. */
-export const DAILY_START = DAILY_DEMO ? '2026-08-01' : '2026-11-01';
+export const DAILY_START = '2026-11-01';
 
 /** Дата → `ГГГГ-ММ-ДД` по местному времени. */
 export function dateKey(d: Date): string {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { chapterRead, levelRank, practiceKey, STORY_CHAPTERS, useStoryProgress, WEEK_MATERIAL, type StoryLevel } from '@/entities/story';
+import { chapterRank, chapterRead, levelRank, STORY_LEVELS, practiceKey, STORY_CHAPTERS, useStoryProgress, WEEK_MATERIAL, type StoryLevel } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add';
 import { buildPool, type DailyLexicon } from '@/features/daily';
 
@@ -20,6 +20,17 @@ export function useDailyPool() {
 }
 
 /** Задания закрепления прочитанных глав, ещё не сделанные на этом уровне: сначала глава «сейчас». */
+/**
+ * Уровень ежедневных — из прогресса, без настройки (docs/product/daily.md): уровень медальона последней закреплённой
+ * главы. Ничего не закреплено — лёгкий.
+ */
+export function useDailyLevel(): StoryLevel {
+  const progress = useStoryProgress();
+  const last = STORY_CHAPTERS.findLast((c) => chapterRank(c, progress[c.id] ?? {}) >= 1);
+  const rank = last ? chapterRank(last, progress[last.id] ?? {}) : 1;
+  return STORY_LEVELS[rank - 1]!;
+}
+
 export function useUnpracticed(level: StoryLevel): string[] {
   const progress = useStoryProgress();
   const rank = levelRank(level);

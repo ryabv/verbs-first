@@ -2,3 +2,8 @@ node_modules
 dist
 .DS_Store
 .venv
+dist-storybook
+*storybook.log
+
+# Исходники сканов музея (pnpm museum:fetch) — полные архивы, в репозиторий не кладём
+.museum-src

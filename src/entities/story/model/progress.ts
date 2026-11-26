@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { setting, table, type Rank } from '@/shared/lib/db';
+import { table, type Rank } from '@/shared/lib/db';
 import { STORY_LEVELS, type PracticeTask, type StoryBranch, type StoryChapter, type StoryLevel } from './types';
 
 /**
@@ -79,6 +79,15 @@ export function chapterRank(chapter: StoryChapter, levels: ChapterLevels): Level
   return chapter.practice.reduce<LevelRank>((min, t) => Math.min(min, levels[practiceKey(t)] ?? 0) as LevelRank, 3);
 }
 
+/**
+ * Уровень закрепления главы: первый не пройденный (лёгкий → средний → сложный). Всё пройдено — сложный (повторный круг).
+ * Настройки уровня нет (docs/product/modes.md): глава всегда начинается с лёгкого.
+ */
+export function chapterLevel(chapter: StoryChapter, levels: ChapterLevels): StoryLevel {
+  const next = Math.min(3, chapterRank(chapter, levels) + 1);
+  return STORY_LEVELS[next - 1]!;
+}
+
 /** Рассказ кота прочитан. */
 export function branchRead(branch: StoryBranch, levels: ChapterLevels): boolean {
   return (levels[branchKey(branch.id)] ?? 0) >= 1;
@@ -104,15 +113,4 @@ export function epochClosed(epoch: number, chapters: readonly StoryChapter[], pr
 /** Главы эпохи, которые ещё не закреплены хотя бы на лёгком. */
 export function unpracticed(epoch: number, chapters: readonly StoryChapter[], progress: Progress): StoryChapter[] {
   return chapters.filter((c) => c.epoch === epoch && chapterRank(c, progress[c.id] ?? EMPTY) < 1);
-}
-
-/* Выбранный уровень — один на всю историю, запоминается (таблица settings). Новичку — лёгкий. */
-const level = setting<StoryLevel>('story-level', 'light', STORY_LEVELS);
-
-export function useStoryLevel(): StoryLevel {
-  return useSyncExternalStore(level.subscribe, level.read, level.read);
-}
-
-export function setStoryLevel(next: StoryLevel): void {
-  level.write(next);
 }

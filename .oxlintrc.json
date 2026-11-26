@@ -33,7 +33,9 @@
   },
   "ignorePatterns": [
     "dist",
+    "dist-storybook",
     "public/audio",
+    "public/draco",
     "node_modules"
   ]
 }

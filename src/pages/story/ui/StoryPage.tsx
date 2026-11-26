@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import {
   branchRead,
   chapterOpen,
@@ -75,10 +75,7 @@ export function StoryPage() {
     rememberIntroSeen();
   };
   const chapter = getChapter(selected);
-  // Только локально: ?preview — на полке все находки, даже ненайденные.
-  const [params] = useSearchParams();
-  const preview = process.env.NODE_ENV !== 'production' && params.has('preview');
-  const finds = STORY_CHAPTERS.filter((c) => c.find && (preview || finished(c.id)));
+  const finds = STORY_CHAPTERS.filter((c) => c.find && finished(c.id));
   // «из N» — главы, у которых есть находка (docs/product/finds.md).
   const findsPlanned = STORY_CHAPTERS.filter((c) => c.find).length;
 

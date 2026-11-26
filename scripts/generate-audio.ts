@@ -28,7 +28,6 @@ import { LIBRARY_TEXTS } from '@/entities/library/data/texts';
 import { GRAMMAR_TOPICS } from '@/entities/grammar/data/topics';
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
 import { WEEK_MATERIAL } from '@/entities/story/data/week-material';
-import { STORY_PRAISE } from '@/entities/story/model/types';
 import { PROVERBS } from '@/entities/proverb/data/proverbs';
 import { GREETINGS } from '@/pages/main/lib/greeting';
 import { buildGreek } from '@/entities/verb/lib/buildPhrase';
@@ -107,7 +106,6 @@ function collectTexts(): Set<string> {
   }
   // Справочник: примеры к правилам.
   for (const t of GRAMMAR_TOPICS) for (const r of t.rules) r.examples?.forEach((e) => add(e.greek));
-  add(STORY_PRAISE.greek);
   // Главная: приветствие по времени суток и пословица дня.
   GREETINGS.forEach((g) => add(g.greek));
   PROVERBS.forEach((p) => add(p.greek));

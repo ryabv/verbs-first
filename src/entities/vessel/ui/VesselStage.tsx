@@ -14,10 +14,12 @@ interface Props {
   className?: string;
   /** Что на постаменте — для чтения с экрана и вместо картинки без WebGL. */
   label: string;
+  /** Приближение колесом и щипком — для осмотра вблизи (в музее страница листается колесом — там выключено). */
+  zoomable?: boolean;
 }
 
 /** 3D-галерея музея: сосуды, черепки или печь по месяцам. three.js подгружается лениво. */
-export function VesselStage({ exhibits, focus, reveal, onRevealed, className, label }: Props) {
+export function VesselStage({ exhibits, focus, reveal, onRevealed, className, label, zoomable = false }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Stage | undefined>(undefined);
   const [status, setStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
@@ -33,7 +35,7 @@ export function VesselStage({ exhibits, focus, reveal, onRevealed, className, la
     void import('../lib/scene')
       .then(({ createVesselStage }) => {
         if (cancelled) return;
-        stageRef.current = createVesselStage(host);
+        stageRef.current = createVesselStage(host, { zoom: zoomable });
         apply();
         setStatus('ready');
       })
@@ -43,7 +45,8 @@ export function VesselStage({ exhibits, focus, reveal, onRevealed, className, la
       stageRef.current?.dispose();
       stageRef.current = undefined;
     };
-  }, []);
+    // Сменился `zoomable` — сцена создаётся заново (на практике не меняется).
+  }, [zoomable]);
 
   // Сцена обновляется, только когда сменился вид экспонатов или фокус.
   const signature = `${focus}|${exhibits.map(viewKey).join(',')}`;

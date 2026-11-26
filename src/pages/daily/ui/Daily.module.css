@@ -48,6 +48,9 @@
 .plaqueTitle { margin: 4px 0 0; font-family: var(--font-display); font-size: 1.5rem; line-height: 1.25; }
 .plaqueWhere { margin: 4px 0 0; color: var(--text-muted); }
 .plaqueText { margin: 8px 0 0; line-height: 1.5; }
+/* Подпись скана: музей и лицензия (CC BY требует подписи). */
+.plaqueCredit { margin: 10px 0 0; font-size: 0.8rem; color: var(--text-subtle); }
+.plaqueCredit a { color: inherit; }
 .plaque .playBtn { display: inline-block; margin-top: 14px; border: none; font: inherit; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
 .teaser { display: flex; align-items: center; gap: 14px; margin-top: 4px; text-align: left; }
 .silhouette { flex: none; width: 56px; height: 70px; opacity: 0.85; }
@@ -147,7 +150,6 @@
 .playBtn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px var(--daily-shadow); }
 
 /* День: задания */
-.levels { margin: 18px 0 0; }
 .progress { display: flex; align-items: center; gap: 12px; margin: 18px 0 0; font-size: 0.9rem; color: var(--text-muted); }
 .progress > :first-child { flex: 1; max-width: 20rem; }
 .task { margin: 20px 0 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
@@ -242,7 +244,6 @@
   .todayPage .play { order: 2; position: sticky; bottom: calc(var(--tabbar) + 10px); z-index: 2; margin-top: auto; padding-top: 12px; }
   /* Полки месяцев нет — месяцы листают стрелки на витрине. */
   .todayPage .shelf { display: none; }
-  .todayPage .demo { order: 4; }
   .todayPage .playNote { display: none; }
   /* Кнопка — не во всю ширину, по центру; повыше, с отступом от панели разделов. */
   .playBtn { display: inline-block; min-width: 60%; padding: 13px 40px; font-size: 1rem; box-shadow: 0 4px 12px var(--daily-shadow); }
@@ -253,18 +254,8 @@
   .cell { max-width: 1.75rem; font-size: 0.78rem; }
 }
 
-/* Только в разработке: панель демо музея. */
-.demo {
-  margin: 12px auto 0;
-  max-width: 544px;
-  padding: 10px 12px;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
+/* Только в разработке: «пройти день» на странице дня (ими пользуются и истории Storybook). */
 .demoTitle { margin: 0 0 6px; }
-.demoRange { width: 100%; accent-color: var(--accent); }
 .demoRow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .demoBtn {
   padding: 4px 10px;

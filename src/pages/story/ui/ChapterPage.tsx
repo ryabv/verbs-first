@@ -1,11 +1,14 @@
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Fragment } from 'react';
+import { Link, useParams } from 'react-router';
 import {
   branchRead,
+  ChapterMedal,
   chapterOpen,
   chapterRank,
   chapterRead,
   doneAt,
   getChapter,
+  MEDAL_METALS,
   STORY_CHAPTERS,
   STORY_LEVEL_LABELS,
   STORY_LEVELS,
@@ -32,11 +35,7 @@ export function ChapterRoute() {
   const { chapterId = '', step, branch } = useParams();
   const chapter = getChapter(Number(chapterId));
   const progress = useStoryProgress();
-  // Только локально: ?preview — конец любой главы без замка и без отметок в прогрессе (посмотреть находку).
-  const [params] = useSearchParams();
-  const preview = process.env.NODE_ENV !== 'production' && params.has('preview');
   if (!chapter) return <NotFound />;
-  if (preview && step === 'end') return <ChapterEnd chapter={chapter} preview />;
   // Внутри эпохи — следующая глава после чтения прошлой; новая эпоха — после закрепления всей прошлой.
   if (!chapterOpen(chapter, STORY_CHAPTERS, progress)) return <Locked chapter={chapter} progress={progress} />;
   if (branch !== undefined) {
@@ -86,6 +85,23 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
   const rank = chapterRank(chapter, levels);
   const continueTo = firstUnread === -1 ? routes.storyStep(chapter.id, 'end') : routes.storyStep(chapter.id, firstUnread + 1);
   const practiced = rank > 0 ? STORY_LEVEL_LABELS[STORY_LEVELS[rank - 1]!].toLowerCase() : undefined;
+  // Рассказы кота — под шагом, к которому относятся (`after`); без своего шага — в конце списка.
+  const branches = chapter.branches ?? [];
+  const talesAfter = (stepId: string) => branches.filter((b) => b.after === stepId);
+  const orphanTales = branches.filter((b) => !chapter.steps.some((s) => s.id === b.after));
+  const tale = (b: (typeof branches)[number]) => (
+    <li key={b.id} className={styles.taleRow}>
+      <Link to={routes.storyBranch(chapter.id, b.id)} className={styles.stepLink}>
+        <span className={styles.stepNum}>
+          <CatIcon />
+        </span>
+        <span className={styles.stepName}>{b.title}</span>
+        <span className={`${styles.stepKind} ${styles.taleKind}`}>рассказ кота</span>
+        {branchRead(b, levels) && <Check className={styles.stepDone} />}
+      </Link>
+    </li>
+  );
+  const here = <span className={styles.here}>Вы здесь</span>;
 
   return (
     <div className={styles.page}>
@@ -135,51 +151,38 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
         </div>
       </header>
 
+      {/* Оглавление главы: шаги по порядку, рассказы кота (по желанию) — под своим шагом, в конце — закрепление с медальоном. */}
       <ol className={styles.steps}>
         {chapter.steps.map((s, i) => (
-          <li key={s.id}>
-            <Link to={routes.storyStep(chapter.id, i + 1)} className={styles.stepLink}>
-              <span className={styles.stepNum}>{i + 1}</span>
-              <span className={styles.stepName}>{s.title}</span>
-              <span className={styles.stepKind}>{s.check ? 'чтение и вопрос' : 'чтение'}</span>
-              {done.includes(s.id) && <Check className={styles.stepDone} />}
-            </Link>
-          </li>
+          <Fragment key={s.id}>
+            <li className={i === firstUnread ? styles.stepHere : undefined} aria-current={i === firstUnread ? 'step' : undefined}>
+              <Link to={routes.storyStep(chapter.id, i + 1)} className={styles.stepLink}>
+                <span className={styles.stepNum}>{i + 1}</span>
+                <span className={styles.stepName}>
+                  {s.title}
+                  {i === firstUnread && here}
+                </span>
+                <span className={styles.stepKind}>{s.check ? 'чтение и вопрос' : 'чтение'}</span>
+                {done.includes(s.id) && <Check className={styles.stepDone} />}
+              </Link>
+            </li>
+            {talesAfter(s.id).map(tale)}
+          </Fragment>
         ))}
-        <li>
+        {orphanTales.map(tale)}
+        <li className={read && !practiced ? styles.stepHere : undefined} aria-current={read && !practiced ? 'step' : undefined}>
           <Link to={routes.storyPractice(chapter.id)} className={styles.stepLink}>
-            <span className={styles.stepNum}>✦</span>
-            <span className={styles.stepName}>Закрепление</span>
-            <span className={styles.stepKind}>{chapter.practice.length} заданий</span>
-            {rank > 0 && <Check className={styles.stepDone} />}
+            <span className={styles.stepNum}>
+              <ChapterMedal chapter={chapter.id} rank={rank} size="1.7rem" />
+            </span>
+            <span className={styles.stepName}>
+              Закрепление
+              {read && !practiced && here}
+            </span>
+            <span className={styles.stepKind}>{practiced ? `${MEDAL_METALS[rank].toLowerCase()} · ${practiced}` : `${chapter.practice.length} заданий`}</span>
           </Link>
         </li>
       </ol>
-
-      {chapter.branches && chapter.branches.length > 0 && (
-        <section className={styles.catSection}>
-          <h2 className={styles.catSectionTitle}>
-            <CatIcon /> Рассказы кота Ερμής
-          </h2>
-          <p className={styles.tileIntro}>По желанию: откуда слова, мифы, обычаи. Читайте в любой момент.</p>
-          <ul className={styles.steps}>
-            {chapter.branches.map((b) => {
-              return (
-                <li key={b.id}>
-                  <Link to={routes.storyBranch(chapter.id, b.id)} className={styles.stepLink}>
-                    <span className={styles.stepNum}>
-                      <CatIcon />
-                    </span>
-                    <span className={styles.stepName}>{b.title}</span>
-                    <span className={styles.stepKind}>рассказ</span>
-                    {branchRead(b, levels) && <Check className={styles.stepDone} />}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
     </div>
   );
 }

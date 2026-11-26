@@ -11,7 +11,7 @@
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"], "@sb/*": ["./.storybook/*"] }
   },
-  "include": ["src"]
+  "include": ["src", ".storybook"]
 }

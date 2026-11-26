@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { markStoryStep, practiceKey, useStoryLevel } from '@/entities/story';
+import { markStoryStep, practiceKey, type StoryLevel } from '@/entities/story';
 import { addCards, ensureDeck, isDueAny, useCards, type DeckRef } from '@/entities/card';
 import { ShardThumb, vesselOfMonth } from '@/entities/vessel';
 import { analyzePhrase, lookupToken } from '@/features/card-add';
@@ -33,9 +33,9 @@ import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
-import { LevelSwitch, PracticeTask } from '@/widgets/practice-task';
+import { LevelBadge, PracticeTask } from '@/widgets/practice-task';
 import { FoundShard } from './FoundShard';
-import { useDailyPool, useUnpracticed } from '../lib/pool';
+import { useDailyLevel, useDailyPool, useUnpracticed } from '../lib/pool';
 import styles from './Daily.module.css';
 
 /** Слова из ошибок дня — в свой набор карточек. */
@@ -68,7 +68,7 @@ export function DayRoute() {
 }
 
 function DayPage({ date }: { date: string }) {
-  const level = useStoryLevel();
+  const level = useDailyLevel();
   const { read, pool } = useDailyPool();
   const unpracticed = useUnpracticed(level);
   const days = useDailyDays();
@@ -84,12 +84,11 @@ function DayPage({ date }: { date: string }) {
 
   if (!day) return <div className={styles.page} />;
   const tasks = day.tasks.flatMap((k) => pool.get(k) ?? []);
-  // Смена уровня — новый круг заданий, как в закреплении главы.
-  return <Day key={level} date={date} day={day} tasks={tasks} />;
+  // Уровень вырос (закреплена глава строже) — новый круг заданий.
+  return <Day key={level} date={date} day={day} tasks={tasks} level={level} />;
 }
 
-function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: readonly DailyTask[] }) {
-  const level = useStoryLevel();
+function Day({ date, day, tasks, level }: { date: string; day: DailyDayRecord; tasks: readonly DailyTask[]; level: StoryLevel }) {
   const isDone = (t: DailyTask) => day.solved.includes(t.key) || day.revealed.includes(t.key);
   const [queue, setQueue] = useState(() => {
     const left = tasks.filter((t) => !isDone(t));
@@ -150,12 +149,12 @@ function Day({ date, day, tasks }: { date: string; day: DailyDayRecord; tasks: r
         <p className={styles.kicker}>
           {date === todayKey() ? 'Задания на сегодня' : `Задания на ${dayTitle(date)}`}
         </p>
-        <LevelSwitch className={styles.levels} />
         <div className={styles.progress}>
           <ProgressBar value={tasks.length ? doneCount / tasks.length : 0} />
           <span>
             {doneCount}/{tasks.length}
           </span>
+          <LevelBadge level={level} single />
         </div>
         {process.env.NODE_ENV !== 'production' && item && (
           <div className={styles.demoRow}>

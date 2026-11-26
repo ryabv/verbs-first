@@ -6,8 +6,8 @@ import {
   levelRank,
   MEDAL_METALS,
   STORY_CHAPTERS,
-  setStoryLevel,
   STORY_LEVEL_LABELS,
+  STORY_LEVEL_SKILLS,
   STORY_LEVELS,
   STORY_PRAISE,
   useStoryProgress,
@@ -16,7 +16,6 @@ import {
   type StoryLevel,
 } from '@/entities/story';
 import { routes } from '@/shared/config/routes';
-import { speak } from '@/shared/lib/speech';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { Arrow } from '@/shared/ui/ornament';
 import { Fireworks } from './Fireworks';
@@ -24,7 +23,7 @@ import styles from './Celebration.module.css';
 
 /** Что изменится на уровне выше — чтобы кнопка «Закрепить на …» была понятна. */
 const HARDER_HINT: Partial<Record<StoryLevel, string>> = {
-  medium: 'Дальше — средний уровень: та же глава, но формы вписываете сами, с подсказкой.',
+  medium: 'Пока вы узнаёте формы среди вариантов. Дальше — средний уровень: вспоминаете и вписываете сами, с подсказкой.',
   hard: 'Дальше — сложный уровень: без подсказок, только значение слова; на слух — записать.',
 };
 
@@ -33,7 +32,7 @@ const EPOCH_SIZE = 4;
 
 /**
  * Глава закреплена — получение медальона (docs/product/collection.md), как черепок у ежедневных: тёплая тьма, лучи,
- * салют, «Μπράβο!» греческим голосом; медальон главы поднимается с вращением и вспыхивает. Уровень выше прежнего —
+ * салют, «Μπράβο!» (без озвучки); медальон главы поднимается с вращением и вспыхивает. Уровень выше прежнего —
  * медальон перековывается (на развороте прежний металл сменяется новым). Одна кнопка «Забрать» — медальон уходит
  * в «Коллекцию», дальше карточка с выбором: закрепить строже или к следующей главе.
  * Сила праздника растёт с уровнем. Показывается один раз — в момент, когда сделано последнее задание уровня.
@@ -44,11 +43,14 @@ export function Celebration({
   level,
   fromRank,
   onClose,
+  onNextLevel,
 }: {
   chapter: StoryChapter;
   level: StoryLevel;
   fromRank: LevelRank;
   onClose: () => void;
+  /** Закрепить главу на следующем уровне — новый круг заданий (праздник закрывается сам). */
+  onNextLevel: () => void;
 }) {
   const progress = useStoryProgress();
   const actionsRef = useRef<HTMLDivElement>(null);
@@ -56,11 +58,6 @@ export function Celebration({
   const rank = levelRank(level);
   const upgrade = fromRank > 0 && fromRank < rank;
 
-  useEffect(() => {
-    // Звук — сразу после нажатия ученика (последний ответ), браузер его пропустит. Один раз — на получении медальона.
-    const t = setTimeout(() => void speak(STORY_PRAISE.greek), 900);
-    return () => clearTimeout(t);
-  }, []);
   useEffect(() => {
     // Фокус — на главное действие («Забрать», потом — выбор дальше): Enter ведёт дальше. Esc — забрать / закрыть.
     actionsRef.current?.querySelector<HTMLElement>('a, button')?.focus({ preventScroll: true });
@@ -102,7 +99,7 @@ export function Celebration({
             Медальон главы {chapter.id}
           </h2>
           <p className={styles.revealMetal}>
-            {upgrade ? `${MEDAL_METALS[fromRank]} → ${metal.toLowerCase()}` : metal}: глава закреплена на уровне «{STORY_LEVEL_LABELS[level].toLowerCase()}»
+            {upgrade ? `${MEDAL_METALS[fromRank]} → ${metal.toLowerCase()}` : metal}: {STORY_LEVEL_SKILLS[level]}
           </p>
           {epochDone && <p className={styles.revealEpoch}>Эпоха {chapter.epoch} пройдена — открыта следующая!</p>}
           <button type="button" className={styles.take} onClick={() => setTaken(true)}>
@@ -139,9 +136,8 @@ export function Celebration({
           {harder && (
             <Button
               onClick={() => {
-                // Смена уровня перезапускает круг заданий — праздник закрывается сам.
-                setStoryLevel(harder);
                 onClose();
+                onNextLevel();
               }}
             >
               Закрепить на {harder === 'medium' ? 'среднем' : 'сложном'} уровне <Arrow />

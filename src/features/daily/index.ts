@@ -1,5 +1,4 @@
 export {
-  DAILY_DEMO,
   DAILY_START,
   dateKey,
   dayOpen,
@@ -20,8 +19,6 @@ export {
   markDailyTask,
   monthSummary,
   shardOfDay,
-  setMuseumDemo,
-  setMuseumDemoMonth,
   openDay,
   assemble,
   useAssembledMonths,

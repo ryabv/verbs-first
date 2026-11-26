@@ -1,19 +1,26 @@
 /**
- * 3D-музей ежедневных: сосуд на постаменте (целый, склеенный, черепки), печь, пока месяц идёт,
- * и миниатюры для полки. Модуль грузится лениво (import()) — three.js только там, где нужен.
+ * 3D-музей ежедневных: сосуд на постаменте (целый, склеенный, черепки) и миниатюры для полки.
+ * Сосуд — 3D-скан музейного подлинника (`public/museum/<сосуд>.glb`, `pnpm museum:bake`).
+ * Модуль грузится лениво (import()) — three.js и загрузчик сканов только там, где нужны.
  */
 import * as THREE from 'three';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { viewKey, type Vessel, type VesselView } from '../model/types';
 import { BAY, courtyard, FLOOR_Y, isNight, makePlinth } from './courtyard';
-import { cutVessel, handleCurve, paintSkin, prepare, rng, solidify, TAU, unpackPieces, type Handle, type Piece, type SkinPixels } from './bake';
-import { SHAPES } from './shapes';
-import { STYLES, TEX_H, TEX_W } from './paint';
+import { cutMesh, mergePieces, rng, solidify, unpackPieces, type Piece } from './shards';
 
-/* ---------- Готовые роспись и черепки — из public/museum (pnpm museum:bake); нет файла — считаем здесь ---------- */
+/* ---------- Скан и черепки — из public/museum (pnpm museum:bake) ---------- */
+const MUSEUM = `${process.env.BASE_URL}museum/`;
+/** Скан: сцена из GLB (общая — у экспонатов клоны) и его материалы по номерам (у черепков те же). */
+interface Scan {
+  scene: THREE.Group;
+  materials: THREE.Material[];
+}
+const scans = new Map<string, Scan>();
 const cuts = new Map<string, Piece[]>();
 const cutKey = (vessel: Vessel, count: number) => `${vessel.id}:${count}`;
 const pending = new Map<string, Promise<void>>();
-const MUSEUM = `${process.env.BASE_URL}museum/`;
 /** Одна задача на ключ: повторные просьбы ждут ту же. */
 function once(key: string, run: () => Promise<void>): Promise<void> {
   const hit = pending.get(key);
@@ -25,60 +32,64 @@ function once(key: string, run: () => Promise<void>): Promise<void> {
 /** Дать странице отрисоваться между тяжёлыми шагами. */
 const breathe = () => new Promise<void>((r) => setTimeout(r, 0));
 
-/** Готов ли экспонат: роспись сосуда скачана и (для стола реставратора) черепки нарезаны. */
-function isBaked(vessel: Vessel, count?: number): boolean {
-  return skins.has(vessel.id) && (count === undefined || cuts.has(cutKey(vessel, count)));
+/** Общее, что лежит в кэше (сцена скана, его материалы): при уборке экспоната — не освобождать. */
+const share = (o: { userData: Record<string, unknown> }) => (o.userData.shared = true);
+const shared = (o: { userData: Record<string, unknown> }) => o.userData.shared === true;
+
+let loader: GLTFLoader | undefined;
+function gltfLoader(): GLTFLoader {
+  if (loader) return loader;
+  // Декодер сжатой сетки (Draco) лежит рядом с сайтом — `public/draco/`.
+  loader = new GLTFLoader().setDRACOLoader(new DRACOLoader().setDecoderPath(`${process.env.BASE_URL}draco/`));
+  return loader;
 }
 
-/** Скачать роспись сосуда и, если нужно, нарезать черепки — дальше сцена строится без задержек. */
+/** Дней в месяце сосуда — на столько черепков он нарезан заранее. */
+const ownDays = (vessel: Vessel) => {
+  const [y, m] = vessel.month.split('-').map(Number) as [number, number];
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+};
+
+/** Готов ли экспонат: скан скачан и (для стола реставратора) черепки есть. */
+function isBaked(vessel: Vessel, count?: number): boolean {
+  return scans.has(vessel.id) && (count === undefined || cuts.has(cutKey(vessel, count)));
+}
+
+/** Скачать скан и, если нужно, черепки — дальше сцена строится без задержек. */
 export function bakeVessel(vessel: Vessel, count?: number): Promise<void> {
-  const skinJob = skins.has(vessel.id)
+  const scanJob = scans.has(vessel.id)
     ? Promise.resolve()
-    : once(`skin:${vessel.id}`, async () => {
-        const loader = new THREE.TextureLoader();
-        try {
-          const [map, roughness] = await Promise.all([loader.loadAsync(`${MUSEUM}${vessel.id}.webp`), loader.loadAsync(`${MUSEUM}${vessel.id}-rough.webp`)]);
-          map.colorSpace = THREE.SRGBColorSpace;
-          map.anisotropy = 8;
-          skins.set(vessel.id, { map, roughness });
-        } catch {
-          // Файла нет (новый сосуд, не испекли) — рисуем здесь.
-          await breathe();
-          skin(vessel);
-        }
+    : once(`scan:${vessel.id}`, async () => {
+        const gltf = await gltfLoader().loadAsync(`${MUSEUM}${vessel.id}.glb`);
+        const materials = (await gltf.parser.getDependencies('material')) as THREE.Material[];
+        for (const m of materials) share(m);
+        gltf.scene.traverse((o) => {
+          share(o);
+          if (o instanceof THREE.Mesh) o.castShadow = true;
+        });
+        scans.set(vessel.id, { scene: gltf.scene, materials });
       });
-  if (count === undefined) return skinJob;
+  if (count === undefined) return scanJob;
   const key = cutKey(vessel, count);
   const cutJob = cuts.has(key)
     ? Promise.resolve()
     : once(`cut:${key}`, async () => {
-        try {
-          // Черепки нарезаны заранее на число дней месяца сосуда; другое число (демо, перепривязка) — режем здесь.
-          const res = await fetch(`${MUSEUM}${vessel.id}-${count}.bin`);
-          if (!res.ok) throw new Error(String(res.status));
-          cuts.set(key, unpackPieces(await res.arrayBuffer()));
-        } catch {
-          await breathe();
-          if (!cuts.has(key)) cuts.set(key, cutVessel(vessel.id, vessel.shape, count));
-        }
+        const load = async (n: number) => {
+          const res = await fetch(`${MUSEUM}${vessel.id}-${n}.bin`);
+          if (!res.ok) throw new Error(`${vessel.id}-${n}.bin: ${res.status}`);
+          return unpackPieces(await res.arrayBuffer());
+        };
+        const own = ownDays(vessel);
+        if (count === own) return void cuts.set(key, await load(own));
+        // Месяц другой длины (сосуд пошёл по кругу, демо): черепки своего месяца склеиваем и режем заново.
+        const pieces = await load(own);
+        await breathe();
+        cuts.set(key, cutMesh(vessel.id, mergePieces(pieces), count));
       });
-  return Promise.all([skinJob, cutJob]).then(() => undefined);
+  return Promise.all([scanJob, cutJob]).then(() => undefined);
 }
+const TAU = Math.PI * 2;
 const viewCount = (view: VesselView) => (view.kind === 'dig' ? view.total : undefined);
-
-/* ---------- Текстуры сосуда ---------- */
-interface Skin {
-  map: THREE.Texture;
-  roughness: THREE.Texture;
-}
-const skins = new Map<string, Skin>();
-function skin(vessel: Vessel): Skin {
-  const key = vessel.id;
-  const hit = skins.get(key);
-  if (hit) return hit;
-  // Роспись не скачали заранее — рисуем здесь.
-  return skinFrom(vessel.id, paintSkin(vessel.id, vessel.shape));
-}
 
 /** Высота «чёлки» над холстом: CSS-переменная --safe-top (на телефоне — env(safe-area-inset-top)), в пикселях. */
 function safeTop(host: HTMLElement): number {
@@ -90,53 +101,22 @@ function safeTop(host: HTMLElement): number {
   return h;
 }
 
-/** Холст с готовыми пикселями. */
-function pixelCanvas(data: Uint8ClampedArray<ArrayBuffer>): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = TEX_W;
-  c.height = TEX_H;
-  c.getContext('2d')!.putImageData(new ImageData(data, TEX_W, TEX_H), 0, 0);
-  return c;
+function scanOf(vessel: Vessel): Scan {
+  const scan = scans.get(vessel.id);
+  if (!scan) throw new Error(`Скан ${vessel.id} не загружен — сначала bakeVessel`);
+  return scan;
 }
 
-/** Текстуры из пикселей, нарисованных на странице (когда готовой росписи нет). */
-function skinFrom(id: string, px: SkinPixels): Skin {
-  const map = new THREE.CanvasTexture(pixelCanvas(px.map));
-  map.colorSpace = THREE.SRGBColorSpace;
-  map.anisotropy = 8;
-  const out = { map, roughness: new THREE.CanvasTexture(pixelCanvas(px.rough)) };
-  skins.set(id, out);
-  return out;
-}
+/** Изнанка черепка и свежий скол — обожжённая глина. */
+const innerMat = new THREE.MeshStandardMaterial({ color: 0x3a2418, roughness: 0.9, side: THREE.BackSide });
+const rimMat = new THREE.MeshStandardMaterial({ color: 0xb9805a, roughness: 1, side: THREE.DoubleSide });
+share(innerMat);
+share(rimMat);
 
 /* ---------- Сосуд ---------- */
-/** Радиус наружной стороны профиля на высоте `y`. */
-function handleGeometry(vessel: Vessel, h: Handle) {
-  const curve = handleCurve(vessel.shape, h);
-  return new THREE.TubeGeometry(curve, 48, SHAPES[vessel.shape].thick ?? 0.034, 12, false);
-}
-
-function materials(vessel: Vessel) {
-  const style = STYLES[vessel.id]!;
-  const { map, roughness } = skin(vessel);
-  return {
-    outer: new THREE.MeshStandardMaterial({ map, roughnessMap: roughness, roughness: 1, metalness: 0 }),
-    inner: new THREE.MeshStandardMaterial({ color: 0x3a2418, roughness: 0.9, side: THREE.BackSide }),
-    handle: new THREE.MeshStandardMaterial({ color: style.handle, roughness: style.glaze ? 0.25 : style.rough + 0.1 }),
-    // Свежий скол — обожжённая глина изнутри черепка.
-    rim: new THREE.MeshStandardMaterial({ color: 0xb9805a, roughness: 1, side: THREE.DoubleSide }),
-  };
-}
-
 function buildVessel(vessel: Vessel): THREE.Group {
-  const prep = prepare(vessel.shape);
-  const mats = materials(vessel);
-  const lathe = new THREE.LatheGeometry(prep.pts, 160, Math.PI, TAU);
-  const body = new THREE.Group();
-  body.add(new THREE.Mesh(lathe, mats.outer), new THREE.Mesh(lathe, mats.inner));
-  for (const h of SHAPES[vessel.shape].handles) body.add(new THREE.Mesh(handleGeometry(vessel, h), mats.handle));
-  body.scale.setScalar(prep.scale);
-  body.traverse((o) => (o.castShadow = true));
+  // Клон делит с кэшем сетку и материалы.
+  const body = scanOf(vessel).scene.clone();
   const group = new THREE.Group();
   group.add(body);
   return group;
@@ -152,35 +132,22 @@ interface Shard {
 }
 
 function shatter(vessel: Vessel, count: number): { object: THREE.Group; home: THREE.Vector3; outward: THREE.Vector3 }[] {
-  const prep = prepare(vessel.shape);
-  const mats = materials(vessel);
-  const key = cutKey(vessel, count);
-  // Не нарезали заранее — режем здесь.
-  const data = cuts.get(key) ?? cutVessel(vessel.id, vessel.shape, count);
-  cuts.set(key, data);
+  const { materials } = scanOf(vessel);
+  const data = cuts.get(cutKey(vessel, count));
+  if (!data) throw new Error(`Черепки ${vessel.id}:${count} не готовы — сначала bakeVessel`);
   const out = data.map((c) => {
     // Массивы общие с кэшем: геометрию не сдвигаем и не меняем — только объект.
     const { face, inner, rim } = solidify(c);
     const home = new THREE.Vector3(...c.home);
     const object = new THREE.Group();
-    object.add(new THREE.Mesh(face, mats.outer), new THREE.Mesh(inner, mats.inner), new THREE.Mesh(rim, mats.rim));
+    object.add(new THREE.Mesh(face, materials), new THREE.Mesh(inner, innerMat), new THREE.Mesh(rim, rimMat));
     const outward = new THREE.Vector3(home.x, 0, home.z);
     // Донце и горлышко сверху — лежат «изнанкой» вниз; остальное — выпуклой стороной наружу.
     if (outward.lengthSq() < 0.04) outward.set(0, home.y < 0.3 ? -1 : 1, 0);
     else outward.normalize();
+    object.traverse((o) => (o.castShadow = true));
     return { object, home, outward };
   });
-  // Ручки — к черепку, чей центр ближе всего к ручке.
-  for (const h of SHAPES[vessel.shape].handles) {
-    const hg = handleGeometry(vessel, h);
-    hg.scale(prep.scale, prep.scale, prep.scale);
-    hg.computeBoundingBox();
-    const hc = hg.boundingBox!.getCenter(new THREE.Vector3());
-    const owner = out.reduce((best, s) => (s.home.distanceTo(hc) < best.home.distanceTo(hc) ? s : best));
-    hg.translate(-owner.home.x, -owner.home.y, -owner.home.z);
-    owner.object.add(new THREE.Mesh(hg, mats.handle));
-  }
-  for (const s of out) s.object.traverse((o) => (o.castShadow = true));
   // Черепок дня — перемешанный порядок (одинаковый для сосуда): соседние дни — из разных мест сосуда.
   const rnd = rng(`${vessel.id}:finds`);
   for (let i = out.length - 1; i > 0; i--) {
@@ -347,10 +314,10 @@ function makeRenderer(canvas?: HTMLCanvasElement) {
 
 function dispose(o: THREE.Object3D) {
   o.traverse((x) => {
-    if (x instanceof THREE.Mesh || x instanceof THREE.Points) {
+    // Скан и его материалы — в кэше (общие для всех экспонатов и черепков): их не трогаем.
+    if ((x instanceof THREE.Mesh || x instanceof THREE.Points) && !shared(x)) {
       x.geometry.dispose();
-      // Текстуры сосудов в кэше — материалы освобождаем, карты нет.
-      for (const m of [x.material].flat() as THREE.Material[]) m.dispose();
+      for (const m of [x.material].flat() as THREE.Material[]) if (!shared(m)) m.dispose();
     }
   });
 }
@@ -377,7 +344,10 @@ interface Bay {
 
 const easeInOut = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 
-export function createVesselStage(host: HTMLElement): VesselStage {
+/**
+ * `zoom` — приближение колесом и щипком (осмотр сосуда вблизи; на странице музея выключено — колесо там листает страницу).
+ */
+export function createVesselStage(host: HTMLElement, { zoom = false }: { zoom?: boolean } = {}): VesselStage {
   const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   const renderer = makeRenderer();
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -419,9 +389,40 @@ export function createVesselStage(host: HTMLElement): VesselStage {
   let spinV = 0;
   const canvas = renderer.domElement;
   // Вертикальный свайп по витрине прокручивает страницу, горизонтальный — крутит сосуд.
-  canvas.style.touchAction = 'pan-y';
-  const onDown = (e: PointerEvent) => (grab = { x: e.clientX, at: performance.now() });
+  canvas.style.touchAction = zoom ? 'none' : 'pan-y';
+  // Приближение (только с `zoom`): колесо или щипок двумя пальцами; камера.zoom от 1 до ZOOM_MAX.
+  const ZOOM_MAX = 2.5;
+  const setZoom = (z: number) => {
+    camera.zoom = Math.min(ZOOM_MAX, Math.max(1, z));
+    camera.updateProjectionMatrix();
+    invalidate();
+  };
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    setZoom(camera.zoom * Math.exp(-e.deltaY * 0.002));
+  };
+  if (zoom) canvas.addEventListener('wheel', onWheel, { passive: false });
+  const touches = new Map<number, { x: number; y: number }>();
+  let pinch: { dist: number; zoom: number } | undefined;
+  const spread = () => {
+    const [a, b] = [...touches.values()];
+    return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 0;
+  };
+  const onDown = (e: PointerEvent) => {
+    grab = { x: e.clientX, at: performance.now() };
+    if (!zoom) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touches.size === 2) {
+      pinch = { dist: spread(), zoom: camera.zoom };
+      grab = undefined;
+    }
+  };
   const onMove = (e: PointerEvent) => {
+    if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch) {
+      if (pinch.dist > 0) setZoom((pinch.zoom * spread()) / pinch.dist);
+      return;
+    }
     if (!grab) return;
     const now = performance.now();
     const turn = ((e.clientX - grab.x) / canvas.clientWidth) * Math.PI * 1.6;
@@ -434,7 +435,11 @@ export function createVesselStage(host: HTMLElement): VesselStage {
     spinV = turn / ms;
     invalidate();
   };
-  const onUp = () => (grab = undefined);
+  const onUp = (e: PointerEvent) => {
+    grab = undefined;
+    touches.delete(e.pointerId);
+    if (touches.size < 2) pinch = undefined;
+  };
   canvas.addEventListener('pointerdown', onDown);
   window.addEventListener('pointermove', onMove);
   window.addEventListener('pointerup', onUp);
@@ -642,6 +647,7 @@ export function createVesselStage(host: HTMLElement): VesselStage {
       observer.disconnect();
       seen.disconnect();
       canvas.removeEventListener('pointerdown', onDown);
+      canvas.removeEventListener('wheel', onWheel);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
@@ -649,7 +655,7 @@ export function createVesselStage(host: HTMLElement): VesselStage {
       media?.removeEventListener('change', onTheme);
       if (assembling) dropBay(assembling.bay);
       for (const bay of bays.values()) if (bay !== assembling?.bay) dropBay(bay);
-      scene.traverse((o) => o instanceof THREE.Mesh && o.geometry.dispose());
+      scene.traverse((o) => o instanceof THREE.Mesh && !shared(o) && o.geometry.dispose());
       renderer.dispose();
       renderer.domElement.remove();
     },

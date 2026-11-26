@@ -19,6 +19,12 @@ export interface StorySentence {
 export const STORY_LEVELS = ['light', 'medium', 'hard'] as const;
 export type StoryLevel = (typeof STORY_LEVELS)[number];
 export const STORY_LEVEL_LABELS: Record<StoryLevel, string> = { light: 'Лёгкий', medium: 'Средний', hard: 'Сложный' };
+/** Что умеет ученик, закрепивший главу на уровне (медальон): лёгкий — узнавание, не знание (docs/product/modes.md). */
+export const STORY_LEVEL_SKILLS: Record<StoryLevel, string> = {
+  light: 'узнаёте формы среди вариантов',
+  medium: 'вспоминаете и пишете с подсказкой',
+  hard: 'пишете сами, без подсказок',
+};
 
 /** Вопрос на понимание — внутри чтения: одно нажатие, всегда лёгкий, провалить нельзя (ошибка — подсказка и ответ). */
 export interface StoryCheck {

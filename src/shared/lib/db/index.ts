@@ -168,6 +168,23 @@ export function table<N extends TableName>(name: N): Table<RecordOf<N>> {
   };
 }
 
+/** Снимок данных: записи по таблицам, без служебных полей. */
+export type Snapshot = { [N in TableName]?: Fields<RecordOf<N>>[] };
+
+/**
+ * Заменить все данные в памяти снимком (Storybook: состояние экрана задаётся историей, docs/ARCHITECTURE.md).
+ * В IndexedDB не пишет — вызывать без `initDb`.
+ */
+export function loadSnapshot(snapshot: Snapshot): void {
+  const at = '2026-01-01T00:00:00.000Z';
+  for (const name of TABLES) {
+    const map = memory.get(name)!;
+    map.clear();
+    for (const row of snapshot[name] ?? []) map.set(row.id, { ...row, updatedAt: at } as DbRecord);
+    changed(name);
+  }
+}
+
 /** Новый id записи (карточка, набор, ответ): время + случайный хвост — без сервера и без столкновений. */
 export function newId(): string {
   return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

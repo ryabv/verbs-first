@@ -1,0 +1,35 @@
+/* Значок уровня на страницах заданий (закрепление, ежедневные); подробности — подсказкой при наведении, фокусе или нажатии. */
+.levelLaurel { width: 1em; height: 1em; color: var(--olive); }
+.badge { position: relative; display: inline-flex; }
+.badgeBtn { display: inline-flex; padding: 4px; margin: -4px; border: none; border-radius: 6px; background: none; color: inherit; cursor: help; }
+.badgeBtn:focus-visible { outline: 2px solid var(--accent); }
+.icon { width: 1.15rem; height: 1.15rem; }
+.bronze { --metal: var(--hall-bronze); --metal-edge: var(--hall-bronze-edge); }
+.silver { --metal: var(--hall-silver); --metal-edge: var(--hall-silver-edge); }
+.gold { --metal: var(--hall-gold); --metal-edge: var(--hall-gold-edge); }
+.coinEdge { fill: var(--metal-edge); }
+.coin { fill: var(--metal); }
+.coinRing { fill: none; stroke: var(--metal-edge); stroke-width: 0.8; opacity: 0.6; }
+.tip {
+  position: absolute;
+  z-index: 5;
+  top: calc(100% + 8px);
+  right: -8px;
+  width: max-content;
+  max-width: min(18rem, calc(100vw - 32px));
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.15);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s;
+}
+.tip b { color: var(--text); }
+.tipLine { display: block; margin-top: 6px; }
+.tipLine .levelLaurel { vertical-align: -0.15em; margin-right: 2px; }
+.badge:hover .tip, .badgeBtn:focus + .tip { opacity: 1; visibility: visible; }

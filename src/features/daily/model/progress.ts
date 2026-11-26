@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { setting, table, type RecordOf } from '@/shared/lib/db';
-import { daysOfMonth, monthOf, todayKey, DAILY_DEMO_KEY, DAILY_START } from './calendar';
+import { daysOfMonth, monthOf, todayKey, DAILY_START } from './calendar';
 
 /**
  * Прогресс ежедневных — таблица `daily_days` (схема — shared/lib/db/schema.ts): запись на день.
@@ -84,44 +84,6 @@ export const assemble = (month: string) => assembled(month).write('built');
   const read = () => months.map((m) => (assembled(m).read() === 'built' ? '1' : '0')).join('');
   const flags = useSyncExternalStore(assembled(months[0] ?? '').subscribe, read, () => '');
   return months.map((_, i) => flags[i] === '1');
-}
-
-function fillDemo(month: string, n: number) {
-  for (const d of daysOfMonth(month).slice(0, n)) if (!days.get(d)) days.put({ id: d, tasks: ['demo'], solved: ['demo'], revealed: [] });
-}
-
-/**
- * Только в разработке: включить/выключить демо музея. При включении — закрытые дни за август (6 черепков),
- * сентябрь (20 из 30) и октябрь (все — можно собрать).
- */
-export function setMuseumDemo(on: boolean): void {
-  if (process.env.NODE_ENV === 'production') return;
-  try {
-    if (on) localStorage.setItem(DAILY_DEMO_KEY, 'on');
-    else localStorage.removeItem(DAILY_DEMO_KEY);
-  } catch {
-    return;
-  }
-  if (!on) return;
-  fillDemo('2026-08', 6);
-  fillDemo('2026-09', 20);
-  fillDemo('2026-10', 31);
-}
-
-/**
- * Только в разработке (демо музея): в месяце закрыто ровно `closed` дней с начала (не позже сегодня);
- * `built` — сосуд собран (false — снова черепки в лотке, чтобы ещё раз «собрать»).
- */
-export function setMuseumDemoMonth(month: string, closed: number, built: boolean): void {
-  if (process.env.NODE_ENV === 'production') return;
-  const today = todayKey();
-  const dates = daysOfMonth(month).filter((d) => d >= DAILY_START && d <= today);
-  dates.forEach((d, i) => {
-    if (i < closed) {
-      if (!isClosed(dayState(days.get(d)))) days.put({ id: d, tasks: ['demo'], solved: ['demo'], revealed: [] });
-    } else if (days.get(d)) days.remove(d);
-  });
-  assembled(month).write(built ? 'built' : 'dig');
 }
 
 const attempts = table('attempts');

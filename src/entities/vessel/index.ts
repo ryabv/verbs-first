@@ -1,4 +1,4 @@
-export type { Vessel, VesselShape, VesselView } from './model/types';
+export type { Vessel, VesselCredit, VesselView } from './model/types';
 export { VESSELS, vesselOfMonth } from './data/catalog';
 export { VesselStage } from './ui/VesselStage';
 export { VesselPicture } from './ui/VesselPicture';

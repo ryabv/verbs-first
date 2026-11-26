@@ -203,6 +203,13 @@
 .stepName { flex: 1; }
 .stepKind { font-size: 0.75rem; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-strong); }
 .stepDone { flex: none; color: var(--success); }
+/* Текущий шаг — «Вы здесь»; рассказ кота — с отступом под своим шагом. */
+.stepHere .stepLink { background: var(--accent-soft); }
+.here { display: inline-block; margin-left: 10px; padding: 1px 8px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 0.72rem; font-weight: 600; vertical-align: 0.1em; white-space: nowrap; }
+.taleRow .stepLink { padding-left: 2.4rem; font-size: 0.92rem; color: var(--text-muted); }
+.taleRow .stepNum { width: 1.4rem; color: var(--accent-strong); }
+.taleKind { background: none; border: 1px solid var(--border); color: var(--text-subtle); }
+.steps .stepNum:has(> [class]) { display: inline-flex; justify-content: flex-end; }
 .practice { margin: 20px 0 0; font-size: 0.9rem; color: var(--text-muted); }
 
 /* ---------- шаг: две панели ---------- */
@@ -378,6 +385,7 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .taskTitle { margin: 0; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-subtle); }
 .taskPrompt { margin: 0 0 12px; line-height: 1.5; }
 .gaps { display: flex; flex-direction: column; gap: 10px; }
+.stretch { margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--brand); color: var(--on-accent); letter-spacing: 0.04em; cursor: help; }
 .gapHint { font-size: 0.9rem; color: var(--text-muted); }
 .options { display: flex; flex-wrap: wrap; gap: 8px; }
 .option {
@@ -490,7 +498,6 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 }
 
 /* Уровень истории: три сегмента; пройденный — с венком. */
-.chapterLevels { margin: 18px 0 0; }
 
 /* ---------- рассказы кота Ερμής ---------- */
 .catHead { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
@@ -514,9 +521,6 @@ a.stepMark:hover, .fragment:hover .stepMark { color: var(--brand); }
 .catExamples .translation { display: block; }
 .catLink { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; }
 .catLink:hover { color: var(--brand); }
-.catSection { margin-top: 32px; }
-.catSectionTitle { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: 1.2rem; color: var(--accent-strong); }
-.catSection .stepNum { color: var(--accent-strong); }
 /* Шаг: рассказы кота — отдельная плашка под заданием. */
 .catTales { display: flex; gap: 12px; align-items: flex-start; margin: 20px 0 0; padding: 12px 16px; border-radius: var(--radius); background: var(--accent-soft); }
 .catBadgeSmall { flex: none; display: grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 50%; background: var(--bg); color: var(--accent-strong); }

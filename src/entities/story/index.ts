@@ -16,12 +16,13 @@ export { STORY_PLACES } from './data/map';
 export { WEEK_MATERIAL } from './data/week-material';
 export { PROLOGUE, STORY_PRAISE } from './model/types';
 export { PRACTICE_KINDS, TASK_SKILL_LABELS, type PracticeKind, type TaskSkill } from './model/tasks';
-export { STORY_LEVELS, STORY_LEVEL_LABELS, type StoryLevel } from './model/types';
+export { STORY_LEVELS, STORY_LEVEL_LABELS, STORY_LEVEL_SKILLS, type StoryLevel } from './model/types';
 export {
   STORY_END,
   branchKey,
   branchRead,
   chapterOpen,
+  chapterLevel,
   chapterRank,
   chapterRead,
   doneAt,
@@ -29,9 +30,7 @@ export {
   levelRank,
   markStoryStep,
   practiceKey,
-  setStoryLevel,
   unpracticed,
-  useStoryLevel,
   useStoryLevels,
   useStoryProgress,
   type LevelRank,

@@ -81,9 +81,13 @@ React 19 + TypeScript + rspack + pnpm, Feature-Sliced Design, без бэкен�
   и сочетания, проверка: `pnpm reading:check`.
 - Изменение зависимостей → закоммитить `pnpm-lock.yaml` (CI ставит `--frozen-lockfile`).
 - Пуш в `main` сразу деплоит сайт.
+- **Storybook** (`pnpm storybook`, [ARCHITECTURE.md](docs/ARCHITECTURE.md#storybook)): новый компонент или новое состояние
+  экрана — история рядом (`X.stories.tsx`), данные ученика — `parameters.db` через `.storybook/fixtures.ts`.
+  Флаги для разработки в адресе (`?preview`, `?demo`) не заводить — состояние показывает история.
 - Данные ученика (прогресс, карточки, награды, рекорды, ответы) — только в IndexedDB через `shared/lib/db` (`table`, `setting`,
   `logAttempt`) по схеме сервера: `id`, `updatedAt`, удаление — надгробие `deletedAt`. Схема — только в `shared/lib/db/schema.ts`
   (типы записей не объявлять в слайсах); новая таблица или поле — там же, `DB_VERSION` +1 и шаг миграции
   ([ARCHITECTURE.md](docs/ARCHITECTURE.md#хранилище-учебных-данных)). localStorage — только настройки устройства.
-- Музей ежедневных: правите роспись, формы или месяцы сосудов (`entities/vessel`) → `pnpm museum:bake` и закоммитить `public/museum/`.
+- Музей ежедневных (`entities/vessel`): сосуды — 3D-сканы подлинников (CC0 / CC BY, с подписью музея; отбор — `docs/product/amphorae.md`).
+  Правите каталог или резку → `pnpm museum:fetch` (исходники, ключ `SKETCHFAB_TOKEN`), `pnpm museum:bake`, закоммитить `public/museum/` и `data/baked.ts`.
 - PWA: меняете кэширование в `public/sw.js` — поднимите `VERSION`; иконки приложения — из `public/icons/*.svg`.

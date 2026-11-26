@@ -29,7 +29,7 @@ export interface SrsFields {
 
 /** Поля записей по таблицам (без `id`, `updatedAt`, `deletedAt`). */
 export interface Schema {
-  /** id — имя настройки: `story-level`, `cards-mode`. */
+  /** id — имя настройки: `cards-mode`. */
   settings: { value: string };
   /** id — `глава:ключ`: `1:anna` (шаг прочитан), `1:end`, `1:p:einai` (задание закрепления), `1:cat:name` (рассказ кота). */
   story_progress: {

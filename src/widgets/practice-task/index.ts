@@ -1,2 +1,2 @@
 export { PracticeTask } from './ui/PracticeTask';
-export { LevelSwitch } from './ui/LevelSwitch';
+export { LevelBadge } from './ui/LevelBadge';

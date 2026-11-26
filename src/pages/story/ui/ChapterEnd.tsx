@@ -18,11 +18,10 @@ import { Rich } from './Rich';
 import styles from './Story.module.css';
 
 /** Конец главы: находка, вся глава, конспект, слова в карточки, крючок и «Закрепить главу» (по умолчанию; можно пропустить). */
-export function ChapterEnd({ chapter, preview = false }: { chapter: StoryChapter; preview?: boolean }) {
-  // `preview` (только локально) — посмотреть, ничего не отмечая в прогрессе и карточках.
+export function ChapterEnd({ chapter }: { chapter: StoryChapter }) {
   useEffect(() => {
-    if (!preview) markStoryStep(chapter.id, STORY_END);
-  }, [chapter.id, preview]);
+    markStoryStep(chapter.id, STORY_END);
+  }, [chapter.id]);
 
   const reading = useMemo<ReadingText>(
     () => ({ id: `story-${chapter.id}`, title: chapter.title, sentences: chapter.sentences, glossary: {}, questions: [] }),
@@ -35,10 +34,9 @@ export function ChapterEnd({ chapter, preview = false }: { chapter: StoryChapter
   const words = useMemo(() => chapterWords(chapter), [chapter]);
   // Дочитал главу — её слова сами попадают в карточки (docs/product/home.md): повторы не задваиваются.
   useEffect(() => {
-    if (preview) return;
     ensureDeck(STORY_DECK);
     addCards(STORY_DECK.id, words);
-  }, [words, preview]);
+  }, [words]);
   const total = chapter.steps.length;
   const next = getChapter(chapter.id + 1);
 

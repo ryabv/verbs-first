@@ -1,10 +1,9 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { streakOf, useCards } from '@/entities/card';
 import { vesselOfMonth, VesselPicture, VesselStage, type VesselView } from '@/entities/vessel';
 import { Word } from '@/features/card-add';
 import {
-  DAILY_DEMO,
   DAILY_START,
   dailyDay,
   dayState,
@@ -13,8 +12,6 @@ import {
   monthOf,
   monthSummary,
   monthTitle,
-  setMuseumDemo,
-  setMuseumDemoMonth,
   shiftMonth,
   assemble,
   todayKey,
@@ -64,26 +61,15 @@ export function TodayPage() {
   const pickedState = dayState(dailyDay(picked));
   const pickedDone = pickedState === 'closed' || pickedState === 'clean';
   const go = (m: string) => setParams(m === last ? {} : { month: m });
-  // Только в разработке: `?demo=on` / `?demo=off` — демо музея за несколько месяцев (запуск сдвигается, нужна перезагрузка).
-  const demo = process.env.NODE_ENV !== 'production' ? params.get('demo') : null;
-  useEffect(() => {
-    if (demo !== 'on' && demo !== 'off') return;
-    setMuseumDemo(demo === 'on');
-    // Записи в базу уходят асинхронно — перезагружаемся чуть позже.
-    const t = setTimeout(() => window.location.replace(window.location.pathname), 400);
-    return () => clearTimeout(t);
-  }, [demo]);
 
   const months: string[] = [];
   for (let m = first; m <= last; m = shiftMonth(m, 1)) months.push(m);
-  const [built = false] = useAssembledMonths([month]);
   const dates = daysOfMonth(month);
   const blanks = weekdayOf(dates[0]!);
 
   return (
     <div className={`${styles.page} ${styles.todayPage}`}>
       <Museum month={month} months={months} all={all} today={today} go={go} />
-      {DAILY_DEMO && <DemoPanel month={month} open={summary.open.length} total={summary.total} closed={summary.closed} built={built} />}
 
       {months.length > 1 && (
         <nav className={styles.shelf} aria-label="Полка: сосуды по месяцам">
@@ -208,6 +194,13 @@ function Museum({ month, months, all, today, go }: { month: string; months: read
               <Word greek={vessel.greek} russian={vessel.russian} deck={MUSEUM_DECK} /> · {vessel.where}
             </p>
             <p className={styles.plaqueText}>{vessel.fact}</p>
+            <p className={styles.plaqueCredit}>
+              3D-скан:{' '}
+              <a href={vessel.credit.url} target="_blank" rel="noreferrer">
+                {vessel.credit.museum}
+              </a>{' '}
+              · {vessel.credit.license}
+            </p>
           </>
         ) : summary.complete ? (
           <>
@@ -248,40 +241,6 @@ function Museum({ month, months, all, today, go }: { month: string; months: read
 
 const shards = (n: number) => `${n} ${plural(n, ['черепка', 'черепков', 'черепков'])}`;
 
-/** Только в разработке (демо музея): сколько дней закрыто в месяце, разобрать сосуд обратно. */
-function DemoPanel({ month, open, total, closed, built }: { month: string; open: number; total: number; closed: number; built: boolean }) {
-  const set = (n: number) => setMuseumDemoMonth(month, Math.min(open, n), built && n === total);
-  const presets: [string, number][] = [
-    ['0', 0],
-    ['треть', Math.ceil(total / 3)],
-    ['все без одного', total - 1],
-    ['все', total],
-  ];
-  return (
-    <div className={styles.demo}>
-      <p className={styles.demoTitle}>
-        Демо · закрыто {closed} из {total}
-        {open < total && ` (по сегодня — ${open})`}
-      </p>
-      <input type="range" min={0} max={open} value={closed} onChange={(e) => set(Number(e.target.value))} aria-label="Закрыто дней" className={styles.demoRange} />
-      <div className={styles.demoRow}>
-        {presets.map(([label, n]) => (
-          <button key={label} type="button" className={styles.demoBtn} onClick={() => set(n)} disabled={n > open}>
-            {label}
-          </button>
-        ))}
-        {built && (
-          <button type="button" className={styles.demoBtn} onClick={() => setMuseumDemoMonth(month, closed, false)}>
-            разобрать
-          </button>
-        )}
-        <a className={styles.demoBtn} href="?demo=off">
-          выключить демо
-        </a>
-      </div>
-    </div>
-  );
-}
 
 /** Месяцы, чей сосуд собрали только что: показать сборку (один раз). */
 const assembling = new Set<string>();
