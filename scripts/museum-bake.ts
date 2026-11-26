@@ -28,11 +28,15 @@ const OUT = path.join(ROOT, 'public/museum');
  * у сканов с миллионами треугольников крупнее — проверено сравнением с исходником вблизи), `yaw` — поворот (градусы),
  * чтобы спереди была главная сцена; `lid` — часть имени материала крышки: в скане она лежит отдельно — кладём на горло.
  */
-const TUNE: Record<string, { error?: number; yaw?: number; lid?: string }> = {
+/**
+ * `level` — скан снят с наклоном: `base` — поставить на ножку, `rim` — выровнять по венчику (если ножка неровная).
+ * Только по списку: у круглого дна поиск ошибается.
+ */
+const TUNE: Record<string, { error?: number; yaw?: number; lid?: string; level?: 'base' | 'rim' }> = {
   'geo-pyxis': { lid: 'lid' },
   'bf-olbia-krater': { error: 0.003 },
   'cle-1970-16': { yaw: 180 },
-  'rf-fitz-theseus': { yaw: 135 },
+  'rf-fitz-theseus': { yaw: 135, level: 'rim' },
   'bf-utas-gv44': { error: 0.003 },
   'rf-krakow-pelike': { yaw: 270 },
 };
@@ -91,13 +95,51 @@ const positions = (meshes: readonly Mesh_[]) =>
       return Array.from({ length: a.getCount() }, (_, i) => new THREE.Vector3(...(a.getElement(i, [0, 0, 0]) as [number, number, number])));
     }),
   );
+/** Направление, отклонённое от +Y на углы ax (к X) и az (к Z). */
+const dir = (ax: number, az: number) => new THREE.Vector3(Math.sin(ax), 1, Math.sin(az)).normalize();
+
+/**
+ * Наклон скана: сосуд ставим на ножку (для венчика — те же точки, перевёрнутые). Перебираем направления «вниз» в конусе 25° от −Y и берём то, у которого
+ * в опорной плоскости (касательной снизу) лежит больше всего точек — кольцо ножки или плоское дно.
+ * Сначала грубо (шаг 1°), потом точнее (0,1°). Возвращает поворот найденного «вниз» к −Y.
+ */
+function upright(all: readonly THREE.Vector3[]): THREE.Quaternion {
+  const lo = all.reduce((a, p) => Math.min(a, p.y), Infinity);
+  const hi = all.reduce((a, p) => Math.max(a, p.y), -Infinity);
+  const h = hi - lo;
+  const low = all.filter((p) => p.y < lo + 0.3 * h);
+  const step = Math.max(1, Math.floor(low.length / 60_000));
+  const pts = low.filter((_, i) => i % step === 0);
+  const eps = 0.004 * h;
+  const score = (n: THREE.Vector3) => {
+    let d = Infinity;
+    for (const p of pts) d = Math.min(d, p.dot(n));
+    let c = 0;
+    for (const p of pts) if (p.dot(n) < d + eps) c++;
+    return c;
+  };
+  const search = (cx: number, cz: number, span: number, inc: number) => {
+    let best = { ax: cx, az: cz, c: -1 };
+    for (let ax = cx - span; ax <= cx + span + 1e-9; ax += inc)
+      for (let az = cz - span; az <= cz + span + 1e-9; az += inc) {
+        const c = score(dir(ax, az));
+        if (c > best.c) best = { ax, az, c };
+      }
+    return best;
+  };
+  const deg = Math.PI / 180;
+  const coarse = search(0, 0, 25 * deg, 1 * deg);
+  const fine = search(coarse.ax, coarse.az, 1.5 * deg, 0.1 * deg);
+  // dir — «вверх» сосуда (нормаль опорной плоскости внутрь): её — к +Y.
+  return new THREE.Quaternion().setFromUnitVectors(dir(fine.ax, fine.az), new THREE.Vector3(0, 1, 0));
+}
 type Mesh_ = NonNullable<ReturnType<Document['getRoot']>['listMeshes']>[number];
 
 /**
  * Сосуд стоит на y = 0, ось — по центру, вписан в FIT_H × FIT_R; повороты узлов — в вершины.
  * Крышка (`lid`) — выровнять по её плоскости (ручкой вверх) и положить на горло.
  */
-async function normalize(doc: Document, yaw: number, lid?: string) {
+async function normalize(doc: Document, yaw: number, lid?: string, upright_?: 'base' | 'rim') {
   await doc.transform(flatten());
   for (const node of meshNodes(doc)) {
     transformMesh(node.getMesh()!, node.getWorldMatrix());
@@ -122,7 +164,12 @@ async function normalize(doc: Document, yaw: number, lid?: string) {
     const put = new THREE.Matrix4().makeTranslation(mid.x, top - low, mid.z).multiply(turn).multiply(new THREE.Matrix4().makeTranslation(-center.x, -center.y, -center.z));
     for (const m of lids) transformMesh(m, m4(put));
   }
+  const level =
+    upright_ === 'rim' ? upright(positions(meshes).map((p) => p.negate())) : upright(positions(meshes));
+  const tilt = (2 * Math.acos(Math.min(1, Math.abs(level.w))) * 180) / Math.PI;
+  console.log(`  наклон скана ${tilt.toFixed(1)}°${upright_ ? ' — выпрямлен' : ''}`);
   const turn = new THREE.Matrix4().makeRotationY((yaw * Math.PI) / 180);
+  if (upright_) turn.multiply(new THREE.Matrix4().makeRotationFromQuaternion(level));
   for (const m of meshes) transformMesh(m, m4(turn));
   const { min, max } = bounds();
   const s = Math.min(FIT_H / (max[1] - min[1]), (2 * FIT_R) / Math.max(max[0] - min[0], max[2] - min[2]));
@@ -270,7 +317,7 @@ async function bake(v: (typeof VESSELS)[number]) {
   await doc.transform(metalRough());
   for (const ext of doc.getRoot().listExtensionsUsed()) if (ext.extensionName === KHRMaterialsUnlit.EXTENSION_NAME) ext.dispose();
   const before = triangles(doc);
-  await normalize(doc, Number(process.env.YAW ?? tune.yaw ?? 0), tune.lid);
+  await normalize(doc, Number(process.env.YAW ?? tune.yaw ?? 0), tune.lid, tune.level);
   await doc.transform(
     dedup(),
     prune(),
