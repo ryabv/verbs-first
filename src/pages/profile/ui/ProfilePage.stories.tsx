@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { chaptersDone, dailyMonth, storyProgress } from '@sb/fixtures';
 import { ProfilePage } from './ProfilePage';
 
-/** Профиль (/profile): «Коллекция» — музейный зал (находки, сосуды, медальоны глав) и настройки. */
+/** Профиль (/profile): кнопка «Коллекции» (превью и счётчики) и настройки. */
 const meta = {
   title: 'Экраны/Профиль',
   component: ProfilePage,

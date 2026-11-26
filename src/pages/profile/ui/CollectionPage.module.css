@@ -1,0 +1,161 @@
+/* «Коллекция» (docs/product/collection.md): вкладки, группы с крупным заголовком, сетка картинок на светлом «полу». */
+.page { width: 100%; max-width: 820px; margin: 0 auto; padding: 20px 24px 48px; box-sizing: border-box; }
+.head { display: grid; grid-template-columns: 2.6rem 1fr 2.6rem; align-items: center; margin: 0 0 14px; }
+.back {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding-bottom: 3px;
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 2rem;
+  line-height: 1;
+  text-decoration: none;
+}
+.back:hover { background: var(--surface-hover); }
+.title { margin: 0; text-align: center; font-size: 1.25rem; }
+
+/* Переключатель вкладок — как выбор темы в Профиле. */
+.tabs { display: flex; gap: 4px; margin: 0 0 8px; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-muted); }
+.tab {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 8px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.tab:hover:not(.tabOn) { color: var(--text); }
+.tabOn { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+
+.group { padding-top: 14px; border-top: 1px solid var(--border); margin-top: 14px; }
+.group:first-child { border-top: 0; margin-top: 0; }
+.groupTitle { margin: 6px 0 12px; font-family: var(--font-display); font-size: 1.8rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 22px 12px; }
+
+/* Ячейка: картинка на «полу» (светлый градиент снизу) и подпись. */
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+button.cell, a.cell { cursor: pointer; }
+.stage {
+  display: grid;
+  place-items: end center;
+  width: 100%;
+  height: 160px;
+  padding-bottom: 22px;
+  box-sizing: border-box;
+  /* «Пол» — мягкое пятно под экспонатом: целиком внутри ячейки (центр на 84%, радиус 9%), края не режутся. */
+  background: radial-gradient(ellipse 40% 9% at 50% 84%, var(--surface-hover), transparent);
+  transition: transform 0.2s;
+}
+button.cell:hover .stage, a.cell:hover .stage { transform: translateY(-3px); }
+/* Ещё впереди — бледно. */
+.faded > * { opacity: 0.38; }
+.vesselPic { width: 112px; height: 140px; object-fit: contain; }
+.findPic { width: 120px; height: 120px; }
+.medal { width: 5.2rem; height: 5.2rem; margin-bottom: 8px; font-size: 1.6rem; }
+.ghost {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 10px;
+  border: 1px dashed var(--text-subtle);
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--text-subtle);
+}
+
+.caption { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; line-height: 1.25; }
+.caption b { font-size: 0.98rem; font-weight: 600; }
+.sub, .done, .ready, .progress { font-size: 0.85rem; color: var(--text-muted); }
+.done { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.check {
+  display: grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.ready { color: var(--brand); font-weight: 600; }
+.progress { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 70%; font-variant-numeric: tabular-nums; }
+.bar { display: flex; align-self: stretch; }
+
+/* Витрина: экспонат крупно поверх страницы. */
+.dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 2);
+  background: var(--surface);
+  color: var(--text);
+}
+.dialog::backdrop { background: rgb(0 0 0 / 0.55); backdrop-filter: blur(3px); }
+.dialogBody { position: relative; padding: 0 0 20px; }
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.viewer { height: 340px; }
+.plaque { padding: 14px 20px 0; text-align: center; }
+.kicker { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-subtle); }
+.plaqueTitle { margin: 4px 0 4px; font-family: var(--font-display); font-size: 1.5rem; }
+.where { margin: 0 0 8px; color: var(--text-muted); }
+.text { margin: 0; line-height: 1.5; }
+.credit { margin: 10px 0 0; font-size: 0.8rem; color: var(--text-subtle); }
+.credit a { color: inherit; }
+.more { display: inline-block; margin-top: 12px; color: var(--accent); font-weight: 600; }
+
+@media (max-width: 600px) {
+  .page { padding: 12px 16px 32px; }
+  /* По два: в эпохе 4 главы, в году 12 месяцев — ряды без хвостов; картинки крупнее. */
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 20px 10px; }
+  .stage { height: 150px; }
+  .vesselPic { width: 104px; height: 130px; }
+  .findPic { width: 110px; height: 110px; }
+  .stage { padding-bottom: 18px; }
+  .medal { width: 4.2rem; height: 4.2rem; margin-bottom: 6px; font-size: 1.3rem; }
+  .ghost { width: 56px; height: 56px; margin-bottom: 8px; }
+  .tab { font-size: 0.9rem; padding: 8px 4px; }
+  .viewer { height: 260px; }
+  .progress { width: 85%; }
+}

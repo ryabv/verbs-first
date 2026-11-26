@@ -5,7 +5,7 @@ import { DayRoute, TodayPage } from '@/pages/daily';
 import { HomePage } from '@/pages/home';
 import { LessonPage } from '@/pages/lesson';
 import { MainPage } from '@/pages/main';
-import { ProfilePage } from '@/pages/profile';
+import { CollectionPage, ProfilePage } from '@/pages/profile';
 import { GrammarPage, GrammarTopicPage } from '@/pages/grammar';
 import { ChapterRoute, StoryPage } from '@/pages/story';
 import { TextPage, TextsPage } from '@/pages/texts';
@@ -40,6 +40,7 @@ const router = createBrowserRouter([
       { path: '/', element: <MainPage /> },
       { path: '/island', element: <StoryPage /> },
       { path: '/profile', element: <ProfilePage /> },
+      { path: '/profile/collection', element: <CollectionPage /> },
       { path: '/lessons', element: <HomePage /> },
       { path: '/lesson/:lessonId', element: <LessonPage /> },
       { path: '/cards', element: <CardsPage /> },

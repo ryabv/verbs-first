@@ -127,7 +127,7 @@ export function Celebration({
         </p>
 
         <p className={styles.collection}>
-          Медальон — в <Link to={routes.profile()}>Коллекции</Link>
+          Медальон — в <Link to={routes.collection('medals')}>Коллекции</Link>
         </p>
 
         {harder && <p className={styles.harder}>{HARDER_HINT[harder]}</p>}

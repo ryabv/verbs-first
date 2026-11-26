@@ -5,4 +5,6 @@
 <style>
   /* Отступы padded-истории — фоном сайта, а не белым. */
   body.sb-show-main { background: var(--bg); }
+  /* Storybook обнуляет отступы body во fullscreen; на сайте снизу — место под панель разделов (global.css). */
+  body.sb-show-main.sb-main-fullscreen { padding-bottom: var(--tabbar) !important; }
 </style>

@@ -3,6 +3,8 @@ export const routes = {
   home: () => '/',
   /** Профиль: тема, уровень заданий. */
   profile: () => '/profile',
+  /** Коллекция: сосуды, находки, медальоны (вкладка — `tab`, по умолчанию сосуды). */
+  collection: (tab?: 'vessels' | 'finds' | 'medals') => (tab && tab !== 'vessels' ? `/profile/collection?tab=${tab}` : '/profile/collection'),
   /** Список уроков: из шапки убран, страницы уроков — по прямым ссылкам. */
   lessons: () => '/lessons',
   lesson: (id: number | string) => `/lesson/${id}`,
