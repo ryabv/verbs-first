@@ -17,6 +17,31 @@ export function rng(seed: string) {
   };
 }
 
+/**
+ * Черепок дня: порядок находок перемешан (одинаково для сосуда), чтобы соседние дни были из разных мест сосуда.
+ * `order[день] = номер черепка в файле`. Общий для сайта и выпечки (`pnpm museum:bake` пишет вырезы по дням).
+ */
+export function findOrder(vesselId: string, count: number): number[] {
+  const order = Array.from({ length: count }, (_, i) => i);
+  const rnd = rng(`${vesselId}:finds`);
+  for (let i = count - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [order[i], order[j]] = [order[j]!, order[i]!];
+  }
+  return order;
+}
+
+/**
+ * Черепок дня отдельно (`<сосуд>-<дней>/index.json`): праздник находки грузит только его — кусок файла черепков по
+ * смещению и свои вырезы текстуры, без скана сосуда (docs/product/amphorae.md).
+ */
+export interface ShardIndex {
+  /** Материалы скана: цвет (линейный RGB), шероховатость, металл; `map` — у материала есть текстура. */
+  materials: { color: [number, number, number]; roughness: number; metalness: number; map: boolean }[];
+  /** По дням: где черепок в `<сосуд>-<дней>.bin` (смещение, длина без заголовка) и вырезы текстуры по материалам. */
+  days: { at: [number, number]; crops: { material: number; file: string; rect: [number, number, number, number] }[] }[];
+}
+
 /** Высота сосуда на постаменте и предельный радиус (в мире сцены): скан при выпечке вписан в них и стоит на y = 0. */
 export const FIT_H = 2.1;
 export const FIT_R = 0.95;

@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { READING_COURSE } from '@/entities/alphabet';
 import { Link, useParams } from 'react-router';
 import {
   branchRead,
@@ -16,6 +17,7 @@ import {
   useStoryProgress,
   type StoryChapter,
 } from '@/entities/story';
+import { progressKey, readProgress } from '@/features/lesson-progress';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { buttonClassName } from '@/shared/ui/button';
@@ -75,6 +77,27 @@ function NotFound() {
   );
 }
 
+/** Глава 1: ссылка на пролог с алфавитом — пока он не пройден (docs/product/home.md). */
+function PrologueHint() {
+  const done = new Set(readProgress(progressKey.reading).completed);
+  const total = READING_COURSE.steps.length;
+  const passed = READING_COURSE.steps.filter((s) => done.has(s.id)).length;
+  if (passed >= total) return null;
+  return (
+    <p className={styles.prologueHint}>
+      {passed === 0 ? (
+        <>
+          Ещё не читаете по-гречески? <Link to={routes.alphabet()}>Начните с пролога</Link> — Анна учит алфавит по дороге на Кипр.
+        </>
+      ) : (
+        <>
+          Алфавит: пройдено {passed} из {total}. <Link to={routes.alphabet()}>Продолжить пролог</Link>
+        </>
+      )}
+    </p>
+  );
+}
+
 function ChapterPage({ chapter }: { chapter: StoryChapter }) {
   const levels = useStoryLevels(chapter.id);
   const done = doneAt(levels, 'light');
@@ -122,6 +145,7 @@ function ChapterPage({ chapter }: { chapter: StoryChapter }) {
           </div>
         </div>
         <p className={styles.lead}>{chapter.intro}</p>
+        {chapter.id === 1 && <PrologueHint />}
         <div className={styles.chapterProgress}>
           <ProgressBar value={readSteps / total} />
           <span>

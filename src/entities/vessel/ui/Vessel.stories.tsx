@@ -104,6 +104,17 @@ export const ЧерепокНайден: Story = {
   ),
 };
 
+/** Черепок с двумя материалами (тело и крышка пиксиды) — два выреза текстуры. */
+export const ЧерепокДваМатериала: Story = {
+  name: 'Черепок: два материала (3D)',
+  parameters: { layout: 'fullscreen' },
+  render: () => (
+    <div className={sb.fit} style={{ height: '100vh', background: 'var(--reveal-bg)' }}>
+      <ShardReveal vessel={VESSELS.find((v) => v.id === 'geo-pyxis')!} index={3} total={31} />
+    </div>
+  ),
+};
+
 const views = (found: number): VesselView[] => [
   { kind: 'dig', vessel, found: Array.from({ length: found }, (_, i) => i), total },
   { kind: 'vessel', vessel: VESSELS[1]! },

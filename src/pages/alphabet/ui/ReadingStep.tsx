@@ -67,8 +67,8 @@ export function ReadingStep({ step, onGoal }: { step: LessonStep; onGoal: () => 
             'Озвучки по ходу нет — она подсказывает. Послушать можно в разборе.',
           ]}
           actions={
-            <Link to={routes.lesson(1)} className={buttonClassName('secondary')}>
-              К уроку 1
+            <Link to={routes.storyChapter(1)} className={buttonClassName('secondary')}>
+              К главе 1
             </Link>
           }
         />

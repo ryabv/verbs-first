@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { markStoryStep, practiceKey, type StoryLevel } from '@/entities/story';
 import { addCards, ensureDeck, isDueAny, useCards, type DeckRef } from '@/entities/card';
-import { ShardThumb, vesselOfMonth } from '@/entities/vessel';
+import { preloadShard, ShardThumb, vesselOfMonth } from '@/entities/vessel';
 import { analyzePhrase, lookupToken } from '@/features/card-add';
 import {
   buildDay,
@@ -81,6 +81,12 @@ function DayPage({ date }: { date: string }) {
     const usedThisWeek = new Set(days.filter((d) => week.has(d.id)).flatMap((d) => d.tasks));
     openDay(date, buildDay({ date, pool, current: read.at(-1)?.id, unpracticed, mistakes: recentMistakes(date), usedThisWeek }));
   }, [date, day, days, pool, read, unpracticed]);
+
+  // День ещё не закрыт — пока ученик решает, в фоне грузим черепок дня (только его): праздник откроется без ожидания.
+  const open = day !== undefined && !isClosed(dayState(day));
+  const month = date.slice(0, 7);
+  const total = open ? monthSummary(month, days).total : 0;
+  useEffect(() => (open ? preloadShard(vesselOfMonth(month), shardOfDay(date), total) : undefined), [open, month, date, total]);
 
   if (!day) return <div className={styles.page} />;
   const tasks = day.tasks.flatMap((k) => pool.get(k) ?? []);

@@ -11,7 +11,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Новичок: Story = { name: 'Новый ученик' };
+export const Новичок: Story = { name: 'Новый ученик: пролог или глава 1' };
+export const ПрологИдёт: Story = {
+  name: 'Пролог в процессе',
+  parameters: { db: { lesson_progress: [{ id: 'reading', completed: ['r1-letters', 'r1-syllables', 'r1-ladder', 'r1-listen', 'r1-build', 'r2-letters'] }] } },
+};
 export const ВПроцессе: Story = {
   name: 'Глава 2 читается, серия 3, карточки',
   parameters: {

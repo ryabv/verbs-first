@@ -8,8 +8,10 @@ export const routes = {
   /** Список уроков: из шапки убран, страницы уроков — по прямым ссылкам. */
   lessons: () => '/lessons',
   lesson: (id: number | string) => `/lesson/${id}`,
-  /** Урок 0 — курс чтения: карта, ?step=… — шаг. */
+  /** Пролог «Греческий алфавит» (курс чтения): оглавление; шаг — номер с 1; заметка Анны — по id. */
   alphabet: () => '/alphabet',
+  alphabetStep: (n: number) => `/alphabet/${n}`,
+  alphabetNote: (id: string) => `/alphabet/note/${id}`,
   /** Справочник алфавита: все буквы и сочетания, тренажёры. */
   alphabetReference: (section?: string) => `/alphabet?mode=reference${section ? `&section=${section}` : ''}`,
   /** Карточки; lesson — сразу выбрать наборы этого урока. */

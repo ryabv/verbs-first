@@ -22,18 +22,20 @@ export const Задания: Story = {
     await userEvent.click(await canvas.findByRole('button', { name: /Начать/ }));
   },
 };
-export const ПройденЧисто: Story = {
-  name: 'День пройден чисто',
-  play: async ({ canvas, userEvent }) => {
-    await userEvent.click(await canvas.findByRole('button', { name: /Начать/ }));
-    await userEvent.click(await canvas.findByRole('button', { name: 'пройти чисто' }));
-  },
-};
+/** Итог дня и праздник находки: каждое задание — «Показать ответ» и «Дальше» (день закрыт, но не «чисто»). */
 export const ПройденСПодсказками: Story = {
   name: 'День пройден с подсказками',
   play: async ({ canvas, userEvent }) => {
     await userEvent.click(await canvas.findByRole('button', { name: /Начать/ }));
-    await userEvent.click(await canvas.findByRole('button', { name: 'пройти с подсказками' }));
+    // Задания идут одно за другим — по очереди, пока есть «Показать ответ».
+    const next = async (left: number): Promise<void> => {
+      const show = canvas.queryByRole('button', { name: 'Показать ответ' });
+      if (!show || left === 0) return;
+      await userEvent.click(show);
+      await userEvent.click(await canvas.findByRole('button', { name: /Дальше/ }));
+      await next(left - 1);
+    };
+    await next(40);
   },
 };
 export const Прошлый: Story = { name: 'Прошлый день', parameters: day('2026-11-10') };

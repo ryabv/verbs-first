@@ -47,6 +47,8 @@ const router = createBrowserRouter([
       { path: '/today', element: <TodayPage /> },
       { path: '/today/:date', element: <DayRoute /> },
       { path: '/alphabet', element: <AlphabetPage /> },
+      { path: '/alphabet/:step', element: <AlphabetPage /> },
+      { path: '/alphabet/note/:note', element: <AlphabetPage /> },
       { path: '/texts', element: <TextsPage /> },
       { path: '/texts/:textId', element: <TextPage /> },
       { path: '/grammar', element: <GrammarPage /> },

@@ -8,7 +8,7 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { viewKey, type Vessel, type VesselView } from '../model/types';
 import { BAY, courtyard, FLOOR_Y, isNight, makePlinth } from './courtyard';
-import { cutMesh, mergePieces, rng, solidify, unpackPieces, type Piece } from './shards';
+import { cutMesh, findOrder, mergePieces, rng, solidify, unpackPieces, type Piece, type ShardIndex } from './shards';
 
 /* ---------- Скан и черепки — из public/museum (pnpm museum:bake) ---------- */
 const MUSEUM = `${process.env.BASE_URL}museum/`;
@@ -131,30 +131,110 @@ interface Shard {
   tray: { p: THREE.Vector3; q: THREE.Quaternion; scale: number };
 }
 
-function shatter(vessel: Vessel, count: number): { object: THREE.Group; home: THREE.Vector3; outward: THREE.Vector3 }[] {
+type ShardObject = { object: THREE.Group; home: THREE.Vector3; outward: THREE.Vector3 };
+
+/** Черепок как объект сцены: лицо (материалы скана или свои), изнанка и торец скола. */
+function shardObject(c: Piece, materials: THREE.Material[], face = solidify(c)): ShardObject {
+  // Массивы общие с кэшем: геометрию не сдвигаем и не меняем — только объект.
+  const { inner, rim } = solidify(c);
+  const home = new THREE.Vector3(...c.home);
+  const object = new THREE.Group();
+  object.add(new THREE.Mesh(face.face, materials), new THREE.Mesh(inner, innerMat), new THREE.Mesh(rim, rimMat));
+  const outward = new THREE.Vector3(home.x, 0, home.z);
+  // Донце и горлышко сверху — лежат «изнанкой» вниз; остальное — выпуклой стороной наружу.
+  if (outward.lengthSq() < 0.04) outward.set(0, home.y < 0.3 ? -1 : 1, 0);
+  else outward.normalize();
+  object.traverse((o) => (o.castShadow = true));
+  return { object, home, outward };
+}
+
+/** Черепки сосуда в порядке находок по дням (`findOrder`): соседние дни — из разных мест сосуда. */
+function shatter(vessel: Vessel, count: number): ShardObject[] {
   const { materials } = scanOf(vessel);
   const data = cuts.get(cutKey(vessel, count));
   if (!data) throw new Error(`Черепки ${vessel.id}:${count} не готовы — сначала bakeVessel`);
-  const out = data.map((c) => {
-    // Массивы общие с кэшем: геометрию не сдвигаем и не меняем — только объект.
-    const { face, inner, rim } = solidify(c);
-    const home = new THREE.Vector3(...c.home);
-    const object = new THREE.Group();
-    object.add(new THREE.Mesh(face, materials), new THREE.Mesh(inner, innerMat), new THREE.Mesh(rim, rimMat));
-    const outward = new THREE.Vector3(home.x, 0, home.z);
-    // Донце и горлышко сверху — лежат «изнанкой» вниз; остальное — выпуклой стороной наружу.
-    if (outward.lengthSq() < 0.04) outward.set(0, home.y < 0.3 ? -1 : 1, 0);
-    else outward.normalize();
-    object.traverse((o) => (o.castShadow = true));
-    return { object, home, outward };
+  const all = data.map((c) => shardObject(c, materials));
+  return findOrder(vessel.id, all.length).map((i) => all[i]!);
+}
+
+/* ---------- Черепок дня отдельно: для праздника находки — без скана сосуда ---------- */
+interface Single {
+  piece: Piece;
+  materials: THREE.Material[];
+  crops: ShardIndex['days'][number]['crops'];
+}
+const singles = new Map<string, Single>();
+const singleKey = (vessel: Vessel, index: number, total: number) => `${vessel.id}:${total}:${index}`;
+
+/**
+ * Скачать только черепок дня: его кусок файла черепков (запрос части файла) и вырезы текстуры (`<сосуд>-<дней>/`).
+ * Месяц другой длины (сосуд пошёл по кругу) — вырезов нет: грузим сосуд целиком, как раньше.
+ */
+export function bakeShard(vessel: Vessel, index: number, total: number): Promise<void> {
+  if (total !== ownDays(vessel)) return bakeVessel(vessel, total);
+  const key = singleKey(vessel, index, total);
+  if (singles.has(key) || cuts.has(cutKey(vessel, total))) return Promise.resolve();
+  return once(`single:${key}`, async () => {
+    const dir = `${MUSEUM}${vessel.id}-${total}/`;
+    const res = await fetch(`${dir}index.json`);
+    if (!res.ok) throw new Error(`${vessel.id}-${total}/index.json: ${res.status}`);
+    const meta = (await res.json()) as ShardIndex;
+    const day = meta.days[Math.max(0, Math.min(meta.days.length - 1, index))]!;
+    const [at, len] = day.at;
+    const bin = await fetch(`${MUSEUM}${vessel.id}-${total}.bin`, { headers: { Range: `bytes=${at}-${at + len - 1}` } });
+    if (!bin.ok) throw new Error(`${vessel.id}-${total}.bin: ${bin.status}`);
+    // Сервер без частичных ответов отдаст файл целиком — вырежем сами.
+    const got = new Uint8Array(await bin.arrayBuffer());
+    const body = bin.status === 206 ? got : got.subarray(at, at + len);
+    const buf = new Uint8Array(4 + len);
+    new DataView(buf.buffer).setUint32(0, 1, true);
+    buf.set(body, 4);
+    const piece = unpackPieces(buf.buffer)[0]!;
+    const textures = new THREE.TextureLoader();
+    const materials = await Promise.all(
+      meta.materials.map(async (m, i) => {
+        const crop = day.crops.find((c) => c.material === i);
+        const map = crop ? await textures.loadAsync(dir + crop.file) : null;
+        if (map) {
+          // Как у текстур скана (GLTFLoader): без переворота, sRGB.
+          map.flipY = false;
+          map.colorSpace = THREE.SRGBColorSpace;
+        }
+        const material = new THREE.MeshStandardMaterial({ roughness: m.roughness, metalness: m.metalness, map });
+        material.color.setRGB(...m.color, THREE.LinearSRGBColorSpace);
+        share(material);
+        return material;
+      }),
+    );
+    singles.set(key, { piece, materials, crops: day.crops });
   });
-  // Черепок дня — перемешанный порядок (одинаковый для сосуда): соседние дни — из разных мест сосуда.
-  const rnd = rng(`${vessel.id}:finds`);
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
+}
+
+/** Черепок дня: из вырезов, если скачан отдельно, иначе — из черепков всего сосуда. */
+function shardOfDay(vessel: Vessel, index: number, total: number): ShardObject {
+  const single = singles.get(singleKey(vessel, index, total));
+  if (!single || cuts.has(cutKey(vessel, total))) {
+    const all = shatter(vessel, total);
+    const pick = all[Math.max(0, Math.min(all.length - 1, index))]!;
+    for (const s of all) if (s !== pick) dispose(s.object);
+    return pick;
   }
-  return out;
+  // Развёртка — в координатах выреза. Вершина бывает общей у двух материалов — тогда лицо без общих вершин.
+  const solid = solidify(single.piece);
+  const face = single.crops.length > 1 ? solid.face.toNonIndexed() : solid.face.clone();
+  const uv = face.getAttribute('uv') as THREE.BufferAttribute;
+  const remap = (vertex: number, rect: [number, number, number, number]) =>
+    uv.setXY(vertex, (uv.getX(vertex) - rect[0]) / rect[2], (uv.getY(vertex) - rect[1]) / rect[3]);
+  if (single.crops.length === 1) {
+    const rect = single.crops[0]!.rect;
+    for (let v = 0; v < uv.count; v++) remap(v, rect);
+  } else {
+    for (const g of face.groups) {
+      const rect = single.crops.find((c) => c.material === g.materialIndex)?.rect;
+      if (rect) for (let v = g.start; v < g.start + g.count; v++) remap(v, rect);
+    }
+  }
+  return shardObject(single.piece, single.materials, { ...solid, face });
 }
 
 /** Дерево: доски с волокнами. */
@@ -778,8 +858,7 @@ export function createShardReveal(host: HTMLElement, vessel: Vessel, index: numb
   scene.add(glow, ring);
 
   // Черепок: выпуклой стороной к зрителю, крупно.
-  const all = shatter(vessel, total);
-  const shard = all[Math.max(0, Math.min(all.length - 1, index))]!;
+  const shard = shardOfDay(vessel, index, total);
   const holder = new THREE.Group();
   const inner = shard.object;
   inner.quaternion.setFromUnitVectors(shard.outward, new THREE.Vector3(0, 0, 1));
@@ -902,7 +981,7 @@ export function createShardReveal(host: HTMLElement, vessel: Vessel, index: numb
       canvas.removeEventListener('pointermove', onMove);
       canvas.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('pointercancel', onUp);
-      for (const s of all) dispose(s.object);
+      dispose(shard.object);
       scene.traverse((o) => {
         if (o instanceof THREE.Sprite || o instanceof THREE.Points) {
           o.geometry.dispose();

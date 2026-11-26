@@ -12,6 +12,8 @@
   color: var(--text-subtle);
 }
 .lead { margin: 12px 0 0; color: var(--text-muted); line-height: 1.55; }
+/* Глава 1, новичок: пролог с алфавитом — по желанию. */
+.prologueHint { margin: 12px 0 0; padding: 10px 14px; border-radius: var(--radius); background: var(--accent-soft); line-height: 1.5; }
 
 .tileIntro { margin: 0; font-size: 0.95rem; line-height: 1.5; color: var(--text-muted); }
 .tileProgress { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text-subtle); }

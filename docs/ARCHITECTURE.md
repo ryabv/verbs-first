@@ -52,7 +52,7 @@ src/
     home/                 оглавление курса (16 уроков, прогресс урока и ДЗ)
     lesson/               страница урока: один путь (урок → ДЗ → экзамен) + ?mode=reference
     cards/                карточки: наборы, тренировка, добавление своих слов
-    alphabet/             «Урок 0»: карта курса чтения, шаги (?step=), справочник (?mode=reference)
+    alphabet/             пролог «Греческий алфавит» в формате глав: оглавление, шаг /alphabet/:n, заметка Анны, справочник
     texts/                «Тексты»: список по уровням (/texts) и чтение (/texts/:id), «знакомо N% слов»
     story/                «История»: карта острова (/island), глава (/story/:id), шаг (/story/:id/:n), вся глава (/story/:id/end), рассказ кота (/story/:id/cat/:branch)
     daily/                «Ежедневные»: календарь месяца и кубки (/today), день — задания по рецепту (/today/:date)
@@ -201,7 +201,7 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 
 - `/` — карта «Истории» (`StoryPage`, главная), `/story` → `/`, `/lessons` — список уроков (`HomePage`, из шапки убран),
   `/lesson/:lessonId` — `LessonPage`, `/cards[?lesson=N]` — `CardsPage`
-  (с `lesson` сразу выбраны наборы этого урока), `/alphabet[?step=…]`, `/alphabet?mode=reference[&section=letters|combinations|stress|sounds|words|order]` (старые `?section=` ведут в справочник) —
+  (с `lesson` сразу выбраны наборы этого урока), `/alphabet` (оглавление пролога), `/alphabet/:n` (шаг с 1), `/alphabet/note/:id` (заметка Анны; старые `?step=<id>` ведут на шаг), `/alphabet?mode=reference[&section=letters|combinations|stress|sounds|words|order]` (старые `?section=` ведут в справочник) —
   `AlphabetPage` (разделы описаны массивом `SECTIONS` в самой странице).
 - Урок — **один путь** `lessonPath(lesson)` (`entities/lesson/lib/path.ts`): этапы урока, после
   каждого — части `homework` с `after` = этот этап, в конце шаг `exam`. `sectionOf(step)` — часть пути (`lesson` / `homework` /
@@ -240,8 +240,8 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - Этап пройден, когда пройдены все его шаги (`isStageDone`); экзамен засчитан, только если
   сдан (`doneWithExam`). Показанные медальоны — `verbs-first:awards-seen:<id>`: новые
   (полученные, но не показанные) карта анимирует один раз.
-- Урок 0 — тот же `useLessonProgress` с ключом `progressKey.reading` (`verbs-first:reading`);
-  медальоны — `verbs-first:awards-seen:alphabet`, экзамен — `verbs-first:exam:alphabet`.
+- Пролог (курс чтения) — тот же `useLessonProgress` с ключом `progressKey.reading` (`verbs-first:reading`), без медальонов;
+  экзамен — `verbs-first:exam:alphabet`.
   Старый ключ ДЗ вливается только у ключей уроков (`verbs-first:lesson:*`).
 - Прочие ключи `localStorage`: `verbs-first:theme`, `verbs-first:greek-keyboard`,
   `verbs-first:cards:v1`, `verbs-first:cards:settings`, `verbs-first:alphabet-order:best`,
@@ -344,7 +344,12 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 - **Выпечка** (`scripts/museum-bake.ts`, `lib/shards.ts`, `pnpm museum:bake`) → `public/museum/`:
   `<сосуд>.glb` — скан для сайта (сосуд высотой до `FIT_H`, стоит на y = 0; сетка упрощена с ограничением ошибки,
   швы развёртки не трогаются; текстуры 2048 WebP; Draco), `<сосуд>-<дней>.bin` — черепки на число дней месяца
-  (ячейки Вороного на упрощённой копии скана: сжатые вершины, номер материала, край скола), `<сосуд>-photo.webp`
+  (ячейки Вороного на упрощённой копии скана: сжатые вершины, номер материала, край скола), `<сосуд>-<дней>/` —
+  черепок дня отдельно для праздника находки (`index.json`: смещение черепка в `.bin` по дням в порядке находок
+  `findOrder`, материалы; вырезы текстуры `<день>-<материал>.webp` до 512 px). Праздник (`bakeShard`) скачивает только
+  `index.json`, свой кусок `.bin` (запрос `Range`; сервер без частичных ответов — режем сами; service worker такие
+  запросы пропускает мимо кэша) и вырезы — ~50–150 КБ вместо скана и всех черепков; месяц другой длины — по-старому
+  целиком. `<сосуд>-photo.webp`
   и `<сосуд>-mask.png` — портрет и силуэт (программная растеризация скана, вид спереди), `src/entities/vessel/data/baked.ts` —
   где сосуд в кадре портрета. Декодер Draco — `public/draco/` (из `three/examples`). Страница только скачивает;
   толщину черепка (изнанка, торец) достраивает сама за миллисекунды.
@@ -436,8 +441,11 @@ docs/curriculum.md                 план всех 16 уроков (глаго
 ### Алфавит — `entities/alphabet` + `features/alphabet-quiz` + `pages/alphabet`
 
 - **Курс чтения** `READING_COURSE` (`entities/alphabet/data/course.ts`) — тип `Course`
-  из `entities/lesson` (этапы, шаги, ответвления, `examAward`, без ДЗ); `lessonStages`/
-  `lessonBranches` принимают и урок, и курс, карта и путь — те же `LessonMap`/`LessonPath`.
+  из `entities/lesson` (этапы, шаги, ответвления, без ДЗ). Показ — в формате глав «Истории» (`pages/alphabet/lib/prologue.ts`,
+  `ui/ProloguePage.tsx`): шаги подряд, этапы — заголовки в оглавлении, без карты и медальонов; «Дальше» доступно всегда,
+  чтение засчитывается при открытии, задания (`choice`, `build`, `order`) — по выполнении, экзамен — когда сдан.
+  Ответвления — **заметки Анны** (она переводчица; кота ещё нет): плашка под первым шагом своего этапа, страница
+  `/alphabet/note/:id`, на прогресс не влияют.
   Шаги курса — виды `letters`, `syllables`, `ladder`, `choice` (`listen` — «услышь и выбери»),
   `build`, `text` (`look`: записка/открытка/объявление/табличка), `order`, `rules` в общем `LessonStep`; рисует их `pages/alphabet/ui/ReadingStep`.
   Неверные варианты «услышь и выбери» и «как читается» — ближайшие по написанию слова

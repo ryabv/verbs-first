@@ -5,9 +5,10 @@
  *   браузера (cache: 'no-cache' — сверка по ETag), иначе GitHub Pages до 10 минут отдаёт старые файлы.
  * - version.json (номер сборки, src/app/update.ts) — только из сети.
  * - mp3 озвучки — сначала кэш: имя файла — хэш текста, файл не меняется.
+ * - Запросы части файла (Range: черепок дня) — только из сети.
  * - Шрифт с Google Fonts — тоже кэшируется, чтобы заголовки офлайн не падали на запасной шрифт.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE = `verbs-first-${VERSION}`;
 const SCOPE = new URL(self.registration.scope);
 const SHELL = new URL('index.html', SCOPE).href;
@@ -55,6 +56,8 @@ async function cacheFirst(request) {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+  // Часть файла (черепок дня из файла черепков) — мимо кэша: ответ 206 в кэш не кладётся.
+  if (request.headers.has('range')) return;
   const url = new URL(request.url);
 
   if (request.mode === 'navigate' && url.href.startsWith(SCOPE.href)) {

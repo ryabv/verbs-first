@@ -1,104 +1,53 @@
-import { useCallback, useState, type ReactNode } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
-import { COMBINATIONS, CombinationList, LETTERS, LetterGrid, READING_COURSE, SOUND_QUIZ, WORD_QUIZ } from '@/entities/alphabet';
-import { lessonBranches, lessonStages } from '@/entities/lesson';
+import { useState, type ReactNode } from 'react';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
+import { COMBINATIONS, CombinationList, LETTERS, LetterGrid, SOUND_QUIZ, WORD_QUIZ } from '@/entities/alphabet';
 import { AlphabetOrder, ChoiceQuiz } from '@/features/alphabet-quiz';
 import { wordIn } from '@/features/card-add';
-import { progressKey } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
-import { LessonMap } from '@/widgets/lesson-map';
-import { LessonPath } from '@/widgets/lesson-path';
 import { routes } from '@/shared/config/routes';
 import { Breadcrumbs, type Crumb } from '@/shared/ui/breadcrumbs';
-import { buttonClassName } from '@/shared/ui/button';
 import { Callout } from '@/shared/ui/callout';
 import { Arrow } from '@/shared/ui/ornament';
 import { PrevNext } from '@/shared/ui/prev-next';
 import { SidebarLayout, SidebarSection } from '@/shared/ui/sidebar-layout';
-import { ALPHABET_DECK, ReadingStep } from './ReadingStep';
+import { PROLOGUE_NOTES, PROLOGUE_STEPS } from '../lib/prologue';
+import { PrologueNotePage, PrologueOverview, PrologueStep } from './ProloguePage';
+import { ALPHABET_DECK } from './ReadingStep';
 import { StressRules } from './StressRules';
 import styles from './AlphabetPage.module.css';
 
-const COURSE = READING_COURSE;
-const STAGES = lessonStages(COURSE);
-const BRANCHES = lessonBranches(COURSE);
 const CRUMBS: Crumb[] = [
   { label: 'История', to: routes.story() },
-  { label: 'Урок 0', to: routes.alphabet() },
+  { label: 'Пролог', to: routes.alphabet() },
 ];
 
-/** «Урок 0 · Алфавит и чтение»: карта курса, шаги по этапам и справочник. */
+/**
+ * Пролог «Греческий алфавит» — в формате глав: /alphabet — оглавление, /alphabet/:n — шаг, /alphabet/note/:id —
+ * заметка Анны; ?mode=reference — справочник алфавита. Старые ссылки ?step=<id> ведут на шаг.
+ */
 export function AlphabetPage() {
-  const [params, setParams] = useSearchParams();
-  const syncStep = useCallback(
-    (id: string, initial: boolean) => setParams({ step: id }, { replace: initial }),
-    [setParams],
-  );
+  const [params] = useSearchParams();
+  const { step, note } = useParams();
 
   // Справочник: все буквы и сочетания на одной странице. Старые ссылки ?section=… ведут сюда же.
   if (params.get('mode') === 'reference' || params.has('section')) {
     return <Reference section={params.get('section')} />;
   }
-
-  const openStepId = params.get('step') ?? undefined;
-  const header = (
-    <SidebarSection title="Урок 0">
-      <div className={styles.courseTitle}>{COURSE.title}</div>
-      <Link to={routes.alphabetReference()} className={styles.headerLink}>
-        Справочник алфавита <Arrow />
-      </Link>
-    </SidebarSection>
-  );
-
-  if (!openStepId) {
-    return (
-      <LessonMap
-        course={{ id: COURSE.id, kicker: 'Урок 0', title: COURSE.title, summary: COURSE.summary }}
-        stages={STAGES}
-        branches={BRANCHES}
-        storageKey={progressKey.reading}
-        crumbs={[CRUMBS[0]!, { label: 'Урок 0' }]}
-        onOpenStep={(id) => setParams({ step: id })}
-        links={
-          <Link to={routes.alphabetReference()}>
-            Справочник алфавита <Arrow />
-          </Link>
-        }
-        finish={{
-          title: 'Вы читаете по-гречески!',
-          text: <p>Все буквы, сочетания и правила ударения позади, экзамен сдан. Пора к глаголам.</p>,
-          actions: (
-            <>
-              <Link to={routes.lesson(1)} className={buttonClassName('primary')}>
-                К уроку 1
-              </Link>
-              <Link to={routes.cards()} className={buttonClassName('secondary')}>
-                Слова в карточках
-              </Link>
-            </>
-          ),
-        }}
-      />
-    );
+  const legacy = params.get('step');
+  if (legacy) {
+    const i = PROLOGUE_STEPS.findIndex((s) => s.id === legacy);
+    const n = PROLOGUE_NOTES.find((x) => x.step.id === legacy);
+    return <Navigate to={n ? routes.alphabetNote(n.id) : i >= 0 ? routes.alphabetStep(i + 1) : routes.alphabet()} replace />;
   }
-
-  return (
-    <LessonPath
-      examId={COURSE.id}
-      stages={STAGES}
-      branches={BRANCHES}
-      storageKey={progressKey.reading}
-      openStepId={openStepId}
-      onStepChange={syncStep}
-      onOpenMap={() => {
-        setParams({});
-        window.scrollTo({ top: 0 });
-      }}
-      renderStep={(step, onGoal) => <ReadingStep step={step} onGoal={onGoal} />}
-      sidebarHeader={header}
-      crumbs={CRUMBS}
-    />
-  );
+  if (note !== undefined) {
+    const n = PROLOGUE_NOTES.find((x) => x.id === note);
+    return n ? <PrologueNotePage note={n} /> : <Navigate to={routes.alphabet()} replace />;
+  }
+  if (step !== undefined) {
+    const index = Number(step) - 1;
+    return PROLOGUE_STEPS[index] ? <PrologueStep index={index} /> : <Navigate to={routes.alphabet()} replace />;
+  }
+  return <PrologueOverview />;
 }
 
 // ---------- справочник ----------
@@ -168,10 +117,10 @@ function Reference({ section: raw }: { section: string | null }) {
 
   const sidebar = (
     <>
-      <SidebarSection title="Урок 0">
-        <div className={styles.courseTitle}>{COURSE.title}</div>
+      <SidebarSection title="Пролог">
+        <div className={styles.courseTitle}>Греческий алфавит</div>
         <Link to={routes.alphabet()} className={styles.headerLink}>
-          <Arrow direction="left" /> К карте урока
+          <Arrow direction="left" /> К прологу
         </Link>
       </SidebarSection>
       <SidebarSection title="Справочник">

@@ -3,6 +3,8 @@
  * - `<сосуд>.glb` — скан для сайта: сосуд вписан в FIT_H × FIT_R и стоит на y = 0; сетка упрощена с ограничением
  *   ошибки (швы развёртки не трогаем — иначе проступает фон текстуры), текстуры 2048 WebP, Draco;
  * - `<сосуд>-<дней>.bin` — черепки на число дней месяца сосуда (упрощённая копия скана);
+ * - `<сосуд>-<дней>/` — черепок каждого дня отдельно для праздника находки: `index.json` (смещения в `.bin`,
+ *   материалы) и вырезы текстуры `<день>-<материал>.webp` — грузится один черепок, а не весь сосуд;
  * - `<сосуд>-photo.webp`, `<сосуд>-mask.png` — портрет и силуэт для полки (растеризация здесь же, вид спереди);
  * - `src/entities/vessel/data/baked.ts` — где сосуд в кадре портрета; `public/draco/` — декодер Draco.
  * Запуск: `pnpm museum:bake` — после правок каталога (сканы, месяцы) или резки (`lib/shards.ts`).
@@ -17,7 +19,7 @@ import { MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 import * as THREE from 'three';
 import { VESSELS } from '../src/entities/vessel/data/catalog';
-import { cutMesh, FIT_H, FIT_R, FLOOR, packPieces, PORTRAIT_H, PORTRAIT_W, PX, type Mesh } from '../src/entities/vessel/lib/shards';
+import { cutMesh, findOrder, FIT_H, FIT_R, FLOOR, packPieces, PORTRAIT_H, PORTRAIT_W, PX, type Mesh, type Piece, type ShardIndex } from '../src/entities/vessel/lib/shards';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SRC = path.join(ROOT, '.museum-src');
@@ -55,6 +57,7 @@ if (!ONLY) rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 let bytes = 0;
 const write = (file: string, data: Uint8Array) => {
+  mkdirSync(path.dirname(path.join(OUT, file)), { recursive: true });
   writeFileSync(path.join(OUT, file), data);
   bytes += data.byteLength;
 };
@@ -217,6 +220,82 @@ function toMesh(doc: Document): Mesh {
   return { pos: new Float32Array(pos), nor: new Float32Array(nor), uv: new Float32Array(uv), index: new Uint32Array(index), mat: new Uint8Array(mat) };
 }
 
+/* ---------- Черепок дня отдельно: смещение в файле черепков и вырезы текстуры ---------- */
+/** Вырез текстуры черепка — не больше этого по длинной стороне: черепок на празднике крупно, но это не весь сосуд. */
+const CROP_MAX = 512;
+const CROP_PAD = 3;
+
+async function shardsByDay(id: string, days: number, pieces: Piece[], doc: Document) {
+  // Где черепок в общем файле: заголовок (u32 — число черепков), дальше черепки подряд.
+  const sizes = pieces.map((p) => packPieces([p]).byteLength - 4);
+  const offsets = sizes.map((_, i) => 4 + sizes.slice(0, i).reduce((a, b) => a + b, 0));
+  const mats = doc.getRoot().listMaterials();
+  const textures = [...new Set(mats.map((m) => m.getBaseColorTexture()).filter((t): t is Texture => Boolean(t)))];
+  const images = new Map(
+    await Promise.all(
+      textures.map(async (t) => {
+        const data = Buffer.from(t.getImage()!);
+        const meta = await sharp(data).metadata();
+        return [t, { data, w: meta.width!, h: meta.height! }] as const;
+      }),
+    ),
+  );
+  const order = findOrder(id, days);
+  const files: { file: string; data: Promise<Buffer> }[] = [];
+  // Вырез текстуры одного материала черепка: рамка развёртки по вершинам его треугольников.
+  const crop = (day: number, p: Piece, material: number) => {
+    const tex = mats[material]?.getBaseColorTexture();
+    const img = tex && images.get(tex);
+    if (!img) return [];
+    let [u0, v0, u1, v1] = [Infinity, Infinity, -Infinity, -Infinity];
+    for (let g = 0; g < p.groups.length; g += 3) {
+      if (p.groups[g + 2] !== material) continue;
+      for (let k = p.groups[g]!; k < p.groups[g]! + p.groups[g + 1]!; k++) {
+        const vi = p.index[k]!;
+        const u = p.uv[vi * 2]!;
+        const w = p.uv[vi * 2 + 1]!;
+        [u0, v0, u1, v1] = [Math.min(u0, u), Math.min(v0, w), Math.max(u1, u), Math.max(v1, w)];
+      }
+    }
+    // Развёртка за пределами [0, 1] (повтор текстуры) — вырезом не передать: берём текстуру целиком.
+    const wraps = u0 < -1e-3 || v0 < -1e-3 || u1 > 1 + 1e-3 || v1 > 1 + 1e-3;
+    const x0 = wraps ? 0 : Math.max(0, Math.floor(u0 * img.w) - CROP_PAD);
+    const y0 = wraps ? 0 : Math.max(0, Math.floor(v0 * img.h) - CROP_PAD);
+    const x1 = wraps ? img.w : Math.min(img.w, Math.ceil(u1 * img.w) + CROP_PAD);
+    const y1 = wraps ? img.h : Math.min(img.h, Math.ceil(v1 * img.h) + CROP_PAD);
+    const k = Math.min(1, CROP_MAX / Math.max(x1 - x0, y1 - y0));
+    const file = `${day}-${material}.webp`;
+    files.push({
+      file,
+      data: sharp(img.data)
+        .extract({ left: x0, top: y0, width: x1 - x0, height: y1 - y0 })
+        .resize(Math.max(1, Math.round((x1 - x0) * k)), Math.max(1, Math.round((y1 - y0) * k)))
+        .webp({ quality: 85 })
+        .toBuffer(),
+    });
+    return [{ material, file, rect: [x0 / img.w, y0 / img.h, (x1 - x0) / img.w, (y1 - y0) / img.h] as [number, number, number, number] }];
+  };
+  const index: ShardIndex = {
+    materials: mats.map((m) => {
+      const [r, g, b] = m.getBaseColorFactor();
+      return { color: [r, g, b], roughness: m.getRoughnessFactor(), metalness: m.getMetallicFactor(), map: Boolean(m.getBaseColorTexture()) };
+    }),
+    days: order.map((n, day) => {
+      const p = pieces[n]!;
+      const used = new Set<number>();
+      for (let g = 2; g < p.groups.length; g += 3) used.add(p.groups[g]!);
+      return { at: [offsets[n]!, sizes[n]!], crops: [...used].flatMap((m) => crop(day, p, m)) };
+    }),
+  };
+  let cropBytes = 0;
+  for (const [i, data] of (await Promise.all(files.map((f) => f.data))).entries()) {
+    write(`${id}-${days}/${files[i]!.file}`, data);
+    cropBytes += data.byteLength;
+  }
+  write(`${id}-${days}/index.json`, new TextEncoder().encode(JSON.stringify(index)));
+  console.log(`  черепки по дням: вырезы ${Math.round(cropBytes / 1024)} КБ, в среднем ${Math.round(cropBytes / days / 1024)} КБ`);
+}
+
 /* ---------- Портрет: растеризация скана спереди (ортогонально), свет слева сверху ---------- */
 const SS = 3;
 async function pixelsOf(tex: Texture | null) {
@@ -332,7 +411,9 @@ async function bake(v: (typeof VESSELS)[number]) {
   console.log(`  копия для черепков: ${Math.round(triangles(coarse) / 1000)}k`);
   const [y, m] = v.month.split('-').map(Number) as [number, number];
   const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
-  write(`${v.id}-${days}.bin`, packPieces(cutMesh(v.id, toMesh(coarse), days)));
+  const pieces = cutMesh(v.id, toMesh(coarse), days);
+  write(`${v.id}-${days}.bin`, packPieces(pieces));
+  await shardsByDay(v.id, days, pieces, coarse);
   const pic = await portrait(doc);
   write(`${v.id}-photo.webp`, pic.photo);
   write(`${v.id}-mask.png`, pic.mask);

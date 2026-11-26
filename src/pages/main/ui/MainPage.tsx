@@ -1,11 +1,13 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
+import { READING_COURSE } from '@/entities/alphabet';
 import { isDueAny, planToday, statusOf, useCards, type Card, type DeckRef } from '@/entities/card';
 import { chapterOpen, chapterRank, chapterRead, doneAt, STORY_CHAPTERS, useStoryProgress, type StoryChapter } from '@/entities/story';
 import { vesselOfMonth, VesselPicture } from '@/entities/vessel';
 import { PROVERBS } from '@/entities/proverb';
 import { Phrase, Word } from '@/features/card-add';
 import { dateKey, dayState, isClosed, monthOf, monthSummary, partOf, todayKey, useDailyDays, weekOf, type DailyDayRecord } from '@/features/daily';
+import { progressKey, readProgress } from '@/features/lesson-progress';
 import { SpeakButton } from '@/features/pronounce';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
@@ -71,7 +73,7 @@ export function MainPage() {
             Карта острова <Arrow />
           </Link>
         </div>
-        {chapter && <StoryCard chapter={chapter} progress={progress} />}
+        {prologueFirst(progress) ? <PrologueCard /> : chapter && <StoryCard chapter={chapter} progress={progress} />}
 
       </div>
     </div>
@@ -87,6 +89,55 @@ function currentChapter(progress: Progress): StoryChapter | undefined {
   const open = STORY_CHAPTERS.filter((c) => chapterOpen(c, STORY_CHAPTERS, progress));
   const levels = (c: StoryChapter) => progress[c.id] ?? {};
   return open.find((c) => !chapterRead(levels(c))) ?? open.find((c) => chapterRank(c, levels(c)) === 0) ?? open.at(-1);
+}
+
+/** Доля пройденных шагов пролога (курса чтения). */
+function prologuePart(): number {
+  const done = new Set(readProgress(progressKey.reading).completed);
+  return READING_COURSE.steps.filter((s) => done.has(s.id)).length / READING_COURSE.steps.length;
+}
+
+/**
+ * Пролог вместо главы — пока ученик не начал главу 1 и не прошёл пролог: новичок должен узнать, что можно сначала
+ * выучить алфавит (docs/product/home.md). Начал главу 1 — значит, читает и так: дальше — карточка главы.
+ */
+function prologueFirst(progress: Progress): boolean {
+  const ch1 = STORY_CHAPTERS[0];
+  const started = ch1 ? doneAt(progress[ch1.id] ?? {}, 'light').length > 0 : true;
+  return !started && prologuePart() < 1;
+}
+
+function PrologueCard() {
+  const part = prologuePart();
+  const total = READING_COURSE.steps.length;
+  const done = Math.round(part * total);
+  return (
+    <section className={styles.story}>
+      <Meander className={styles.meander} />
+      <p className={styles.kicker}>Пролог · по желанию</p>
+      <h1 className={styles.storyTitle}>Греческий алфавит</h1>
+      <p className={styles.storyIntro}>
+        Пока самолёт летит на Кипр, Анна учится читать по-гречески. Ещё не читаете — начните с алфавита.
+      </p>
+      {done > 0 && (
+        <div className={styles.storyProgress}>
+          <span className={styles.track}>
+            <span className={styles.fill} style={{ width: `${part * 100}%` }} />
+          </span>
+          <span>
+            {done} из {total}
+          </span>
+        </div>
+      )}
+      <Link to={routes.alphabet()} className={buttonClassName('primary', styles.storyAction)}>
+        {done > 0 ? 'Продолжить алфавит' : 'Учить алфавит'} <Arrow />
+      </Link>
+      <Link to={routes.storyChapter(1)} className={styles.storySkip}>
+        Уже читаю по-гречески — к главе 1 <Arrow />
+      </Link>
+      <Meander className={styles.meander} />
+    </section>
+  );
 }
 
 function StoryCard({ chapter, progress }: { chapter: StoryChapter; progress: Progress }) {
