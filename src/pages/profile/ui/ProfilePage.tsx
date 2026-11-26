@@ -1,6 +1,4 @@
 import { Link } from 'react-router';
-import { ChapterMedal, FindIcon } from '@/entities/story';
-import { VesselPicture } from '@/entities/vessel';
 import { ThemeChoice } from '@/features/theme-switcher';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
@@ -22,30 +20,42 @@ export function ProfilePage() {
   );
 }
 
-/** Кнопка раздела: превью (сосуд текущего месяца, последняя находка, лучший медальон — картинками, без 3D) и счётчики. */
+const KINDS = [
+  { id: 'vessels', label: 'сосуды' },
+  { id: 'finds', label: 'находки' },
+  { id: 'medals', label: 'медальоны' },
+] as const;
+
+/** Кнопка раздела — карточка как на Главной: подпись, сколько всего, счётчики по видам, круглая кнопка. */
 function CollectionEntry() {
   const c = useCollection();
-  const vessel = c.vessels.find((v) => v.built) ?? c.vessels[0];
-  const find = c.finds.findLast((f) => f.found);
-  const medal = c.medals.filter((m) => m.rank > 0).reduce<(typeof c.medals)[number] | undefined>((best, m) => (!best || m.rank > best.rank ? m : best), undefined);
   return (
     <Link to={routes.collection()} className={styles.entry}>
-      <span className={styles.entryPics} aria-hidden="true">
-        {vessel && <VesselPicture vessel={vessel.vessel} kind={vessel.built ? 'photo' : 'silhouette'} fill={vessel.found / Math.max(1, vessel.total)} className={styles.entryVessel} />}
-        {find ? <FindIcon icon={find.chapter.find!.icon} className={styles.entryFind} /> : null}
-        <ChapterMedal chapter={medal?.chapter ?? 1} rank={medal?.rank ?? 0} size="2.6rem" />
-      </span>
       <span className={styles.entryText}>
-        <b>Коллекция</b>
-        <span>
-          {c.total === 0 ? 'Пока пусто — сосуды, находки и медальоны появятся здесь' : `${c.total} ${plural(c.total, ['экспонат', 'экспоната', 'экспонатов'])}`}
+        <span className={styles.entryKicker}>Коллекция</span>
+        <span className={styles.entryTitle}>
+          {c.total === 0 ? 'Пока пусто' : `${c.total} ${plural(c.total, ['экспонат', 'экспоната', 'экспонатов'])}`}
         </span>
-        <span className={styles.entryCounts}>
-          сосуды {c.counts.vessels.got}/{c.counts.vessels.of} · находки {c.counts.finds.got}/{c.counts.finds.of} · медальоны {c.counts.medals.got}/{c.counts.medals.of}
+        <span className={styles.entryStats}>
+          {KINDS.map((k) => (
+            <span key={k.id} className={styles.stat}>
+              <b>
+                {c.counts[k.id].got}
+                <small>/{c.counts[k.id].of}</small>
+              </b>
+              {k.label}
+            </span>
+          ))}
         </span>
       </span>
-      <span className={styles.entryArrow} aria-hidden="true">
-        ›
+      <span className={styles.go} aria-hidden="true">
+        <span className={styles.goDisc}>
+          {/* Шеврон рисунком: символ «›» в шрифте сидит не по центру круга. */}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.5 5.5 16 12l-6.5 6.5" />
+          </svg>
+        </span>
+        <span className={styles.goLabel}>открыть</span>
       </span>
     </Link>
   );
