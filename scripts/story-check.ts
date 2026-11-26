@@ -32,6 +32,17 @@ const wordsOf = (greek: string) => analyzePhrase(greek).filter((t) => t.isWord);
 const inRange = (c: StoryChapter, [a, b]: readonly [number, number]) => a >= 1 && b >= a && b <= c.sentences.length;
 const unique = (list: readonly string[]) => new Set(list).size === list.length;
 
+/** Словарная форма слова (как в карточке), иначе — само слово. */
+const lemmaOf = (t: ReturnType<typeof analyzePhrase>[number]) => lookupToken(t)?.greek ?? t.key;
+const GREEK_RUN = /[\p{Script=Greek}]+(?:[ \u00a0]+[\p{Script=Greek}]+)*/gu;
+/** Слова, которые ученик уже встретил в главах 1…N: текст главы и греческий в объяснениях шагов и конспекте. */
+const chapterWords = new Set<string>();
+const addWords = (g: string) => wordsOf(g).forEach((t) => chapterWords.add(lemmaOf(t)));
+function readChapter(c: StoryChapter) {
+  c.sentences.forEach((x) => addWords(x.greek));
+  [...c.summary, ...c.steps.flatMap((x) => x.body)].flatMap((x) => x.replace(/`[^`]+`/g, ' ').match(GREEK_RUN) ?? []).forEach(addWords);
+}
+
 function checkChapter(c: StoryChapter, index: number) {
   const at = (what: string) => `Глава ${c.id}: ${what}`;
   const err = (what: string) => errors.push(at(what));
@@ -121,6 +132,7 @@ function checkChapter(c: StoryChapter, index: number) {
   ]);
 
   // Материал недели: есть у каждой главы, 2–3 текста с вопросами, 20–30 предложений, глаголы — пройденные.
+  readChapter(c);
   const week = WEEK_MATERIAL.find((w) => w.chapter === c.id);
   if (!week) {
     note('нет материала недели (entities/story/data/week-material.ts)');
@@ -135,6 +147,11 @@ function checkChapter(c: StoryChapter, index: number) {
     for (const q of t.questions) if (q.answer < 0 || q.answer >= q.options.length) weekErr(`текст ${t.id}: номер ответа вне вариантов`);
   }
   checkVerbs(c.lesson, weekErr, [...week.texts.flatMap((t) => t.sentences), ...week.sentences].map((s) => s.greek));
+  // Материал недели — закрепление: только слова, которые уже были в главах 1…N (новые слова приходят с главами).
+  for (const x of [...week.texts.flatMap((t) => t.sentences), ...week.sentences]) {
+    const fresh = wordsOf(x.greek).filter((t) => !chapterWords.has(lemmaOf(t)));
+    if (fresh.length) weekErr(`«${x.greek}»: слов нет в главах 1–${c.id}: ${[...new Set(fresh.map(lemmaOf))].join(', ')}`);
+  }
 }
 
 /** Глаголы во фразах — только из уроков не позже `lesson`. */

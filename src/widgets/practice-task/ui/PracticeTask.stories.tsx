@@ -81,7 +81,6 @@ export const ЗначокУровня: Story = {
       <LevelBadge level="light" />
       <LevelBadge level="medium" passed={1} />
       <LevelBadge level="hard" passed={3} />
-      <LevelBadge level="medium" single />
     </div>
   ),
   play: async ({ canvas }) => canvas.getAllByRole('button')[1]?.focus(),

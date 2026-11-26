@@ -33,7 +33,7 @@ export const STORY_WORDS: DictEntry[] = [
   { greek: 'η γειτόνισσα', russian: 'соседка' },
   { greek: 'το δωμάτιο', russian: 'комната', forms: ['δωμάτια'], why: { δωμάτια: { note: 'Множественное число: -ο → -α.', rule: 'noun#plural' } } },
   { greek: 'η κουζίνα', russian: 'кухня', forms: ['κουζίνας'], why: { κουζίνας: GEN_F } },
-  { greek: 'το μυστικό', russian: 'тайна, секрет' },
+  { greek: 'το μυστικό', russian: 'тайна, секрет', forms: ['μυστικά'], why: { μυστικά: PL_N } },
   { greek: 'το κρεβάτι', russian: 'кровать, постель' },
   { greek: 'ο γάτος', russian: 'кот' },
   { greek: 'η πόρτα', russian: 'дверь' },

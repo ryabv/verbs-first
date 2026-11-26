@@ -33,9 +33,9 @@ import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button, buttonClassName } from '@/shared/ui/button';
 import { Arrow, Check } from '@/shared/ui/ornament';
 import { ProgressBar } from '@/shared/ui/progress-bar';
-import { LevelBadge, PracticeTask } from '@/widgets/practice-task';
+import { PracticeTask } from '@/widgets/practice-task';
 import { FoundShard } from './FoundShard';
-import { useDailyLevel, useDailyPool, useUnpracticed } from '../lib/pool';
+import { dayLevels, useDailyLevel, useDailyPool, useUnpracticed } from '../lib/pool';
 import styles from './Daily.module.css';
 
 /** Слова из ошибок дня — в свой набор карточек. */
@@ -84,11 +84,13 @@ function DayPage({ date }: { date: string }) {
 
   if (!day) return <div className={styles.page} />;
   const tasks = day.tasks.flatMap((k) => pool.get(k) ?? []);
-  // Уровень вырос (закреплена глава строже) — новый круг заданий.
-  return <Day key={level} date={date} day={day} tasks={tasks} level={level} />;
+  // Потолок вырос (закреплена глава строже) — новый круг заданий.
+  return <Day key={level} date={date} day={day} tasks={tasks} top={level} />;
 }
 
-function Day({ date, day, tasks, level }: { date: string; day: DailyDayRecord; tasks: readonly DailyTask[]; level: StoryLevel }) {
+function Day({ date, day, tasks, top }: { date: string; day: DailyDayRecord; tasks: readonly DailyTask[]; top: StoryLevel }) {
+  // У каждого задания свой уровень: смесь до потолка, большая часть — лёгкие (docs/product/daily.md).
+  const levels = useMemo(() => dayLevels(date, tasks.map((t) => t.key), top), [date, tasks, top]);
   const isDone = (t: DailyTask) => day.solved.includes(t.key) || day.revealed.includes(t.key);
   const [queue, setQueue] = useState(() => {
     const left = tasks.filter((t) => !isDone(t));
@@ -103,6 +105,7 @@ function Day({ date, day, tasks, level }: { date: string; day: DailyDayRecord; t
   const [closedBefore] = useState(() => isClosed(dayState(day)));
   // День закрыли в этот заход — праздник с найденным черепком; «Закрыть» уводит на стол реставратора.
   const item = queue[index];
+  const level = (item && levels.get(item.key)) ?? 'light';
 
   const log = (result: 'right' | 'revealed' | 'skipped') =>
     item && logAttempt({ source: 'daily', item: item.key, kind: item.task.kind, level, result });
@@ -134,12 +137,6 @@ function Day({ date, day, tasks, level }: { date: string; day: DailyDayRecord; t
     setSolved(false);
   };
 
-  // Только в разработке: закрыть день одним нажатием — посмотреть экран итога.
-  const demoFinish = (how: 'solved' | 'revealed') => {
-    for (const t of tasks) markDailyTask(date, t.key, how);
-    setIndex(queue.length);
-    setSolved(false);
-  };
 
   const doneCount = tasks.filter(isDone).length;
   return (
@@ -154,19 +151,7 @@ function Day({ date, day, tasks, level }: { date: string; day: DailyDayRecord; t
           <span>
             {doneCount}/{tasks.length}
           </span>
-          <LevelBadge level={level} single />
         </div>
-        {process.env.NODE_ENV !== 'production' && item && (
-          <div className={styles.demoRow}>
-            <span className={styles.demoTitle}>Демо:</span>
-            <button type="button" className={styles.demoBtn} onClick={() => demoFinish('solved')}>
-              пройти чисто
-            </button>
-            <button type="button" className={styles.demoBtn} onClick={() => demoFinish('revealed')}>
-              пройти с подсказками
-            </button>
-          </div>
-        )}
       </header>
 
       {!started && item ? (

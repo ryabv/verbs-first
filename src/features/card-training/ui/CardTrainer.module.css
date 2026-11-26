@@ -180,7 +180,14 @@
 }
 @media (max-width: 600px) {
   .card, .finish { padding: 16px; border-width: 2px; }
+  .promptBox { margin: 0 0 1rem; }
   .prompt { font-size: 1.6rem; }
+  .optionBtn { min-height: 2.9rem; }
+  .result { margin-top: 0.75rem; padding: 0.6rem 0.9rem; }
+  /* «Дальше» и «Помню / Не вспомнил(а)» — прилипают к низу экрана над панелью разделов: видны без прокрутки. */
+  .next, .selfButtons { position: sticky; bottom: calc(var(--tabbar) + 10px); z-index: 2; }
+  .next { width: 100%; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
+  .selfButtons { padding: 8px 0; background: var(--bg); }
   .options { grid-template-columns: 1fr; }
   .modes { grid-template-columns: 1fr 1fr; }
   .modeText { display: none; }

@@ -35,8 +35,9 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
 
   const goNext = () => {
     // Следующий шаг — без прокрутки наверх: кусок рядом, текст сам подвинется, если его не видно.
-    if (index + 1 < total) navigate(routes.storyStep(chapter.id, index + 2), { preventScrollReset: true });
-    else navigate(routes.storyStep(chapter.id, 'end'));
+    // replace: шаги главы — одна запись истории, «назад» ведёт туда, откуда пришли в главу, а не на прошлый шаг.
+    if (index + 1 < total) navigate(routes.storyStep(chapter.id, index + 2), { preventScrollReset: true, replace: true });
+    else navigate(routes.storyStep(chapter.id, 'end'), { replace: true });
   };
 
   useFocusMode();

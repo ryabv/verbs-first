@@ -255,19 +255,6 @@
 }
 
 /* Только в разработке: «пройти день» на странице дня (ими пользуются и истории Storybook). */
-.demoTitle { margin: 0 0 6px; }
-.demoRow { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.demoBtn {
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
-  text-decoration: none;
-}
-.demoBtn:disabled { opacity: 0.4; cursor: default; }
 
 /* Итог дня: найденный черепок. */
 .find {

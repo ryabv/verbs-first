@@ -44,7 +44,7 @@ export function CardsPage() {
   const learned = cards.filter(isLearned).length;
 
   return (
-    <div className={styles.page}>
+    <div className={training ? `${styles.page} ${styles.training}` : styles.page}>
       <header className={styles.head}>
         <Breadcrumbs items={[{ label: 'Главная', to: routes.home() }, { label: 'Карточки' }]} back={false} />
         <div className={styles.titleRow}>

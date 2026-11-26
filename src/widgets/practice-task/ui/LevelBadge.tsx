@@ -24,12 +24,11 @@ function LevelIcon({ level }: { level: StoryLevel }) {
 
 /**
  * Уровень на странице заданий — маленький значок; подробности — при наведении или нажатии (подсказка).
- * Уровень не выбирают — он идёт от прогресса (docs/product/modes.md). `passed` — до какого уровня глава уже пройдена;
- * `single` — без ступеней (ежедневные не поднимаются по уровням).
+ * Уровень не выбирают — он идёт от прогресса (docs/product/modes.md). `passed` — до какого уровня глава уже пройдена.
  */
-export function LevelBadge({ level, passed = 0, single = false }: { level: StoryLevel; passed?: LevelRank; single?: boolean }) {
+export function LevelBadge({ level, passed = 0 }: { level: StoryLevel; passed?: LevelRank }) {
   const tip = useId();
-  const next = single ? undefined : STORY_LEVELS[STORY_LEVELS.indexOf(level) + 1];
+  const next = STORY_LEVELS[STORY_LEVELS.indexOf(level) + 1];
   return (
     <span className={styles.badge}>
       <button type="button" className={styles.badgeBtn} aria-describedby={tip} aria-label={`Уровень: ${STORY_LEVEL_LABELS[level].toLowerCase()}`}>
@@ -37,17 +36,15 @@ export function LevelBadge({ level, passed = 0, single = false }: { level: Story
       </button>
       <span role="tooltip" id={tip} className={styles.tip}>
         <b>Уровень: {STORY_LEVEL_LABELS[level].toLowerCase()}</b> — {HINTS[level]}. Медальон — {MEDAL_METALS[levelRank(level)].toLowerCase()}.
-        {!single && (
-          <span className={styles.tipLine}>
-            {STORY_LEVELS.map((l, i) => (
-              <span key={l}>
-                {i > 0 && ' → '}
-                {passed >= levelRank(l) && <Laurel className={styles.levelLaurel} aria-label="пройден" />}
-                {l === level ? <b>{STORY_LEVEL_LABELS[l]}</b> : STORY_LEVEL_LABELS[l]}
-              </span>
-            ))}
-          </span>
-        )}
+        <span className={styles.tipLine}>
+          {STORY_LEVELS.map((l, i) => (
+            <span key={l}>
+              {i > 0 && ' → '}
+              {passed >= levelRank(l) && <Laurel className={styles.levelLaurel} aria-label="пройден" />}
+              {l === level ? <b>{STORY_LEVEL_LABELS[l]}</b> : STORY_LEVEL_LABELS[l]}
+            </span>
+          ))}
+        </span>
         {next && <span className={styles.tipLine}>Пройдёте — глава продолжится на уровне «{STORY_LEVEL_LABELS[next].toLowerCase()}».</span>}
       </span>
     </span>
