@@ -16,35 +16,35 @@
 
 Картинки будущих глав не показываются, пока глава не написана, — сюжет не выдаётся.
 
-Готово: глава 1 — `chapter-01.webp`; для главы 2 картинка уже лежит (`chapter-02.webp`), `image` добавить, когда глава будет написана.
+Готово: главы 1–4 — `chapter-01…04.webp`, нарисованы по описаниям ниже (перерисованы под Кипр, решение владельца, 2026-11-27;
+прежние картинки глав 1–2 были в стиле кикладского острова).
 
 ## Общий стиль (добавлять к каждому промпту)
 
 ```
 Hand-drawn storybook illustration, fine ink linework with soft watercolor washes on aged cream paper,
-high three-quarter bird's-eye view, richly detailed, muted natural palette: Aegean blue-grey sea,
-olive and pine greens, ochre earth, whitewashed Cycladic houses with blue doors and shutters,
-soft warm morning light, calm and slightly mysterious mood. A small fictional Greek island.
-No text, no lettering, no signs, no watermark, no logos. People tiny and far away or absent. 16:9.
+high three-quarter bird's-eye view, richly detailed, muted natural palette: blue-grey Mediterranean sea,
+olive and carob greens, dry golden grass, ochre and red earth, honey-coloured local limestone,
+soft warm morning light, calm and slightly mysterious mood. Southern Cyprus, a real place, not a Greek island:
+no Cycladic white cubes, no blue doors or blue church domes, no islands on the horizon.
+No text, no lettering, no signs, no flags, no watermark, no logos. People tiny and far away or absent. 16:9.
 ```
 
 ## Места
 
+Факты мест — из источников (в скобках); чего источник не говорит, в описание не ставим. Описания пишутся вместе с главой.
+
 | Глава | Место | Описание для промпта |
 |---|---|---|
-| 1 | Порт и дом тёти | A small harbour in a sheltered bay: stone quay, a few wooden fishing boats, a ferry approaching, whitewashed houses climbing the slope, one small white house with blue shutters slightly apart, close to the sea. |
-| 2 | Деревня | A hillside village of white houses among patchwork fields and olive trees, narrow stepped lanes, a fisherman's boat pulled up on a pebble beach below. |
-| 3 | Город и библиотека | The island's small town: a square with an old neoclassical library building, a bus stop, cafés with awnings, red-tiled and white roofs around. |
-| 4 | Кафенио | A village square with an old kafeneio under a huge plane tree, wooden chairs and small tables, men playing backgammon, a church bell tower nearby. |
-| 5 | Звонок домой | Evening: a terrace of a small white house above the bay, a table with a lamp and a telephone, lights of the harbour below, first stars. |
-| 6 | Маяк | A lonely white lighthouse on a long rocky cape, a winding dirt road to it, waves breaking on the rocks, wide open sea. |
-| 7 | Пляж | A lagoon behind a long sandy spit, turquoise shallow water, the open sea on the other side, a few umbrellas far away, dunes with low shrubs. |
-| 8 | Холм с вышкой | A bare hill above the island with an old radio mast and a small abandoned broadcasting hut, the whole island and the sea visible below. |
-| 9 | Часовня | A tiny white chapel with a blue dome on a rocky hilltop, cypress trees, a stone path, goats grazing among herbs. |
-| 10 | За маяком | A wild rocky coast beyond the lighthouse, a narrow path along the cliffs leading to an old wooden door set into the rock. |
-| 11 | Северный берег | The windy northern coast: dark pine forest down to the water, rough sea with white crests, storm clouds gathering. |
-| 12 | Пирей | A big busy mainland port: large ferries, cranes, rows of city buildings, the island ferry departing (not a recognizable real landmark). |
-| 13 | Рынок | A morning market in the town: stalls with fish, vegetables, fruit and old things, awnings, crates, a small bric-a-brac stall with records and cassettes. |
-| 14 | Оливковая роща | An ancient olive grove in neat rows on terraced slopes, gnarled trunks, dry stone walls, a small stone hut. |
-| 15 | Старая пристань | An old abandoned wooden pier in a quiet eastern bay, a weathered boathouse, a half-sunk rowing boat, clear water. |
-| 16 | Мэрия | The town hall on the main square: a modest neoclassical building with a flag pole, steps, palm trees, people coming and going. |
+| 1 | Куклия: дом тёти (сегодня) | Kouklia today, a village in south-west Cyprus near the Mediterranean shore, close to the mouth of a dry seasonal riverbed. Low old village houses of honey-coloured stone blocks, narrow lanes, courtyards with a lemon tree and clay pots, fields of the coastal plain, the open sea beyond. In the foreground a small, old, whitewashed stone house with a wooden door and a little courtyard; a cat sits at the door. |
+| 2 | Кухня тёти | Interior of an old Cypriot village kitchen in the late evening: thick stone walls, a small deep window, a wooden table with an envelope on it, an oil lamp or a simple lamp, shelves with clay jars and plates, a cat on a chair. Warm lamplight, quiet and mysterious. Seen from slightly above, no people. |
+| 3 | Шиллурокамбос: первые люди (≈ 8000 до н. э.) | Neolithic Cyprus about ten thousand years ago: a small early farming settlement on a low plateau near the southern coast, a few simple huts, smoke from a fire, wild scrubland and the sea in the distance; a few tiny figures and a cat. No pottery, no metal, no buildings of later ages. |
+| 4 | Хирокития (сегодня) | The Neolithic site of Choirokoitia today, on the slope of a hill in the valley of the Maroni river, inland from the southern coast: remains of round stone houses huddled close together, a massive stone village wall, a few reconstructed round huts with flat roofs, dry hills around; two tiny visitors walking on a path. |
+
+Источники: Куклия — у побережья юго-запада Кипра, у устья пересыхающей реки Диаризос, ≈ 16 км к востоку от Пафоса;
+в 1887–88 — «низкие дома на глиняном растворе из тёсаных камней» ([Wikipedia: Kouklia](https://en.wikipedia.org/wiki/Kouklia)).
+Шиллурокамбос — неолит, низкое плато у Парекклисии, ≈ 6 км от Лимасола, 8200–7500 до н. э.
+([Wikipedia: Shillourokambos](https://en.wikipedia.org/wiki/Shillourokambos)). Хирокития — склон холма в долине реки
+Марони, ≈ 6 км от моря; круглые дома (толосы) тесно друг к другу, низ стен — камень, найдена плоская крыша; стена
+2,5 м толщиной; реконструированные дома ([Wikipedia: Khirokitia](https://en.wikipedia.org/wiki/Khirokitia)).
+Высота Куклии над морем и точное расстояние до берега источник не даёт — в описании их нет.
