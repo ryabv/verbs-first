@@ -1,3 +1,4 @@
+import { isServiceWord } from '@/entities/dictionary';
 import type { StoryChapter, StorySentence, WeekMaterial } from '@/entities/story';
 import type { TextToken } from '@/entities/verb';
 import type { SentenceSource, WordSentence } from '@/features/card-training';
@@ -56,7 +57,7 @@ export function buildSentenceIndex(chapters: readonly StoryChapter[], week: read
       // Одна фраза на слово — один раз, даже если слово в ней дважды.
       if (!list.some((o) => o.sentence === sentence)) list.push({ sentence, source, tokens, index });
       byLemma.set(plain(e.greek), list);
-      if (!SERVICE.test(e.russian) && !/^[А-ЯЁ]/.test(e.russian)) {
+      if (!SERVICE.test(e.russian) && !isServiceWord(e) && !/^[А-ЯЁ]/.test(e.russian)) {
         forms.push({ form: t.text, lemma: e.greek, kind: kindOf(e.greek, e.kind === 'verb'), verb: t.verb ? `${t.verb.tense}:${t.verb.persons.join(',')}` : undefined });
       }
     });

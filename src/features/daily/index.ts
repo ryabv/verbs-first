@@ -42,3 +42,4 @@ export {
   type DailyLexicon,
   type DailyTask,
 } from './model/recipe';
+export { studiedMaterial, type StudiedMaterial } from './model/material';

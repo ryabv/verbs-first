@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { table, type Rank } from '@/shared/lib/db';
-import { STORY_LEVELS, type PracticeTask, type StoryBranch, type StoryChapter, type StoryLevel } from './types';
+import { STORY_LEVELS, type PracticeTask, type StoryBranch, type StoryChapter, type StoryLevel, type StorySentence } from './types';
 
 /**
  * Прогресс истории — таблица `story_progress` (IndexedDB, схема сервера): запись на «главу × ключ», лучший уровень 1…3.
@@ -72,6 +72,23 @@ export function doneAt(levels: ChapterLevels, level: StoryLevel): string[] {
 /** Глава дочитана до конца. */
 export function chapterRead(levels: ChapterLevels): boolean {
   return (levels[STORY_END] ?? 0) >= 1;
+}
+
+/**
+ * Прочитанные предложения главы: дочитана — все; иначе — куски прочитанных шагов. Для того, что глава приносит
+ * по мере чтения (слова в карточки, фразы с ними): непрочитанный кусок — непройденные слова и времена.
+ */
+export function readSentences(chapter: StoryChapter, levels: ChapterLevels): StorySentence[] {
+  const read = readSentenceNumbers(chapter, levels);
+  return chapter.sentences.filter((_, i) => read.has(i + 1));
+}
+
+/** Номера (с 1) прочитанных предложений главы. */
+export function readSentenceNumbers(chapter: StoryChapter, levels: ChapterLevels): Set<number> {
+  const all = chapter.sentences.map((_, i) => i + 1);
+  if (chapterRead(levels)) return new Set(all);
+  const read = chapter.steps.filter((s) => (levels[s.id] ?? 0) >= 1);
+  return new Set(all.filter((n) => read.some((s) => n >= s.sentences[0] && n <= s.sentences[1])));
 }
 
 /** Уровень закрепления главы — самый низкий из уровней её заданий: 0, пока хоть одно не сделано. */

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { addCards, ensureDeck } from '@/entities/card';
 import { Link, useNavigate } from 'react-router';
 import { doneAt, markStoryStep, useStoryLevels, type StoryChapter, type StoryCheck, type StoryStep } from '@/entities/story';
 import { SpeakButton } from '@/features/pronounce';
@@ -6,7 +7,8 @@ import { routes } from '@/shared/config/routes';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
 import { Button } from '@/shared/ui/button';
 import { Arrow, Check } from '@/shared/ui/ornament';
-import { storyDeck } from '../lib/deck';
+import { STORY_DECK, storyDeck } from '../lib/deck';
+import { sentenceWords } from '../lib/words';
 import { shuffle } from '../lib/task';
 import { CatIcon } from './CatIcon';
 import { Manuscript } from './Manuscript';
@@ -30,8 +32,13 @@ function Step({ chapter, step, index }: { chapter: StoryChapter; step: StoryStep
   const [answered, setAnswered] = useState(wasRead || !step.check);
   const total = chapter.steps.length;
 
-  // Шаг открыт — значит, прочитан: глава не держит ученика на вопросе.
-  useEffect(() => markStoryStep(chapter.id, step.id), [chapter.id, step.id]);
+  // Шаг открыт — значит, прочитан: глава не держит ученика на вопросе. Слова его куска — сразу в карточки:
+  // карточки растут по мере чтения, а не всей главой сразу (решение владельца, 2026-11-27).
+  useEffect(() => {
+    markStoryStep(chapter.id, step.id);
+    ensureDeck(STORY_DECK);
+    addCards(STORY_DECK.id, sentenceWords(chapter.sentences.slice(step.sentences[0] - 1, step.sentences[1])));
+  }, [chapter, step]);
 
   const goNext = () => {
     // Следующий шаг — без прокрутки наверх: кусок рядом, текст сам подвинется, если его не видно.

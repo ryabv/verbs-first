@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { isServiceWord } from '@/entities/dictionary';
 import { markStoryStep, practiceKey, type StoryLevel } from '@/entities/story';
 import { addCards, ensureDeck, meetCard, planToday, recordAnswer, useCards, type Card, type DeckRef } from '@/entities/card';
 import { preloadShard, ShardThumb, vesselOfMonth } from '@/entities/vessel';
@@ -64,7 +65,7 @@ function wordsOf(t: DayItem) {
   const out = new Map<string, { greek: string; russian: string }>();
   for (const token of analyzePhrase(t.phrase.greek)) {
     const e = token.isWord ? lookupToken(token) : undefined;
-    if (e && !/артикль|предлог|частица|союз/.test(e.russian) && !out.has(e.greek)) out.set(e.greek, { greek: e.greek, russian: e.russian });
+    if (e && !isServiceWord(e) && !out.has(e.greek)) out.set(e.greek, { greek: e.greek, russian: e.russian });
   }
   return [...out.values()];
 }

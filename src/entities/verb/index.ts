@@ -4,6 +4,7 @@ export { GREEK_PRONOUNS, RUSSIAN_PRONOUNS, TENSE_LABELS, FORM_LABELS } from './m
 export { buildGreek, buildRussian } from './lib/buildPhrase';
 export { getVerb, getVerbs } from './lib/getVerbs';
 export { createAnalyzer, type Analyzer, type TextToken, type VerbMatch } from './lib/analyze';
+export { fitsGrammar, knownGrammar, type KnownGrammar } from './lib/known';
 export { VerbTable } from './ui/VerbTable';
 export { VerbParadigm } from './ui/VerbParadigm';
 export { PersonSwitcher } from './ui/PersonSwitcher';

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { checkGreek, shuffle, stageOf, type Card, type Stage } from '@/entities/card';
+import { isServiceWord } from '@/entities/dictionary';
 import { SpeakButton } from '@/features/pronounce';
 import type { AnswerVerdict } from '@/shared/lib/greek';
 import { Button } from '@/shared/ui/button';
@@ -147,7 +148,9 @@ function makeAsk(card: Card, stage: CheckProps['stage'], examples: readonly Word
   const others = (text: (c: Card) => string) => {
     const right = text(card);
     const out = new Set<string>();
+    // Служебные слова (για — «для») в вариантах не нужны: смысл у них только в конструкции.
     for (const c of shuffle(allCards)) {
+      if (isServiceWord(c)) continue;
       const t = text(c);
       if (t !== right) out.add(t);
       if (out.size === OPTIONS - 1) break;

@@ -30,6 +30,8 @@ export {
   levelRank,
   markStoryStep,
   practiceKey,
+  readSentenceNumbers,
+  readSentences,
   unpracticed,
   useStoryLevels,
   useStoryProgress,

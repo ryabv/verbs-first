@@ -1,5 +1,6 @@
+import { isServiceWord } from '@/entities/dictionary';
 import type { PracticeTask, StoryChapter, StorySentence, WeekMaterial } from '@/entities/story';
-import { RUSSIAN_PRONOUNS, TENSE_LABELS, type Person, type TextToken } from '@/entities/verb';
+import { RUSSIAN_PRONOUNS, TENSE_LABELS, type Person, type Tense, type TextToken } from '@/entities/verb';
 import { stripAccents } from '@/shared/lib/greek';
 import { seeded, seededShuffle } from '@/shared/lib/random';
 
@@ -79,7 +80,6 @@ function decoys<T>(pool: readonly T[], right: T, n: number, seed: string, same: 
 const plain = (s: string) => stripAccents(s.toLowerCase()).replace(/[^\p{L}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
 /** Первое значение перевода: «дом; στο σπίτι — дома» → «дом». */
 const firstSense = (ru: string) => ru.split(/[;(]/)[0]!.trim();
-const isFunctionWord = (ru: string) => /артикль|предлог|частица|союз/.test(ru);
 const isName = (ru: string) => /^[А-ЯЁ]/.test(ru);
 const capitalize = (form: string, like: string) => (like[0] === like[0]!.toUpperCase() ? form[0]!.toUpperCase() + form.slice(1) : form);
 const firstForm = (forms: string) => forms.split('/')[0]!.trim();
@@ -87,8 +87,16 @@ const firstForm = (forms: string) => forms.split('/')[0]!.trim();
 // ---------- пул заданий ----------
 
 interface PoolInput {
-  /** Главы, открытые ученику для ежедневных (прочитанные), по порядку. */
+  /** Начатые главы, по порядку. */
   chapters: readonly StoryChapter[];
+  /**
+   * Прочитанные предложения (номера с 1) по главам — задания берутся только из прочитанных кусков (studiedMaterial).
+   * Главы нет в списке — прочитана вся.
+   */
+  read?: ReadonlyMap<number, ReadonlySet<number>>;
+  /** Знакомые времена: ловушки «формы» — только в них. Не задано — все. */
+  tenses?: ReadonlySet<Tense>;
+  /** Материал недели — уже отобранный по пройденному. */
   week: readonly WeekMaterial[];
   /** Глава 1 — для новичка: её слова и «услышь слово», пока ни одна глава не прочитана. */
   first?: StoryChapter;
@@ -96,15 +104,25 @@ interface PoolInput {
 }
 
 /** Все задания, которые можно дать ученику: ключ → задание. */
-export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<string, DailyTask> {
+export function buildPool({ chapters, read, tenses, week, first, lexicon }: PoolInput): Map<string, DailyTask> {
   const pool = new Map<string, DailyTask>();
   const add = (t: DailyTask) => pool.set(t.key, t);
   const words = (text: string) => lexicon.analyze(text).filter((t) => t.isWord);
 
   for (const c of chapters) {
     const label = `Глава ${c.id}`;
-    // 1. Задания закрепления главы — готовые и вычитанные.
+    const seen = read?.get(c.id);
+    const isRead = (from: number, to = from) => !seen || Array.from({ length: to - from + 1 }, (_, i) => from + i).every((n) => seen.has(n));
+    const whole = !seen || seen.size === c.sentences.length;
+    // 1. Задания закрепления главы — готовые и вычитанные; из прочитанных кусков (без привязки к куску — когда глава дочитана).
     for (const task of c.practice) {
+      const available =
+        task.kind === 'gap'
+          ? isRead(task.sentence)
+          : task.kind === 'tap' || (task.kind === 'choose' && task.sentences)
+            ? isRead(...task.sentences!)
+            : whole;
+      if (!available) continue;
       const phrase =
         task.kind === 'gap'
           ? (c.sentences[task.sentence - 1] ?? { greek: task.word, russian: task.meaning })
@@ -118,8 +136,8 @@ export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<st
       add({ key: `p:${c.id}:${task.id}`, group: 'practice', chapter: c.id, task, sentences: c.sentences, withTranslation: false, phrase, source: label });
     }
 
-    // 2. Слова главы: «что значит».
-    addWords(pool, c, label, lexicon);
+    // 2. Слова главы: «что значит» — из прочитанного.
+    addWords(pool, seen ? { ...c, sentences: c.sentences.filter((_, i) => seen.has(i + 1)) } : c, label, lexicon);
 
     const material = week.find((w) => w.chapter === c.id);
     if (!material) continue;
@@ -155,7 +173,7 @@ export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<st
           ...new Set(
             tokens
               .map((t) => lexicon.lookup(t))
-              .filter((e) => e && !isFunctionWord(e.russian))
+              .filter((e) => e && !isServiceWord(e))
               .map((e) => e!.greek),
           ),
         ].join(', ');
@@ -186,7 +204,10 @@ export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<st
         const table = m.tense === 'present' ? m.verb.greek.present : m.verb.greek.past;
         const otherTense = m.tense === 'present' ? m.verb.greek.past : m.verb.greek.present;
         const otherPerson = ((p + (p === 2 ? 3 : 2)) % 6) as Person;
-        const candidates = [firstForm(otherTense[p]), firstForm(table[otherPerson])].map((f) => capitalize(f, verb.text));
+        const thirdPerson = ((otherPerson + 1 === p ? otherPerson + 2 : otherPerson + 1) % 6) as Person;
+        // Другое время в ловушках — только если оно уже встречалось; иначе — другие лица того же времени.
+        const otherKnown = !tenses || tenses.has(m.tense === 'present' ? 'past' : 'present');
+        const candidates = [firstForm(otherKnown ? otherTense[p] : table[thirdPerson]), firstForm(table[otherPerson])].map((f) => capitalize(f, verb.text));
         const options = [verb.text, ...candidates.filter((f, j, all) => plain(f) !== plain(verb.text) && all.findIndex((g) => plain(g) === plain(f)) === j)];
         if (options.length === 3) {
           const who = m.persons.map((x) => RUSSIAN_PRONOUNS[x]).join(' или ');
@@ -233,7 +254,10 @@ export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<st
   // Новичок: слова главы 1 — услышать и узнать написание, значение. В пуле всегда: дни новичка хранятся ключами,
   // и после первой главы они должны открываться так же; в новые дни их не берём (buildDay).
   if (first) {
-    addWords(pool, first, 'Слова главы 1', lexicon);
+    // Слова главы 1 для новичка: те, что ещё не пришли из прочитанного, — с главой 0 (только в днях новичка).
+    const novice = new Map<string, DailyTask>();
+    addWords(novice, first, 'Слова главы 1', lexicon);
+    for (const [k, t] of novice) if (!pool.has(k)) pool.set(k, Object.assign(t, { chapter: 0 }));
     const forms = [
       ...new Map(
         first.sentences
@@ -245,7 +269,7 @@ export function buildPool({ chapters, week, first, lexicon }: PoolInput): Map<st
     ];
     for (const t of forms) {
       const entry = lexicon.lookup(t);
-      if (!entry || isFunctionWord(entry.russian)) continue;
+      if (!entry || isServiceWord(entry)) continue;
       const key = `a:${plain(t.text)}`;
       const wrong = decoys(forms, t, 2, key, (a, b) => plain(a.text) === plain(b.text));
       if (wrong.length < 2) continue;
@@ -279,7 +303,7 @@ function addWords(pool: Map<string, DailyTask>, c: StoryChapter, label: string, 
     for (const t of lexicon.analyze(s.greek)) {
       if (!t.isWord) continue;
       const e = lexicon.lookup(t);
-      if (!e || isFunctionWord(e.russian) || isName(e.russian) || plain(e.greek).replace(/\s/g, '').length < 3) continue;
+      if (!e || isServiceWord(e) || isName(e.russian) || plain(e.greek).replace(/\s/g, '').length < 3) continue;
       if (!entries.has(e.greek)) entries.set(e.greek, { greek: e.greek, russian: firstSense(e.russian) });
     }
   }
@@ -358,7 +382,7 @@ export function buildDay({ date, pool, current, unpracticed, mistakes, usedThisW
     keys.push(k);
     return true;
   };
-  // Задания новичка (глава 0) — только пока не прочитана ни одна глава.
+  // Задания новичка (глава 0) — только пока не начата ни одна глава.
   const all = [...pool.values()].filter((t) => current === undefined || t.chapter !== 0);
   /** Свежие — сначала, повторы недели — в запас; глава «сейчас» — вдвое чаще прошлых. */
   const ordered = (tasks: readonly DailyTask[], seed: string) => {

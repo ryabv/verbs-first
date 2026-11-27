@@ -1,4 +1,4 @@
-import type { StoryChapter } from '@/entities/story';
+import type { StoryChapter, StorySentence } from '@/entities/story';
 import { analyzePhrase, lookupToken } from '@/features/card-add';
 
 interface ChapterWord {
@@ -9,8 +9,13 @@ interface ChapterWord {
 
 /** Слова главы словарной формой (без имён и названий) — для «в карточки». */
 export function chapterWords(chapter: StoryChapter): ChapterWord[] {
+  return sentenceWords(chapter.sentences);
+}
+
+/** Слова фраз словарной формой (без имён и названий). */
+export function sentenceWords(sentences: readonly StorySentence[]): ChapterWord[] {
   const seen = new Map<string, ChapterWord>();
-  for (const s of chapter.sentences) {
+  for (const s of sentences) {
     for (const token of analyzePhrase(s.greek)) {
       const entry = token.isWord ? lookupToken(token) : undefined;
       if (!entry) continue;
