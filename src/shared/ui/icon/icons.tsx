@@ -150,6 +150,16 @@ export function StopIcon(props: IconProps) {
   );
 }
 
+/** Карандаш — исправить, переименовать. */
+export function PencilIcon(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" />
+      <path d="m13.5 6.5 4 4" />
+    </Svg>
+  );
+}
+
 /** Колонна с ионической капителью — раздел «Справочник» (правила, на которых всё держится). */
 export function ColumnIcon(props: IconProps) {
   return (

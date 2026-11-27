@@ -25,8 +25,8 @@ const versions = new Map<TableName, number>(TABLES.map((t) => [t, 0]));
 let channel: BroadcastChannel | null = null;
 
 /** Применить миграции по порядку: из версии `from` в DB_VERSION. */
-function upgrade(database: IDBDatabase, from: number) {
-  for (let v = from + 1; v <= DB_VERSION; v++) MIGRATIONS[v]?.(database);
+function upgrade(database: IDBDatabase, tx: IDBTransaction, from: number) {
+  for (let v = from + 1; v <= DB_VERSION; v++) MIGRATIONS[v]?.(database, tx);
 }
 
 const request = <T>(req: IDBRequest<T>) =>
@@ -38,7 +38,7 @@ const request = <T>(req: IDBRequest<T>) =>
 function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.addEventListener('upgradeneeded', (e) => upgrade(req.result, e.oldVersion));
+    req.addEventListener('upgradeneeded', (e) => upgrade(req.result, req.transaction!, e.oldVersion));
     req.addEventListener('success', () => resolve(req.result));
     req.addEventListener('error', () => reject(req.error ?? new Error('IndexedDB')));
     req.addEventListener('blocked', () => reject(new Error('IndexedDB blocked')));

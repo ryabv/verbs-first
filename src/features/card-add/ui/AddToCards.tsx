@@ -88,7 +88,7 @@ export function AddToCards({ greek, russian, deck = DEFAULT_DECK, extra }: Props
 /** Убрать из набора; если это последний набор и слово уже учили — спросить. */
 function removeFrom(card: Card, deckId: string) {
   const last = card.deckIds.length === 1;
-  const studied = card.progress['ru-gr'].seen + card.progress['gr-ru'].seen > 0;
+  const studied = card.srs !== undefined;
   if (last && studied && !window.confirm('Это последний набор слова — карточка и её прогресс удалятся. Убрать?')) return;
   removeFromDeck(card.id, deckId);
 }

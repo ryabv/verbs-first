@@ -1,4 +1,4 @@
-.page { max-width: var(--content-width); margin: 0 auto; padding: 0 40px 48px; }
+.page { width: 100%; box-sizing: border-box; max-width: var(--content-width); margin: 0 auto; padding: 0 40px 48px; }
 
 .head { margin: 32px 0 20px; }
 .titleRow { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 16px; }
@@ -108,6 +108,10 @@ a.tile:hover { border-color: var(--border-strong); background: var(--surface-mut
   cursor: pointer;
 }
 .iconBtn:hover { color: var(--accent); background: var(--accent-soft); }
+.iconBtn svg { display: block; margin: auto; }
+/* Карандаш у названия набора — рядом с ним, по центру строки. */
+.title:has(.titleEdit) { display: inline-flex; align-items: center; gap: 0.3rem; }
+.titleEdit { flex: none; font-size: 1.05rem; }
 .iconDanger { font-size: 1.3rem; }
 .iconDanger:hover { color: var(--danger); background: var(--danger-soft); }
 .wordEdit { padding: 8px 8px 8px 16px; }

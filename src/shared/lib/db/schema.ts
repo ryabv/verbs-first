@@ -17,14 +17,26 @@ export interface DbRecord {
 /** Уровень 1…3: лёгкий, средний, сложный. */
 export type Rank = 1 | 2 | 3;
 
-/** Прогресс слова в одном направлении (коробка Лейтнера). */
+/**
+ * Память о слове — модель FSRS (docs/product/cards.md): насколько прочно слово держится и когда его повторить.
+ * Поля — как у карточки ts-fsrs, даты — мс. Нет записи — слово ещё ни разу не проверяли.
+ */
 export interface SrsFields {
-  /** Коробка 0…5: верный ответ +1, ошибка — 0. */
-  box: number;
-  /** Сколько раз отвечали. 0 — новое слово. */
-  seen: number;
-  /** Когда повторить (начало дня, мс). Нет — пора. */
-  due?: number;
+  /** Когда повторить (начало дня, мс). */
+  due: number;
+  /** Стабильность, дни: за сколько дней вероятность вспомнить падает до 90%. */
+  stability: number;
+  /** Трудность слова 1…10. */
+  difficulty: number;
+  /** Сколько раз проверяли и сколько раз забыли. */
+  reps: number;
+  lapses: number;
+  /** Состояние FSRS: 0 — новое, 1 — учится, 2 — повторение, 3 — переучивается. */
+  state: 0 | 1 | 2 | 3;
+  /** Интервал, назначенный последней проверкой, дни. */
+  scheduled: number;
+  /** Последняя проверка, мс. */
+  last?: number;
 }
 
 /** Поля записей по таблицам (без `id`, `updatedAt`, `deletedAt`). */
@@ -61,7 +73,12 @@ export interface Schema {
     greek: string;
     russian: string;
     createdAt: number;
-    progress: Record<'ru-gr' | 'gr-ru', SrsFields>;
+    /** Знакомство (первый показ слова с примерами), мс. Нет — слово ещё не показывали. */
+    met?: number;
+    /** Память о слове (FSRS). Нет — ещё ни разу не проверяли. */
+    srs?: SrsFields;
+    /** Фразы, в которых слово недавно показывали (греческий текст), — следующий раз берём другую. */
+    shown?: string[];
   };
   /** id — день занятий `2026-11-21` (серия дней подряд, календарь). */
   activity_days: Record<never, never>;
@@ -117,17 +134,60 @@ export const TABLE_INFO = {
 export const TABLES = Object.keys(TABLE_INFO) as TableName[];
 
 /** Версия схемы = версия базы IndexedDB. */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 /**
  * Миграции: шаг N переводит базу из версии N−1 в N. Сервер повторяет те же шаги.
- * Версия 1 — все таблицы с ключом `id`. Версия 2 — `daily_days` (ежедневные).
+ * Версия 1 — все таблицы с ключом `id`. Версия 2 — `daily_days` (ежедневные). Версия 3 — карточки: коробки Лейтнера
+ * по двум направлениям (`progress`) → одна память FSRS на слово (`srs`, `met`).
  */
-export const MIGRATIONS: Record<number, (db: IDBDatabase) => void> = {
+export const MIGRATIONS: Record<number, (db: IDBDatabase, tx: IDBTransaction) => void> = {
   1: (db) => {
     for (const name of TABLES) if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
   },
   2: (db) => {
     if (!db.objectStoreNames.contains('daily_days')) db.createObjectStore('daily_days', { keyPath: 'id' });
   },
+  3: (_db, tx) => {
+    const store = tx.objectStore('cards');
+    const req = store.openCursor();
+    req.addEventListener('success', () => {
+      const cursor = req.result;
+      if (!cursor) return;
+      const row = cursor.value as DbRecord | LeitnerCard;
+      if ('progress' in row) void cursor.update(fromLeitner(row));
+      cursor.continue();
+    });
+  },
 };
+
+/** Карточка версии 2: коробки Лейтнера 0…5 (интервалы 0, 1, 2, 4, 8, 16 дней) по двум направлениям. */
+interface LeitnerCard extends DbRecord {
+  createdAt: number;
+  progress: Record<string, { box: number; seen: number; due?: number }>;
+}
+const LEITNER_DAYS = [0, 1, 2, 4, 8, 16];
+
+/**
+ * Перенос прогресса: берём слабое из двух направлений. Интервал коробки — оценка стабильности (сколько дней слово
+ * уже держалось), срок — прежний. Слово, которое ни разу не учили, остаётся новым.
+ */
+export function fromLeitner({ progress, ...card }: LeitnerCard): DbRecord {
+  const seen = Object.values(progress).filter((p) => p.seen > 0);
+  const updatedAt = new Date().toISOString();
+  if (!seen.length) return { ...card, updatedAt };
+  const weak = seen.reduce((a, b) => (b.box < a.box ? b : a));
+  const days = LEITNER_DAYS[weak.box] ?? 16;
+  const due = Math.min(...seen.map((p) => p.due ?? card.createdAt));
+  const srs: SrsFields = {
+    due,
+    stability: Math.max(0.5, days),
+    difficulty: 5,
+    reps: Math.max(...seen.map((p) => p.seen)),
+    lapses: 0,
+    state: weak.box === 0 ? 3 : 2,
+    scheduled: days,
+    last: due - days * 86_400_000,
+  };
+  return { ...card, updatedAt, met: card.createdAt, srs } as DbRecord;
+}

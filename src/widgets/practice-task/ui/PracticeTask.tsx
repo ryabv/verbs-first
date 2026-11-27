@@ -4,6 +4,7 @@ import { analyzePhrase } from '@/features/card-add';
 import { SpeakButton } from '@/features/pronounce';
 import { compareAnswer, type AnswerVerdict } from '@/shared/lib/greek';
 import { Button } from '@/shared/ui/button';
+import { GreekKeyboard, useGreekKeyboard } from '@/shared/ui/greek-keyboard';
 import { Check } from '@/shared/ui/ornament';
 import { shuffle, tapCorrect, tilesOf } from '../lib/task';
 import styles from './PracticeTask.module.css';
@@ -116,7 +117,10 @@ function Options({
   );
 }
 
-/** Поле ввода по-гречески с проверкой. Ошибка только в ударении — засчитана, с подсказкой. */
+/**
+ * Поле ввода по-гречески с проверкой. Ошибка только в ударении — засчитана, с подсказкой.
+ * Нет греческой раскладки — буквы на экране (`GreekKeyboard`, как в карточках и тренажёрах).
+ */
 function Write({
   accepted,
   hint,
@@ -134,6 +138,11 @@ function Write({
 }) {
   const [value, setValue] = useState('');
   const [verdict, setVerdict] = useState<AnswerVerdict | null>(null);
+  const keyboard = useGreekKeyboard();
+  const type = (next: string) => {
+    setValue(next);
+    setVerdict(null);
+  };
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const v = compareAnswer(value, accepted);
@@ -147,11 +156,9 @@ function Write({
         className={[styles.input, wide && styles.inputWide, verdict === 'wrong' && styles.inputWrong].filter(Boolean).join(' ')}
         value={solved && verdict !== 'accent' && verdict !== 'correct' ? accepted[0] : value}
         readOnly={solved}
-        onChange={(e) => {
-          setValue(e.target.value);
-          setVerdict(null);
-        }}
+        onChange={(e) => type(e.target.value)}
         lang="el"
+        inputMode={keyboard.inputMode}
         autoComplete="off"
         autoCapitalize="off"
         spellCheck={false}
@@ -170,6 +177,7 @@ function Write({
           {verdict === 'wrong' && <span className={styles.hintWrong}>Не совсем — попробуйте ещё раз.</span>}
         </div>
       )}
+      {!solved && <GreekKeyboard open={keyboard.open} onToggle={keyboard.toggle} onKey={(ch) => type(value + ch)} onBackspace={() => type(value.slice(0, -1))} />}
     </form>
   );
 }

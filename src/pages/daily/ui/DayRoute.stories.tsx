@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { chaptersDone, dailyMonth } from '@sb/fixtures';
+import { cards, chaptersDone, dailyMonth } from '@sb/fixtures';
 import { DayRoute } from './DayPage';
 import { FoundShard } from './FoundShard';
 
@@ -36,6 +36,30 @@ export const ПройденСПодсказками: Story = {
       await next(left - 1);
     };
     await next(40);
+  },
+};
+/** Часть «Слова» — из карточек: 3 слова пора повторить, остальные новые (знакомство и проверка). */
+const WITH_CARDS = {
+  db: {
+    story_progress: story,
+    cards: cards(
+      [
+        ['το γράμμα', 'письмо'],
+        ['ταξιδεύω', 'путешествовать, ездить'],
+        ['το σπίτι', 'дом'],
+        ['η κυρία', 'госпожа'],
+        ['βλέπω', 'видеть, смотреть'],
+      ],
+      3,
+    ),
+  },
+};
+export const СКарточками: Story = { name: 'Сегодня: слова из карточек', parameters: WITH_CARDS };
+export const КарточкаВДне: Story = {
+  name: 'Сегодня: новое слово из карточек',
+  parameters: WITH_CARDS,
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(await canvas.findByRole('button', { name: /Начать/ }));
   },
 };
 export const Прошлый: Story = { name: 'Прошлый день', parameters: day('2026-11-10') };

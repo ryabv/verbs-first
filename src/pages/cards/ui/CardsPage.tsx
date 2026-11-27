@@ -4,7 +4,7 @@ import {
   cardsInDeck,
   cardsInDecks,
   createDeck,
-  isDueAny,
+  isDue,
   isLearned,
   learnedShare,
   streakOf,
@@ -14,6 +14,7 @@ import {
 } from '@/entities/card';
 import { AddWordForm } from '@/features/card-editor';
 import { CardTrainer } from '@/features/card-training';
+import { useWordSentences } from '@/widgets/word-sentences';
 import { routes } from '@/shared/config/routes';
 import { plural } from '@/shared/lib/plural';
 import { Breadcrumbs } from '@/shared/ui/breadcrumbs';
@@ -32,6 +33,7 @@ export function CardsPage() {
   const [params, setParams] = useSearchParams();
   const [training, setTraining] = useState(false);
   const [adding, setAdding] = useState(false);
+  const sentences = useWordSentences();
 
   const deck = decks.find((d) => d.id === params.get('deck'));
   if (deck) return <DeckView key={deck.id} deck={deck} />;
@@ -46,18 +48,18 @@ export function CardsPage() {
   return (
     <div className={training ? `${styles.page} ${styles.training}` : styles.page}>
       <header className={styles.head}>
-        <Breadcrumbs items={[{ label: 'Главная', to: routes.home() }, { label: 'Карточки' }]} back={false} />
+        <Breadcrumbs items={[{ label: 'Главная', to: routes.home() }, { label: 'Карточки' }]} back={training} />
         <div className={styles.titleRow}>
           <h1 className={styles.title}>Карточки</h1>
           {!training && (
             <Button variant="secondary" onClick={() => setAdding((v) => !v)} aria-expanded={adding}>
-              {adding ? 'Скрыть' : '+ Добавить слово'}
+              {adding ? 'Скрыть' : '+ Добавить'}
             </Button>
           )}
         </div>
         {cards.length > 0 && (
           <p className={styles.lead}>
-            {cards.length} {words(cards.length)} · выучено в обе стороны: {learned}
+            {cards.length} {words(cards.length)} · выучено: {learned}
             {streak > 0 && (
               <span className={styles.streak}>
                 {' '}
@@ -79,7 +81,7 @@ export function CardsPage() {
           <p>
             Слова глав попадают сюда сами, когда вы дочитываете главу <Link to={routes.story()}>Истории</Link>, а слова из ошибок —
             когда в ежедневных показываете ответ. Любое греческое слово можно добавить и вручную: нажмите на него — и «в
-            карточки». Или впишите своё — кнопка «Добавить слово» выше.
+            карточки». Или впишите своё — кнопка «Добавить» выше.
           </p>
         </Callout>
       ) : (
@@ -92,7 +94,7 @@ export function CardsPage() {
               </button>
             ) : null}
           </div>
-          <CardTrainer pool={pool} allCards={cards} onSessionChange={setTraining} />
+          <CardTrainer pool={pool} allCards={cards} sentences={sentences} onSessionChange={setTraining} />
         </section>
       )}
 
@@ -153,8 +155,8 @@ function Decks({ decks, cards }: { decks: Deck[]; cards: Card[] }) {
 
 function DeckTile({ deck, cards, title }: { deck: Deck; cards: Card[]; title: string }) {
   const list = cardsInDeck(cards, deck.id);
-  const due = list.filter((c) => isDueAny(c)).length;
-  const fresh = list.filter((c) => c.progress['gr-ru'].seen === 0 && c.progress['ru-gr'].seen === 0).length;
+  const due = list.filter((c) => isDue(c)).length;
+  const fresh = list.filter((c) => c.met === undefined).length;
   return (
     <li>
       <Link to={`${routes.cards()}?deck=${encodeURIComponent(deck.id)}`} className={styles.tile}>

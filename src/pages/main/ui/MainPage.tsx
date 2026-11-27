@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Link } from 'react-router';
 import { READING_COURSE } from '@/entities/alphabet';
-import { isDueAny, planToday, statusOf, useCards, type Card, type DeckRef } from '@/entities/card';
+import { isDue, isLearned, planToday, useCards, type Card, type DeckRef } from '@/entities/card';
 import { chapterOpen, chapterRank, chapterRead, doneAt, STORY_CHAPTERS, useStoryProgress, type StoryChapter } from '@/entities/story';
 import { vesselOfMonth, VesselPicture } from '@/entities/vessel';
 import { PROVERBS } from '@/entities/proverb';
@@ -278,7 +278,6 @@ function groupOfKey(key: string) {
 
 // ---------- Карточки ----------
 
-const learned = (c: Card) => statusOf(c, 'gr-ru') === 'learned' && statusOf(c, 'ru-gr') === 'learned';
 // Служебные карточки («ο/η/το») и длинные фразы на маленькой карточке не смотрятся — сверху обычное слово.
 const nice = (c: Card) => !c.greek.includes('/') && c.greek.length <= 12;
 const words = (n: number) => `${n} ${plural(n, ['слово', 'слова', 'слов'])}`;
@@ -286,9 +285,9 @@ const words = (n: number) => `${n} ${plural(n, ['слово', 'слова', 'с�
 /** Карточки — той же строкой: стопка со словом, которое ждёт первым, полоска «выучено», круглая кнопка с числом. */
 function CardsCard() {
   const { cards } = useCards();
-  const due = cards.filter((c) => isDueAny(c));
-  const fresh = planToday(cards, 'gr-ru').fresh;
-  const learnedCount = cards.filter(learned).length;
+  const due = cards.filter((c) => isDue(c));
+  const fresh = planToday(cards).fresh;
+  const learnedCount = cards.filter(isLearned).length;
   // На верхней карточке — слово, которое ждёт первым: так стопка «зовёт» конкретным словом.
   const top = due.find(nice) ?? fresh.find(nice) ?? cards.find(nice) ?? due[0] ?? fresh[0];
   const title = cards.length === 0 ? 'Карточек пока нет' : due.length > 0 ? `${words(due.length)} ждут` : fresh.length > 0 ? `${words(fresh.length)} — новые` : 'На сегодня всё';

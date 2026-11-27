@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { newId, table, type DbRecord, type Fields, type Table } from '@/shared/lib/db';
 import { cardKey } from '../lib/answers';
-import { addDays, dayKey, newSrs, schedule } from '../lib/srs';
-import type { Card, CardsState, Deck, Direction, WordInput } from './types';
+import { addDays, dayKey, review } from '../lib/srs';
+import type { Card, CardsState, Deck, WordInput } from './types';
 
 /**
  * Хранилище карточек — таблицы `decks`, `cards`, `activity_days` (IndexedDB, схема сервера): запись на набор,
@@ -143,7 +143,6 @@ export function addCards(deckId: string, words: readonly WordInput[]): number {
       greek,
       russian,
       createdAt: Date.now(),
-      progress: { 'ru-gr': newSrs(), 'gr-ru': newSrs() },
     };
     byKey.set(key, card);
     fresh.push(card);
@@ -185,19 +184,31 @@ export function cardsInDecks(cards: readonly Card[], deckIds: readonly string[] 
   return deckIds === null ? [...cards] : cards.filter((c) => c.deckIds.some((id) => deckIds.includes(id)));
 }
 
-/** Ответ в тренировке: новый срок повторения слова и отметка «сегодня занимался». */
-export function recordAnswer(cardId: string, dir: Direction, correct: boolean, now = Date.now()): void {
+/** Обновить одну карточку и отметить «сегодня занимался». */
+function touch(cardId: string, patch: (c: Card) => Card, now: number): void {
   const s = getState();
   const today = dayKey(now);
   setState({
     ...s,
     // Неизменяемое обновление: useSyncExternalStore сравнивает ссылки.
-    // oxlint-disable-next-line no-map-spread
-    cards: s.cards.map((c) =>
-      c.id === cardId ? { ...c, progress: { ...c.progress, [dir]: schedule(c.progress[dir], correct, now) } } : c,
-    ),
+    cards: s.cards.map((c) => (c.id === cardId ? patch(c) : c)),
     days: s.days.includes(today) ? s.days : [...s.days, today].slice(-400),
   });
+}
+
+/** Сколько последних фраз помнить, чтобы не повторять одну и ту же. */
+const SHOWN_KEEP = 6;
+const remember = (shown: string[] | undefined, sentence: string | undefined): string[] | undefined =>
+  sentence ? [sentence, ...(shown ?? []).filter((x) => x !== sentence)].slice(0, SHOWN_KEEP) : shown;
+
+/** Знакомство со словом: показали его с примерами. Срока ещё нет — первая проверка в этой же сессии или в следующей. */
+export function meetCard(cardId: string, sentences: readonly string[] = [], now = Date.now()): void {
+  touch(cardId, (c) => ({ ...c, met: c.met ?? now, shown: sentences.reduce<string[] | undefined>((acc, x) => remember(acc, x), c.shown) }), now);
+}
+
+/** Проверка в тренировке: новый срок повторения (FSRS) и фраза, в которой слово показали. */
+export function recordAnswer(cardId: string, correct: boolean, sentence?: string, now = Date.now()): void {
+  touch(cardId, (c) => ({ ...c, met: c.met ?? now, srs: review(c.srs, correct, now), shown: remember(c.shown, sentence) }), now);
 }
 
 /** Исправить слово или перевод. Прогресс сохраняется. */

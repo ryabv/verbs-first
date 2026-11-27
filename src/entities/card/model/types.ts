@@ -1,10 +1,6 @@
 import type { Schema, SrsFields } from '@/shared/lib/db';
 
-/** Направление тренировки: на каком языке ученик отвечает. */
-export type Direction = 'ru-gr' | 'gr-ru';
-export const DIRECTIONS: readonly Direction[] = ['ru-gr', 'gr-ru'];
-
-/** Насколько хорошо знаем слово в одном направлении (коробка Лейтнера). Поля — схема базы. */
+/** Память о слове (FSRS). Поля — схема базы. */
 export type Srs = SrsFields;
 
 /**

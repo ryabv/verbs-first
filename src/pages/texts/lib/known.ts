@@ -75,7 +75,7 @@ export function knownKeys(cards: readonly Card[]): Set<string> {
     if (started) add(keysFor(id, () => lessonGreek(lesson)));
   }
   for (const c of cards) {
-    if (statusOf(c, 'gr-ru') !== 'new' || statusOf(c, 'ru-gr') !== 'new') known.add(cardKey(c.greek));
+    if (statusOf(c) !== 'new') known.add(cardKey(c.greek));
   }
   return known;
 }

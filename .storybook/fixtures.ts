@@ -4,7 +4,10 @@
  */
 import { STORY_CHAPTERS } from '@/entities/story/data/chapters';
 import { practiceKey, STORY_END } from '@/entities/story/model/progress';
+import { WEEK_MATERIAL } from '@/entities/story';
+import { analyzePhrase, lookupToken } from '@/features/card-add';
 import { daysOfMonth } from '@/features/daily/model/calendar';
+import { buildSentenceIndex } from '@/widgets/word-sentences';
 import type { Rank, Snapshot } from '@/shared/lib/db';
 
 /** «Сегодня» во всех историях — фиксированное: экраны с датами одинаковы при каждом просмотре. */
@@ -79,21 +82,23 @@ export function streak(days: number): NonNullable<Snapshot['activity_days']> {
 
 type CardRow = NonNullable<Snapshot['cards']>[number];
 /**
- * Карточки: слова в «Моих словах»; `learned` — сколько из них уже в долгих коробках,
- * `due` — когда их повторять (по умолчанию — пора).
+ * Карточки: слова в «Моих словах»; `learned` — сколько из них уже выучены (держатся месяц),
+ * `due` — когда их повторять (по умолчанию — пора). Остальные — новые.
  */
-export function cards(words: [greek: string, russian: string][], learned = 0, due?: number): CardRow[] {
-  return words.map(([greek, russian], i) => {
-    const srs = i < learned ? { box: 4, seen: 6, due } : { box: 0, seen: 0 };
-    return {
-      id: `card-${i}`,
-      deckIds: ['my-words'],
-      greek,
-      russian,
-      createdAt: 0,
-      progress: { 'gr-ru': srs, 'ru-gr': srs },
-    };
-  });
+export function cards(words: [greek: string, russian: string][], learned = 0, due = 0): CardRow[] {
+  return words.map(([greek, russian], i) => ({
+    id: `card-${i}`,
+    deckIds: ['my-words'],
+    greek,
+    russian,
+    createdAt: 0,
+    ...(i < learned ? { met: 0, srs: srsOf(30, due) } : {}),
+  }));
+}
+
+/** Память о слове для историй: стабильность `stability` дней, срок `due`. */
+export function srsOf(stability: number, due = 0) {
+  return { due, stability, difficulty: 5, reps: 4, lapses: 0, state: 2 as const, scheduled: Math.round(stability), last: 0 };
 }
 
 export const SAMPLE_WORDS: [string, string][] = [
@@ -106,3 +111,6 @@ export const SAMPLE_WORDS: [string, string][] = [
   ['η θάλασσα', 'море'],
   ['γράφω', 'писать'],
 ];
+
+/** Фразы для карточек — из всех глав (в приложении — только из открытых ученику). */
+export const sampleSentences = () => buildSentenceIndex(STORY_CHAPTERS, WEEK_MATERIAL, { analyze: analyzePhrase, lookup: lookupToken });

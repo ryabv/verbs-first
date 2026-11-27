@@ -1,30 +1,5 @@
 .today, .session { font-size: 16px; }
 
-/* ---------- режимы ---------- */
-.modes { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.5rem; margin: 0 0 1rem; padding: 0; border: none; min-inline-size: 0; }
-.modesLegend { padding: 0; margin-bottom: 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
-.mode {
-  position: relative;
-  display: grid;
-  align-content: start;
-  gap: 0.2rem;
-  padding: 0.7rem 0.75rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  cursor: pointer;
-  transition: border-color 0.15s;
-}
-.mode:hover { border-color: var(--border-strong); }
-.modeActive, .modeActive:hover { border-color: var(--brand); background: var(--surface-muted); }
-.mode:has(.modeInput:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.modeInput { position: absolute; opacity: 0; pointer-events: none; }
-.modeTitle { font-weight: 700; }
-.modeActive .modeTitle { color: var(--brand); }
-.modeText { font-size: 0.8rem; line-height: 1.35; color: var(--text-muted); }
-/* На телефоне описания в плитках скрыты — показываем описание выбранного режима под ними. */
-.modeHint { display: none; margin: -0.5rem 0 1rem; font-size: 0.85rem; color: var(--text-muted); }
-
 /* ---------- план на сегодня ---------- */
 .plan {
   display: flex;
@@ -47,10 +22,9 @@
 
 /* ---------- сессия ---------- */
 .progress { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: var(--text-muted); font-size: 0.9rem; }
-.exit { font: inherit; font-size: 0.9rem; background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; }
-.exit:hover { color: var(--brand); }
 
 .card { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 28px; }
+.card.bare { border: none; padding: 0; }
 .promptBox { display: grid; justify-items: center; gap: 0.3rem; margin: 0.5rem 0 1.5rem; text-align: center; }
 .prompt { font-size: 2rem; font-weight: 700; display: flex; align-items: center; gap: 0.3rem; }
 .hint { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
@@ -114,51 +88,47 @@
 .revealRussian { color: var(--text-muted); }
 .next { margin-top: 1rem; }
 
-/* ---------- карточка с переворотом ---------- */
-.flipWrap { display: grid; gap: 1rem; }
-.flip {
-  font: inherit;
-  color: inherit;
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 15rem;
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  perspective: 1200px;
-}
-.flip:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: var(--radius); }
-.face {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 0.6rem;
-  padding: 1.5rem;
-  border: 3px solid var(--surface-muted);
-  border-radius: calc(var(--radius) * 2);
-  background: var(--bg);
-  box-shadow: 0 3px 0 var(--border);
-  backface-visibility: hidden;
-  transition: transform 0.5s cubic-bezier(0.3, 0.7, 0.3, 1);
-}
-.back { transform: rotateY(180deg); border-color: var(--olive-soft); background: var(--surface-muted); }
-.flipped .front { transform: rotateY(-180deg); }
-.flipped .back { transform: rotateY(0); }
-.faceText { font-size: 2.2rem; font-weight: 700; text-align: center; }
-.back .faceText { color: var(--brand); }
-.faceHint { font-size: 0.85rem; color: var(--text-subtle); text-align: center; }
-.flipHint { text-align: center; font-size: 0.85rem; color: var(--text-subtle); }
-.selfButtons { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.5rem; }
-.selfButtons :global(button) { display: inline-flex; align-items: center; gap: 0.5rem; }
+/* ---------- ступени: подпись, фразы, пропуск ---------- */
+.stage { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); text-align: center; }
+.meaning { font-size: 1.15rem; color: var(--text-muted); }
+.promptSentence .prompt { display: grid; justify-items: center; gap: 0.5rem; font-size: 1.45rem; font-weight: 400; line-height: 1.45; }
+.promptRussian { font-size: 1rem; color: var(--text-muted); }
+.target { padding: 0 0.15em; border-radius: 4px; background: var(--accent-soft); color: var(--accent-strong); font-weight: 700; }
+.gap { display: inline-block; min-width: 3.5em; border-bottom: 2px solid var(--accent); }
+.examples { display: grid; gap: 0.6rem; margin-top: 1rem; }
+.examplesLabel { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-subtle); }
+.example { padding: 0.6rem 0.9rem; border-radius: var(--radius); background: var(--surface-muted); }
+.exampleGreek { font-size: 1.1rem; line-height: 1.45; }
+.exampleRussian { margin-top: 0.15rem; color: var(--text-muted); }
+.exampleSource { margin-top: 0.2rem; font-size: 0.75rem; color: var(--text-subtle); }
+.writeHint { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--text-subtle); }
 
 /* ---------- итог ---------- */
-.finish { border: 3px solid var(--surface-muted); border-radius: var(--radius); padding: 24px; }
-.finishTitle { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--olive); }
-.finishStats { margin: 0.3rem 0 1rem; color: var(--text-muted); }
+/* Итог без рамки: структуру держат плитки с числами. */
+.finish { padding: 4px 0 0; }
+.finishStats { margin: 0.3rem 0 0.75rem; color: var(--text-muted); }
+.praise { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.5rem; }
+.praiseGreek { font-family: var(--font-display); font-style: italic; font-size: 1.9rem; font-weight: 700; color: var(--olive); }
+.praiseRu { flex-basis: 100%; color: var(--text-muted); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin: 1rem 0; }
+.stat { display: grid; justify-items: center; gap: 0.1rem; padding: 0.7rem 0.4rem; border-radius: var(--radius); background: var(--surface-muted); text-align: center; }
+.stat b { font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1; color: var(--text); }
+.stat small { font-size: 1rem; color: var(--text-subtle); }
+.stat span { font-size: 0.8rem; color: var(--text-muted); }
+.grown { list-style: none; margin: 0 0 1rem; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.grown li { display: inline-flex; align-items: baseline; gap: 0.4rem; padding: 0.3rem 0.7rem; border-radius: 999px; background: var(--olive-soft); }
+.grownGreek { font-weight: 600; }
+.grownNote { font-size: 0.78rem; color: var(--text-muted); }
+.goal { margin: 0.35rem 0 1rem; font-size: 0.9rem; color: var(--text); }
+.week { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.45rem; margin: 0 0 1.2rem; font-size: 0.72rem; color: var(--text-subtle); }
+.day { display: grid; justify-items: center; gap: 0.15rem; }
+.dayDot { display: grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 2px solid var(--border); color: var(--on-accent); font-size: 0.7rem; }
+.dayDone .dayDot { border-color: var(--olive); background: var(--olive); }
+.dayToday { color: var(--text); font-weight: 600; }
+.weekText { flex: 1 1 10rem; margin-left: 0.4rem; font-size: 0.85rem; color: var(--text-muted); }
+.growthBar { display: flex; align-items: center; gap: 0.75rem; font-size: 0.85rem; color: var(--text-muted); }
+.growthBar > :first-child { flex: 1; max-width: 16rem; }
+
 .finishLabel { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
 .missed { list-style: none; margin: 0 0 1rem; padding: 4px 0; border-radius: var(--radius); background: var(--surface-muted); }
 .missed li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.5rem; padding: 4px 14px; }
@@ -167,34 +137,34 @@
 .missedRussian { color: var(--text-muted); }
 .finishActions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 
-@media (prefers-reduced-motion: reduce) {
-  .face { transition: none; }
-}
-@media (max-width: 900px) {
-  .modes { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
-}
 /* Сенсорный экран без клавиатуры — подсказки клавиш не нужны. */
 @media (hover: none) {
   .key { display: none; }
-  .flipHint { display: none; }
 }
 @media (max-width: 600px) {
-  .card, .finish { padding: 16px; border-width: 2px; }
-  .promptBox { margin: 0 0 1rem; }
-  .prompt { font-size: 1.6rem; }
+  /* На телефоне карточка без рамки и плотнее: слово, перевод, фразы и «Дальше» — на одном экране. */
+  .card { padding: 4px 0 0; border: none; }
+  .card.bare { padding: 0; }
+  .stage { font-size: 0.72rem; }
+  .promptBox { gap: 0.1rem; margin: 0.2rem 0 0.75rem; }
+  .prompt { font-size: 1.45rem; }
+  .meaning { font-size: 1rem; }
+  .promptSentence .prompt { font-size: 1.15rem; gap: 0.3rem; }
+  .promptRussian { font-size: 0.92rem; }
+  .examples { gap: 0.4rem; margin-top: 0.6rem; }
+  .examplesLabel { font-size: 0.72rem; }
+  .example { padding: 0.45rem 0.7rem; }
+  .exampleGreek { font-size: 1rem; }
+  .exampleRussian { font-size: 0.9rem; }
+  .exampleSource { font-size: 0.7rem; margin-top: 0.1rem; }
+  .optionBtn { font-size: 1rem; }
+  .next { margin-top: 0.75rem; }
   .optionBtn { min-height: 2.9rem; }
   .result { margin-top: 0.75rem; padding: 0.6rem 0.9rem; }
-  /* «Дальше» и «Помню / Не вспомнил(а)» — прилипают к низу экрана над панелью разделов: видны без прокрутки. */
-  .next, .selfButtons { position: sticky; bottom: calc(var(--tabbar) + 10px); z-index: 2; }
-  .next { width: 100%; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
-  .selfButtons { padding: 8px 0; background: var(--bg); }
+  /* «Дальше» прилипает к низу экрана над панелью разделов: виден без прокрутки. */
+  .next { position: sticky; bottom: calc(var(--tabbar) + 10px); z-index: 2; width: 100%; box-shadow: 0 6px 18px rgb(0 0 0 / 0.18); }
   .options { grid-template-columns: 1fr; }
-  .modes { grid-template-columns: 1fr 1fr; }
-  .modeText { display: none; }
-  .modeHint { display: block; }
   .plan { padding: 16px; }
   .planActions, .planActions :global(button) { width: 100%; }
-  .flip { height: 12rem; }
-  .faceText { font-size: 1.8rem; }
-  .selfButtons :global(button), .next, .finishActions :global(button) { flex: 1 1 auto; min-height: 2.9rem; }
+  .next, .finishActions :global(button) { flex: 1 1 auto; min-height: 2.9rem; }
 }

@@ -315,14 +315,37 @@ export interface DayInput {
   mistakes: readonly string[];
   /** Задания других дней этой недели: без повторов, где хватает материала. */
   usedThisWeek: ReadonlySet<string>;
+  /** Карточки ученика (id): пора повторить — по сроку; новые — по порядку добавления. Часть «Слова» — из них. */
+  cards?: { due: readonly string[]; fresh: readonly string[] };
+}
+
+/** Новых слов в день: знакомство и проверка — два задания на слово. */
+export const DAILY_NEW_WORDS = 2;
+/** Ключи заданий-карточек: `ci:id` — знакомство, `c:id` — проверка (ступень — по прочности слова). */
+export const cardKeyOf = (id: string, intro = false) => `${intro ? 'ci' : 'c'}:${id}`;
+export const parseCardKey = (key: string): { id: string; intro: boolean } | undefined => {
+  const m = /^(ci?):(.+)$/.exec(key);
+  return m ? { id: m[2]!, intro: m[1] === 'ci' } : undefined;
+};
+
+/**
+ * Часть «Слова» из карточек: сначала то, что пора повторить; осталось место — новые слова (знакомство в начале
+ * части, проверка — в конце, чтобы между ними прошло несколько заданий).
+ */
+function cardKeys(cards: NonNullable<DayInput['cards']>, size: number): string[] {
+  const fresh = cards.fresh.slice(0, Math.min(DAILY_NEW_WORDS, Math.floor(Math.max(0, size - cards.due.length) / 2)));
+  const due = cards.due.slice(0, size - fresh.length * 2);
+  return [...fresh.map((id) => cardKeyOf(id, true)), ...due.map((id) => cardKeyOf(id)), ...fresh.map((id) => cardKeyOf(id))];
 }
 
 /**
  * Собрать день: ключи заданий по частям (DAY_PARTS). Одна дата и тот же прогресс — тот же набор.
  * Каждая часть набирается до своего размера; не хватило материала в одной — добирают другие, чтобы день не худел.
  */
-export function buildDay({ date, pool, current, unpracticed, mistakes, usedThisWeek }: DayInput): string[] {
+export function buildDay({ date, pool, current, unpracticed, mistakes, usedThisWeek, cards }: DayInput): string[] {
   const picked = new Map<string, string[]>(DAY_PARTS.map((p) => [p.id, []]));
+  // Часть «Слова» — сначала карточки ученика (интервальные повторения); не хватило — слова глав.
+  if (cards) picked.get('word')!.push(...cardKeys(cards, DAY_PARTS.find((p) => p.id === 'word')!.size));
   const has = (k: string) => [...picked.values()].some((ks) => ks.includes(k));
   const total = () => [...picked.values()].reduce((n, ks) => n + ks.length, 0);
   /** Взять задание в его часть; `force` — сверх размера части (добор). */

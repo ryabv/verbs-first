@@ -272,3 +272,6 @@
 .findTitle { margin: 2px 0 4px; font-family: var(--font-display, inherit); font-size: 1.15rem; font-weight: 700; color: var(--text); }
 .findText { margin: 0 0 8px; font-size: 0.9rem; color: var(--text); }
 .findLink { font-size: 0.9rem; }
+
+/* Карточка ведёт сама: у неё своя кнопка «Дальше». */
+.hidden { display: none; }

@@ -31,6 +31,9 @@ export {
 export {
   buildDay,
   buildPool,
+  cardKeyOf,
+  parseCardKey,
+  DAILY_NEW_WORDS,
   DAY_PARTS,
   DAY_SIZE,
   partOf,

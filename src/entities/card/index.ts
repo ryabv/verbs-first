@@ -1,5 +1,4 @@
-export type { Card, Deck, Direction, Srs, WordInput, CardsState } from './model/types';
-export { DIRECTIONS } from './model/types';
+export type { Card, Deck, Srs, WordInput, CardsState } from './model/types';
 export {
   useCards,
   ensureDeck,
@@ -13,6 +12,7 @@ export {
   inDeck,
   recentDecks,
   recordAnswer,
+  meetCard,
   updateCard,
   renameDeck,
   streakOf,
@@ -26,8 +26,8 @@ export {
 } from './model/store';
 export {
   statusOf,
+  stageOf,
   isDue,
-  isDueAny,
   isLearned,
   learnedShare,
   planToday,
@@ -36,10 +36,13 @@ export {
   nextReview,
   daysUntil,
   shuffle,
-  LEARNED_BOX,
+  LEARNED_FROM,
+  RECALL_FROM,
+  WRITE_FROM,
   NEW_PER_SESSION,
   SESSION_LIMIT,
   type CardStatus,
+  type Stage,
   type Plan,
 } from './lib/srs';
 export { cardKey, checkGreek, checkRussian, greekVariants } from './lib/answers';
